@@ -3,15 +3,23 @@ import {
   View,
   Text,
   StyleSheet,
-  TouchableOpacity,
   ScrollView,
-  TextInput,
   SafeAreaView,
   Modal,
+  TextInput,
+  TouchableOpacity,
   I18nManager,
 } from 'react-native';
 import { useTranslation } from 'react-i18next';
 import { SurveyProtocol, Species } from '@tunisia-survey/shared';
+import { IOSColors, IOSTypography, IOSLayout } from '../theme/ios';
+import {
+  IOSNavigationBar,
+  IOSGroupedList,
+  IOSListRow,
+  IOSSegmentedControl,
+  IOSButton,
+} from '../components/ios';
 
 interface StructuredSurveyScreenProps {
   onBack: () => void;
@@ -28,44 +36,41 @@ export const StructuredSurveyScreen: React.FC<StructuredSurveyScreenProps> = ({
 }) => {
   const { t } = useTranslation();
 
-  // Session state
   const [protocol, setProtocol] = useState<SurveyProtocol>('transect');
   const [selectedRoute, setSelectedRoute] = useState<string | null>(null);
   const [isSurveyActive, setIsSurveyActive] = useState<boolean>(false);
   const [elapsedSeconds, setElapsedSeconds] = useState<number>(0);
   const [distanceKm, setDistanceKm] = useState<number>(0.0);
-  
-  // Animal logging modal within session
+
+  // In-session animal logging sheet
   const [isLoggingAnimal, setIsLoggingAnimal] = useState<boolean>(false);
   const [sightingSpecies, setSightingSpecies] = useState<Species>('cat');
   const [groupSize, setGroupSize] = useState<number>(1);
-  const [distanceFromPathM, setDistanceFromPathM] = useState<string>('5');
+  const [distanceFromPathM, setDistanceFromPathM] = useState<string>('5.0');
 
-  // Complete checklist end modal (eBird model)
+  // eBird Complete Checklist modal
   const [showEndModal, setShowEndModal] = useState<boolean>(false);
 
-  // Timer simulation
   useEffect(() => {
     let timer: any;
     if (isSurveyActive) {
       timer = setInterval(() => {
         setElapsedSeconds((prev) => prev + 1);
-        // Simulate distance accumulation for walking transect
         if (protocol === 'transect') {
-          setDistanceKm((prev) => prev + 0.0012); // ~4.3 km/h pace
+          setDistanceKm((prev) => prev + 0.0012);
         }
       }, 1000);
     }
     return () => clearInterval(timer);
   }, [isSurveyActive, protocol]);
 
-  const formatTime = (secs: number) => {
+  const formatTimer = (secs: number) => {
     const mins = Math.floor(secs / 60);
     const s = secs % 60;
     return `${mins.toString().padStart(2, '0')}:${s.toString().padStart(2, '0')}`;
   };
 
-  const handleStartSurvey = () => {
+  const handleStart = () => {
     setIsSurveyActive(true);
     setElapsedSeconds(0);
     setDistanceKm(0.0);
@@ -80,11 +85,11 @@ export const StructuredSurveyScreen: React.FC<StructuredSurveyScreenProps> = ({
       observed_at: new Date().toISOString(),
     });
     setIsLoggingAnimal(false);
-    setDistanceFromPathM('5');
+    setDistanceFromPathM('5.0');
     setGroupSize(1);
   };
 
-  const confirmEndSurvey = (completeChecklist: boolean) => {
+  const confirmEnd = (completeChecklist: boolean) => {
     setShowEndModal(false);
     setIsSurveyActive(false);
     onFinishSurvey({
@@ -98,187 +103,168 @@ export const StructuredSurveyScreen: React.FC<StructuredSurveyScreenProps> = ({
   };
 
   return (
-    <SafeAreaView style={styles.container}>
-      {/* Top Header */}
-      <View style={styles.topBar}>
-        <TouchableOpacity onPress={onBack} style={styles.backBtn} disabled={isSurveyActive}>
-          <Text style={[styles.backBtnText, isSurveyActive && { color: '#CBD5E1' }]}>✕</Text>
-        </TouchableOpacity>
-        <Text style={styles.topBarTitle}>{t('survey.mode_title')}</Text>
-        <View style={{ width: 32 }} />
-      </View>
+    <SafeAreaView style={styles.safeArea}>
+      <IOSNavigationBar
+        title={isSurveyActive ? 'Enquête en cours' : t('survey.mode_title')}
+        onBack={!isSurveyActive ? onBack : undefined}
+        backTitle="Accueil"
+      />
 
-      <ScrollView contentContainerStyle={styles.scroll}>
-        {!isSurveyActive ? (
-          // Pre-Survey Setup Screen
-          <View style={styles.setupCard}>
-            <Text style={styles.sectionLabel}>{t('survey.protocol_label')}</Text>
-            <View style={styles.toggleRow}>
-              <TouchableOpacity
-                style={[styles.protocolBtn, protocol === 'transect' && styles.protocolBtnActive]}
-                onPress={() => setProtocol('transect')}
-              >
-                <Text style={styles.protocolEmoji}>🚶</Text>
-                <Text style={[styles.protocolText, protocol === 'transect' && styles.protocolTextActive]}>
-                  {t('survey.transect')}
-                </Text>
-              </TouchableOpacity>
-
-              <TouchableOpacity
-                style={[styles.protocolBtn, protocol === 'stationary_point' && styles.protocolBtnActive]}
-                onPress={() => setProtocol('stationary_point')}
-              >
-                <Text style={styles.protocolEmoji}>📍</Text>
-                <Text style={[styles.protocolText, protocol === 'stationary_point' && styles.protocolTextActive]}>
-                  {t('survey.stationary')}
-                </Text>
-              </TouchableOpacity>
+      {!isSurveyActive ? (
+        <ScrollView contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
+          {/* Protocol Selection Group */}
+          <IOSGroupedList
+            header={t('survey.protocol_label')}
+            footer="Le transect permet d'estimer la densité par échantillonnage des distances; le point fixe mesure le taux de détection stationnaire."
+          >
+            <View style={styles.protocolPickerContainer}>
+              <IOSSegmentedControl<SurveyProtocol>
+                selectedValue={protocol}
+                onValueChange={setProtocol}
+                values={[
+                  { label: '🚶 ' + t('survey.transect'), value: 'transect' },
+                  { label: '📍 ' + t('survey.stationary'), value: 'stationary_point' },
+                ]}
+              />
             </View>
+          </IOSGroupedList>
 
-            {/* Fixed Predefined Routes */}
-            <Text style={[styles.sectionLabel, { marginTop: 16 }]}>{t('survey.fixed_route')}</Text>
-            <TouchableOpacity
-              style={[styles.routeOption, selectedRoute === null && styles.routeOptionActive]}
+          {/* Fixed Predefined Routes */}
+          <IOSGroupedList
+            header={t('survey.fixed_route')}
+            footer="Les itinéraires fixes permettent de répéter les inventaires sur les mêmes secteurs pour les modèles de dynamique temporelle."
+          >
+            <IOSListRow
+              title="🗺️ Nouvel itinéraire libre"
+              subtitle="Tracé GPS libre et découverte de secteur"
               onPress={() => setSelectedRoute(null)}
-            >
-              <Text style={styles.routeName}>🗺️ {t('survey.no_route')}</Text>
-            </TouchableOpacity>
-
-            <TouchableOpacity
-              style={[styles.routeOption, selectedRoute === 'route-medina-01' && styles.routeOptionActive]}
-              onPress={() => setSelectedRoute('route-medina-01')}
-            >
-              <Text style={styles.routeName}>📍 Tunis Médina - Circuit Bab Souika (1.8 km)</Text>
-              <Text style={styles.routeSub}>Tunis • Urban / Market</Text>
-            </TouchableOpacity>
-
-            <TouchableOpacity
-              style={[styles.routeOption, selectedRoute === 'route-ariana-02' && styles.routeOptionActive]}
-              onPress={() => setSelectedRoute('route-ariana-02')}
-            >
-              <Text style={styles.routeName}>📍 Ariana Centre - Avenue Habib Bourguiba (2.2 km)</Text>
-              <Text style={styles.routeSub}>Ariana • Residential / Commercial</Text>
-            </TouchableOpacity>
-
-            <TouchableOpacity style={styles.startBtn} onPress={handleStartSurvey}>
-              <Text style={styles.startBtnText}>▶ Démarrer le relevé scientifique</Text>
-            </TouchableOpacity>
-          </View>
-        ) : (
-          // Active Survey HUD
-          <View style={styles.hudCard}>
-            <View style={styles.liveIndicator}>
-              <View style={styles.pulseDot} />
-              <Text style={styles.liveText}>{t('survey.tracking_active')}</Text>
-            </View>
-
-            <View style={styles.hudMetrics}>
-              <View style={styles.hudBox}>
-                <Text style={styles.hudVal}>{formatTime(elapsedSeconds)}</Text>
-                <Text style={styles.hudLabel}>Durée</Text>
-              </View>
-              <View style={styles.hudDivider} />
-              <View style={styles.hudBox}>
-                <Text style={styles.hudVal}>{distanceKm.toFixed(2)} km</Text>
-                <Text style={styles.hudLabel}>Distance</Text>
-              </View>
-              <View style={styles.hudDivider} />
-              <View style={styles.hudBox}>
-                <Text style={styles.hudVal}>{loggedAnimalsCount}</Text>
-                <Text style={styles.hudLabel}>Animaux notés</Text>
-              </View>
-            </View>
-
-            {/* In-Session Animal Record Button */}
-            <TouchableOpacity
-              style={styles.addAnimalBtn}
-              onPress={() => setIsLoggingAnimal(true)}
-              activeOpacity={0.8}
-            >
-              <Text style={styles.addAnimalBtnText}>+ Noter un animal vu (Distance Sampling)</Text>
-            </TouchableOpacity>
-
-            {/* Stop Survey Button */}
-            <TouchableOpacity
-              style={styles.stopBtn}
-              onPress={() => setShowEndModal(true)}
-              activeOpacity={0.8}
-            >
-              <Text style={styles.stopBtnText}>⏹ {t('survey.stop_survey')}</Text>
-            </TouchableOpacity>
-          </View>
-        )}
-      </ScrollView>
-
-      {/* Animal Quick Log Modal (Distance Sampling Perpendicular Distance) */}
-      <Modal visible={isLoggingAnimal} transparent animationType="slide">
-        <View style={styles.modalOverlay}>
-          <View style={styles.modalSheet}>
-            <Text style={styles.modalTitle}>Enregistrer une détection</Text>
-
-            <View style={styles.toggleRow}>
-              {(['cat', 'dog'] as Species[]).map((sp) => (
-                <TouchableOpacity
-                  key={sp}
-                  style={[styles.protocolBtn, sightingSpecies === sp && styles.protocolBtnActive]}
-                  onPress={() => setSightingSpecies(sp)}
-                >
-                  <Text style={styles.protocolText}>{sp === 'cat' ? '🐱 Chat' : '🐶 Chien'}</Text>
-                </TouchableOpacity>
-              ))}
-            </View>
-
-            {/* Distance from Path (Distance Sampling g(x)) */}
-            <Text style={styles.inputLabel}>{t('survey.distance_from_path')}</Text>
-            <TextInput
-              style={styles.numInput}
-              keyboardType="numeric"
-              value={distanceFromPathM}
-              onChangeText={setDistanceFromPathM}
-              placeholder="Ex: 8.5"
+              rightComponent={selectedRoute === null ? <Text style={styles.checkmark}>✓</Text> : null}
             />
-            <Text style={styles.inputHelp}>
-              Distance perpendiculaire estimée entre l'animal et la trajectoire de marche.
-            </Text>
+            <IOSListRow
+              title="📍 Tunis Médina - Bab Souika"
+              subtitle="1.8 km • Urbain dense / Marché"
+              onPress={() => setSelectedRoute('route-medina-01')}
+              rightComponent={selectedRoute === 'route-medina-01' ? <Text style={styles.checkmark}>✓</Text> : null}
+            />
+            <IOSListRow
+              title="📍 Ariana Centre - Av. Habib Bourguiba"
+              subtitle="2.2 km • Résidentiel et commercial"
+              isLast
+              onPress={() => setSelectedRoute('route-ariana-02')}
+              rightComponent={selectedRoute === 'route-ariana-02' ? <Text style={styles.checkmark}>✓</Text> : null}
+            />
+          </IOSGroupedList>
 
-            <View style={styles.modalBtnRow}>
-              <TouchableOpacity
-                style={styles.cancelBtn}
-                onPress={() => setIsLoggingAnimal(false)}
-              >
-                <Text style={styles.cancelBtnText}>Annuler</Text>
-              </TouchableOpacity>
-              <TouchableOpacity style={styles.confirmBtn} onPress={handleAddSighting}>
-                <Text style={styles.confirmBtnText}>Ajouter</Text>
-              </TouchableOpacity>
+          <View style={styles.actionContainer}>
+            <IOSButton title="Démarrer l'enregistrement GPS" onPress={handleStart} />
+          </View>
+        </ScrollView>
+      ) : (
+        /* Active Apple Workout/Fitness HUD */
+        <View style={styles.hudContainer}>
+          <View style={styles.hudBeacon}>
+            <View style={styles.pulseDot} />
+            <Text style={styles.beaconText}>ENREGISTREMENT GPS DU TRAJET EN COURS</Text>
+          </View>
+
+          <View style={styles.metricsCard}>
+            <Text style={styles.primaryMetricVal}>{formatTimer(elapsedSeconds)}</Text>
+            <Text style={styles.primaryMetricLabel}>DURÉE ÉCOULÉE</Text>
+
+            <View style={styles.secondaryMetricsRow}>
+              <View style={styles.secondaryMetricBox}>
+                <Text style={styles.secondaryMetricVal}>{distanceKm.toFixed(2)}</Text>
+                <Text style={styles.secondaryMetricLabel}>KILOMÈTRES</Text>
+              </View>
+              <View style={styles.secondaryMetricDivider} />
+              <View style={styles.secondaryMetricBox}>
+                <Text style={styles.secondaryMetricVal}>{loggedAnimalsCount}</Text>
+                <Text style={styles.secondaryMetricLabel}>DÉTECTIONS</Text>
+              </View>
+            </View>
+          </View>
+
+          <View style={styles.hudActions}>
+            <IOSButton
+              title="+ Noter un animal vu (Distance)"
+              onPress={() => setIsLoggingAnimal(true)}
+            />
+            <IOSButton
+              title="⏹ Clôturer l'enquête"
+              variant="destructive"
+              onPress={() => setShowEndModal(true)}
+            />
+          </View>
+        </View>
+      )}
+
+      {/* In-Session Sighting Modal Sheet */}
+      <Modal visible={isLoggingAnimal} transparent animationType="slide">
+        <View style={styles.sheetOverlay}>
+          <View style={styles.sheetContainer}>
+            <View style={IOSLayout.sheetHandle} />
+            <Text style={styles.sheetTitle}>Enregistrer une détection</Text>
+
+            <View style={{ marginBottom: 16 }}>
+              <IOSSegmentedControl<Species>
+                selectedValue={sightingSpecies}
+                onValueChange={setSightingSpecies}
+                values={[
+                  { label: '🐱 Chat', value: 'cat' },
+                  { label: '🐶 Chien', value: 'dog' },
+                ]}
+              />
+            </View>
+
+            <View style={styles.distanceInputGroup}>
+              <Text style={IOSTypography.subheadline}>Distance perpendiculaire du trajet (mètres)</Text>
+              <TextInput
+                style={styles.distanceInput}
+                keyboardType="numeric"
+                value={distanceFromPathM}
+                onChangeText={setDistanceFromPathM}
+                placeholder="Ex: 8.5"
+              />
+              <Text style={styles.distanceHelp}>
+                Mesure essentielle pour ajuster la fonction de détection g(x) dans Distance Sampling.
+              </Text>
+            </View>
+
+            <View style={styles.sheetBtnRow}>
+              <View style={{ flex: 1 }}>
+                <IOSButton
+                  title="Annuler"
+                  variant="secondary"
+                  onPress={() => setIsLoggingAnimal(false)}
+                />
+              </View>
+              <View style={{ flex: 1 }}>
+                <IOSButton title="Ajouter" onPress={handleAddSighting} />
+              </View>
             </View>
           </View>
         </View>
       </Modal>
 
-      {/* eBird Complete Checklist Modal (Mandatory for Non-Detections) */}
+      {/* eBird Complete Checklist Modal (Non-Detections) */}
       <Modal visible={showEndModal} transparent animationType="fade">
-        <View style={styles.modalOverlay}>
-          <View style={styles.modalSheet}>
-            <Text style={styles.modalEmoji}>📋</Text>
-            <Text style={styles.modalTitle}>{t('survey.complete_question')}</Text>
-            <Text style={styles.completeExplanation}>
-              {t('survey.complete_explanation')}
-            </Text>
+        <View style={styles.alertOverlay}>
+          <View style={styles.alertCard}>
+            <Text style={styles.alertEmoji}>📋</Text>
+            <Text style={styles.alertTitle}>{t('survey.complete_question')}</Text>
+            <Text style={styles.alertMessage}>{t('survey.complete_explanation')}</Text>
 
-            <TouchableOpacity
-              style={styles.completeYesBtn}
-              onPress={() => confirmEndSurvey(true)}
-            >
-              <Text style={styles.completeYesText}>✓ {t('survey.yes_complete')}</Text>
-            </TouchableOpacity>
-
-            <TouchableOpacity
-              style={styles.completeNoBtn}
-              onPress={() => confirmEndSurvey(false)}
-            >
-              <Text style={styles.completeNoText}>{t('survey.no_incomplete')}</Text>
-            </TouchableOpacity>
+            <View style={styles.alertBtnStack}>
+              <IOSButton
+                title={t('survey.yes_complete')}
+                onPress={() => confirmEnd(true)}
+              />
+              <IOSButton
+                title={t('survey.no_incomplete')}
+                variant="secondary"
+                onPress={() => confirmEnd(false)}
+              />
+            </View>
           </View>
         </View>
       </Modal>
@@ -287,137 +273,185 @@ export const StructuredSurveyScreen: React.FC<StructuredSurveyScreenProps> = ({
 };
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: '#F8FAFC' },
-  topBar: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    padding: 16,
-    backgroundColor: '#FFFFFF',
-    borderBottomWidth: 1,
-    borderBottomColor: '#E2E8F0',
-  },
-  topBarTitle: { fontSize: 17, fontWeight: '700', color: '#0F172A' },
-  backBtn: { padding: 8 },
-  backBtnText: { fontSize: 18, color: '#64748B' },
-  scroll: { padding: 20 },
-  setupCard: { gap: 14 },
-  sectionLabel: { fontSize: 14, fontWeight: '700', color: '#334155' },
-  toggleRow: { flexDirection: 'row', gap: 12 },
-  protocolBtn: {
+  safeArea: {
     flex: 1,
-    padding: 16,
-    borderRadius: 12,
-    backgroundColor: '#FFFFFF',
-    borderWidth: 1.5,
-    borderColor: '#E2E8F0',
-    alignItems: 'center',
-    gap: 6,
+    backgroundColor: IOSColors.systemGroupedBackground,
   },
-  protocolBtnActive: { borderColor: '#0F766E', backgroundColor: '#F0FDFA' },
-  protocolEmoji: { fontSize: 24 },
-  protocolText: { fontSize: 14, fontWeight: '600', color: '#475569' },
-  protocolTextActive: { color: '#0F766E', fontWeight: '700' },
-  routeOption: {
-    backgroundColor: '#FFFFFF',
-    padding: 16,
-    borderRadius: 12,
-    borderWidth: 1,
-    borderColor: '#E2E8F0',
-    gap: 4,
-  },
-  routeOptionActive: { borderColor: '#0F766E', backgroundColor: '#F0FDFA' },
-  routeName: { fontSize: 15, fontWeight: '600', color: '#1E293B' },
-  routeSub: { fontSize: 12, color: '#64748B' },
-  startBtn: {
-    backgroundColor: '#0F766E',
+  scrollContent: {
     paddingVertical: 16,
-    borderRadius: 14,
-    alignItems: 'center',
-    marginTop: 14,
   },
-  startBtnText: { color: '#FFF', fontSize: 16, fontWeight: '700' },
-  hudCard: {
-    backgroundColor: '#FFFFFF',
-    borderRadius: 16,
+  protocolPickerContainer: {
+    padding: 16,
+    backgroundColor: IOSColors.secondarySystemGroupedBackground,
+  },
+  checkmark: {
+    fontSize: 18,
+    fontWeight: '700',
+    color: IOSColors.systemTeal,
+  },
+  actionContainer: {
+    paddingHorizontal: 16,
+    marginTop: 8,
+  },
+  hudContainer: {
+    flex: 1,
     padding: 20,
-    borderWidth: 1,
-    borderColor: '#E2E8F0',
-    gap: 20,
+    justifyContent: 'space-between',
   },
-  liveIndicator: { flexDirection: 'row', alignItems: 'center', gap: 8 },
-  pulseDot: { width: 10, height: 10, borderRadius: 5, backgroundColor: '#EF4444' },
-  liveText: { fontSize: 14, fontWeight: '600', color: '#EF4444' },
-  hudMetrics: {
+  hudBeacon: {
     flexDirection: 'row',
-    justifyContent: 'space-around',
     alignItems: 'center',
-    backgroundColor: '#F8FAFC',
-    padding: 16,
+    justifyContent: 'center',
+    gap: 8,
+    paddingVertical: 10,
+  },
+  pulseDot: {
+    width: 8,
+    height: 8,
+    borderRadius: 4,
+    backgroundColor: IOSColors.systemRed,
+  },
+  beaconText: {
+    ...IOSTypography.caption2,
+    fontWeight: '700',
+    color: IOSColors.systemRed,
+    letterSpacing: 0.5,
+  },
+  metricsCard: {
+    backgroundColor: IOSColors.secondarySystemGroupedBackground,
+    borderRadius: 20,
+    padding: 24,
+    alignItems: 'center',
+    borderWidth: StyleSheet.hairlineWidth,
+    borderColor: 'rgba(60, 60, 67, 0.12)',
+    shadowColor: '#000000',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.06,
+    shadowRadius: 10,
+    elevation: 3,
+  },
+  primaryMetricVal: {
+    fontSize: 54,
+    fontWeight: '800',
+    color: IOSColors.systemTeal,
+    letterSpacing: -1,
+    fontVariant: ['tabular-nums'],
+  },
+  primaryMetricLabel: {
+    ...IOSTypography.caption1,
+    fontWeight: '700',
+    color: IOSColors.secondaryLabel,
+    letterSpacing: 0.8,
+    marginBottom: 20,
+  },
+  secondaryMetricsRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    width: '100%',
+    paddingTop: 16,
+    borderTopWidth: StyleSheet.hairlineWidth,
+    borderTopColor: IOSColors.separator,
+  },
+  secondaryMetricBox: {
+    flex: 1,
+    alignItems: 'center',
+  },
+  secondaryMetricVal: {
+    fontSize: 26,
+    fontWeight: '800',
+    color: IOSColors.label,
+  },
+  secondaryMetricLabel: {
+    ...IOSTypography.caption2,
+    color: IOSColors.secondaryLabel,
+    marginTop: 2,
+  },
+  secondaryMetricDivider: {
+    width: StyleSheet.hairlineWidth,
+    height: 30,
+    backgroundColor: IOSColors.separator,
+  },
+  hudActions: {
+    gap: 12,
+    marginBottom: 16,
+  },
+  sheetOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0,0,0,0.4)',
+    justifyContent: 'flex-end',
+  },
+  sheetContainer: {
+    backgroundColor: IOSColors.systemBackground,
+    borderTopLeftRadius: 20,
+    borderTopRightRadius: 20,
+    padding: 20,
+    paddingBottom: 36,
+  },
+  sheetTitle: {
+    ...IOSTypography.title3,
+    textAlign: 'center',
+    marginBottom: 16,
+  },
+  distanceInputGroup: {
+    backgroundColor: IOSColors.systemGray6,
+    padding: 14,
     borderRadius: 12,
+    marginBottom: 20,
   },
-  hudBox: { alignItems: 'center', flex: 1 },
-  hudVal: { fontSize: 20, fontWeight: '800', color: '#0F172A' },
-  hudLabel: { fontSize: 12, color: '#64748B', marginTop: 2 },
-  hudDivider: { width: 1, height: 32, backgroundColor: '#E2E8F0' },
-  addAnimalBtn: {
-    backgroundColor: '#0F766E',
-    paddingVertical: 16,
-    borderRadius: 14,
-    alignItems: 'center',
+  distanceInput: {
+    fontSize: 24,
+    fontWeight: '700',
+    color: IOSColors.systemTeal,
+    paddingVertical: 8,
+    borderBottomWidth: 1,
+    borderBottomColor: IOSColors.systemTeal,
   },
-  addAnimalBtnText: { color: '#FFF', fontSize: 15, fontWeight: '700' },
-  stopBtn: {
-    backgroundColor: '#FEE2E2',
-    paddingVertical: 14,
-    borderRadius: 14,
-    alignItems: 'center',
-    borderWidth: 1,
-    borderColor: '#FECACA',
+  distanceHelp: {
+    ...IOSTypography.caption1,
+    color: IOSColors.secondaryLabel,
+    marginTop: 6,
   },
-  stopBtnText: { color: '#DC2626', fontSize: 15, fontWeight: '700' },
-  modalOverlay: {
+  sheetBtnRow: {
+    flexDirection: 'row',
+    gap: 12,
+  },
+  alertOverlay: {
     flex: 1,
     backgroundColor: 'rgba(0,0,0,0.5)',
     justifyContent: 'center',
+    alignItems: 'center',
     padding: 24,
   },
-  modalSheet: {
-    backgroundColor: '#FFFFFF',
+  alertCard: {
+    width: '100%',
+    maxWidth: 340,
+    backgroundColor: IOSColors.systemBackground,
     borderRadius: 20,
     padding: 24,
-    gap: 16,
-  },
-  modalEmoji: { fontSize: 32, textAlign: 'center' },
-  modalTitle: { fontSize: 18, fontWeight: '800', color: '#0F172A', textAlign: 'center' },
-  completeExplanation: { fontSize: 14, color: '#475569', lineHeight: 20, textAlign: 'center' },
-  completeYesBtn: {
-    backgroundColor: '#0F766E',
-    paddingVertical: 16,
-    borderRadius: 12,
     alignItems: 'center',
+    shadowColor: '#000000',
+    shadowOffset: { width: 0, height: 10 },
+    shadowOpacity: 0.2,
+    shadowRadius: 20,
   },
-  completeYesText: { color: '#FFF', fontSize: 15, fontWeight: '700' },
-  completeNoBtn: {
-    backgroundColor: '#F1F5F9',
-    paddingVertical: 14,
-    borderRadius: 12,
-    alignItems: 'center',
+  alertEmoji: {
+    fontSize: 38,
+    marginBottom: 10,
   },
-  completeNoText: { color: '#475569', fontSize: 14, fontWeight: '600' },
-  inputLabel: { fontSize: 14, fontWeight: '600', color: '#334155' },
-  numInput: {
-    borderWidth: 1,
-    borderColor: '#CBD5E1',
-    borderRadius: 10,
-    padding: 12,
-    fontSize: 16,
-    fontWeight: '700',
+  alertTitle: {
+    ...IOSTypography.headline,
+    textAlign: 'center',
+    marginBottom: 8,
   },
-  inputHelp: { fontSize: 12, color: '#64748B' },
-  modalBtnRow: { flexDirection: 'row', gap: 12, marginTop: 8 },
-  cancelBtn: { flex: 1, padding: 14, borderRadius: 10, backgroundColor: '#F1F5F9', alignItems: 'center' },
-  cancelBtnText: { color: '#475569', fontWeight: '600' },
-  confirmBtn: { flex: 1, padding: 14, borderRadius: 10, backgroundColor: '#0F766E', alignItems: 'center' },
-  confirmBtnText: { color: '#FFF', fontWeight: '700' },
+  alertMessage: {
+    ...IOSTypography.footnote,
+    color: IOSColors.secondaryLabel,
+    textAlign: 'center',
+    lineHeight: 18,
+    marginBottom: 20,
+  },
+  alertBtnStack: {
+    width: '100%',
+    gap: 10,
+  },
 });

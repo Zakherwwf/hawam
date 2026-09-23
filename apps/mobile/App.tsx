@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { registerRootComponent } from 'expo';
 import { StatusBar } from 'expo-status-bar';
 import { SafeAreaView, StyleSheet, View, Text } from 'react-native';
 import './src/i18n';
@@ -81,6 +82,7 @@ export default function App() {
           onStartSurvey={() => setCurrentScreen('survey')}
           onQuickSighting={() => setCurrentScreen('opportunistic')}
           onOpenTraining={() => setCurrentScreen('training')}
+          onLanguageChange={handleLanguageChange}
         />
       ) : currentScreen === 'opportunistic' ? (
         <OpportunisticScreen
@@ -118,3 +120,6 @@ const styles = StyleSheet.create({
     backgroundColor: '#FFFFFF',
   },
 });
+
+registerRootComponent(App);
+

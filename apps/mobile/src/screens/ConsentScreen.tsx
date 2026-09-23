@@ -3,12 +3,14 @@ import {
   View,
   Text,
   StyleSheet,
-  TouchableOpacity,
   ScrollView,
   SafeAreaView,
   I18nManager,
+  TouchableOpacity,
 } from 'react-native';
 import { useTranslation } from 'react-i18next';
+import { IOSColors, IOSTypography } from '../theme/ios';
+import { IOSSegmentedControl, IOSButton, IOSGroupedList, IOSListRow } from '../components/ios';
 
 interface ConsentScreenProps {
   onAccept: (version: string) => void;
@@ -22,174 +24,194 @@ export const ConsentScreen: React.FC<ConsentScreenProps> = ({ onAccept, onLangua
   const [agreed, setAgreed] = useState(false);
 
   return (
-    <SafeAreaView style={styles.container}>
-      <View style={styles.langSelector}>
-        <TouchableOpacity
-          style={[styles.langBtn, i18n.language === 'ar' && styles.langBtnActive]}
-          onPress={() => onLanguageChange('ar')}
-        >
-          <Text style={styles.langText}>عربي</Text>
-        </TouchableOpacity>
-        <TouchableOpacity
-          style={[styles.langBtn, i18n.language === 'fr' && styles.langBtnActive]}
-          onPress={() => onLanguageChange('fr')}
-        >
-          <Text style={styles.langText}>Français</Text>
-        </TouchableOpacity>
-        <TouchableOpacity
-          style={[styles.langBtn, i18n.language === 'en' && styles.langBtnActive]}
-          onPress={() => onLanguageChange('en')}
-        >
-          <Text style={styles.langText}>English</Text>
-        </TouchableOpacity>
+    <SafeAreaView style={styles.safeArea}>
+      <View style={styles.topLanguageRow}>
+        <View style={{ width: 220 }}>
+          <IOSSegmentedControl<'ar' | 'fr' | 'en'>
+            selectedValue={i18n.language as 'ar' | 'fr' | 'en'}
+            onValueChange={onLanguageChange}
+            values={[
+              { label: 'العربية', value: 'ar' },
+              { label: 'Français', value: 'fr' },
+              { label: 'English', value: 'en' },
+            ]}
+          />
+        </View>
       </View>
 
-      <ScrollView contentContainerStyle={styles.scrollContent}>
-        <View style={styles.badgeContainer}>
-          <Text style={styles.badgeText}>🛡️ {t('ethics.title')}</Text>
-        </View>
-
-        <Text style={styles.warningText}>{t('ethics.warning')}</Text>
-
-        <View style={styles.card}>
-          <Text style={styles.bulletItem}>🔒 {t('ethics.points.0')}</Text>
-          <Text style={styles.bulletItem}>🌐 {t('ethics.points.1')}</Text>
-          <Text style={styles.bulletItem}>🗑️ {t('ethics.points.2')}</Text>
-        </View>
-
-        <TouchableOpacity
-          style={styles.checkboxRow}
-          onPress={() => setAgreed(!agreed)}
-          activeOpacity={0.7}
-        >
-          <View style={[styles.checkbox, agreed && styles.checkboxChecked]}>
-            {agreed && <Text style={styles.checkmark}>✓</Text>}
+      <ScrollView contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
+        {/* Apple Privacy Splash Header */}
+        <View style={styles.splashHeader}>
+          <View style={styles.shieldIconWrapper}>
+            <Text style={styles.shieldEmoji}>🛡️</Text>
           </View>
-          <Text style={styles.checkboxLabel}>{t('ethics.consent_checkbox')}</Text>
-        </TouchableOpacity>
+          <Text style={styles.splashTitle}>{t('ethics.title')}</Text>
+          <Text style={styles.splashWarning}>{t('ethics.warning')}</Text>
+        </View>
 
-        <TouchableOpacity
-          style={[styles.primaryBtn, !agreed && styles.primaryBtnDisabled]}
-          disabled={!agreed}
-          onPress={() => onAccept(CURRENT_CONSENT_VERSION)}
-        >
-          <Text style={styles.primaryBtnText}>{t('ethics.accept_btn')}</Text>
-        </TouchableOpacity>
+        {/* Feature List (Apple Onboarding Glyphs) */}
+        <View style={styles.featureList}>
+          <View style={styles.featureRow}>
+            <View style={[styles.featureIcon, { backgroundColor: IOSColors.systemTeal }]}>
+              <Text style={styles.featureEmoji}>🔒</Text>
+            </View>
+            <View style={styles.featureTextCol}>
+              <Text style={styles.featureTitle}>Chiffrement & Accès Restreint</Text>
+              <Text style={styles.featureDesc}>{t('ethics.points.0')}</Text>
+            </View>
+          </View>
+
+          <View style={styles.featureRow}>
+            <View style={[styles.featureIcon, { backgroundColor: IOSColors.systemGreen }]}>
+              <Text style={styles.featureEmoji}>🌐</Text>
+            </View>
+            <View style={styles.featureTextCol}>
+              <Text style={styles.featureTitle}>Généralisation Spatiale (1 km²)</Text>
+              <Text style={styles.featureDesc}>{t('ethics.points.1')}</Text>
+            </View>
+          </View>
+
+          <View style={styles.featureRow}>
+            <View style={[styles.featureIcon, { backgroundColor: IOSColors.systemIndigo }]}>
+              <Text style={styles.featureEmoji}>🗑️</Text>
+            </View>
+            <View style={styles.featureTextCol}>
+              <Text style={styles.featureTitle}>Droit à l'Oubli Garanti</Text>
+              <Text style={styles.featureDesc}>{t('ethics.points.2')}</Text>
+            </View>
+          </View>
+        </View>
+
+        {/* Inset Group for Agreement Check */}
+        <IOSGroupedList>
+          <IOSListRow
+            title={t('ethics.consent_checkbox')}
+            onPress={() => setAgreed(!agreed)}
+            rightComponent={
+              <View style={[styles.appleSwitch, agreed && styles.appleSwitchOn]}>
+                <View style={[styles.appleSwitchThumb, agreed && styles.appleSwitchThumbOn]} />
+              </View>
+            }
+            isLast
+          />
+        </IOSGroupedList>
+
+        <View style={styles.bottomActionContainer}>
+          <IOSButton
+            title={t('ethics.accept_btn')}
+            disabled={!agreed}
+            onPress={() => onAccept(CURRENT_CONSENT_VERSION)}
+          />
+        </View>
       </ScrollView>
     </SafeAreaView>
   );
 };
 
 const styles = StyleSheet.create({
-  container: {
+  safeArea: {
     flex: 1,
-    backgroundColor: '#F8FAFC',
+    backgroundColor: IOSColors.systemGroupedBackground,
   },
-  langSelector: {
-    flexDirection: 'row',
-    justifyContent: 'center',
+  topLanguageRow: {
+    alignItems: 'center',
     paddingVertical: 12,
-    backgroundColor: '#FFFFFF',
-    borderBottomWidth: 1,
-    borderBottomColor: '#E2E8F0',
-    gap: 8,
-  },
-  langBtn: {
-    paddingVertical: 6,
-    paddingHorizontal: 14,
-    borderRadius: 20,
-    backgroundColor: '#F1F5F9',
-  },
-  langBtnActive: {
-    backgroundColor: '#0F766E',
-  },
-  langText: {
-    fontSize: 14,
-    fontWeight: '600',
-    color: '#334155',
+    backgroundColor: IOSColors.systemBackground,
+    borderBottomWidth: StyleSheet.hairlineWidth,
+    borderBottomColor: IOSColors.separator,
   },
   scrollContent: {
-    padding: 24,
+    paddingVertical: 20,
   },
-  badgeContainer: {
-    alignSelf: 'flex-start',
-    backgroundColor: '#CCFBF1',
-    paddingHorizontal: 12,
-    paddingVertical: 6,
-    borderRadius: 8,
-    marginBottom: 16,
-  },
-  badgeText: {
-    color: '#0F766E',
-    fontWeight: 'bold',
-    fontSize: 14,
-  },
-  warningText: {
-    fontSize: 16,
-    lineHeight: 24,
-    color: '#1E293B',
-    fontWeight: '600',
-    marginBottom: 20,
-    textAlign: I18nManager.isRTL ? 'right' : 'left',
-  },
-  card: {
-    backgroundColor: '#FFFFFF',
-    borderRadius: 16,
-    padding: 20,
-    borderWidth: 1,
-    borderColor: '#E2E8F0',
-    marginBottom: 24,
-    gap: 14,
-  },
-  bulletItem: {
-    fontSize: 14,
-    lineHeight: 22,
-    color: '#475569',
-    textAlign: I18nManager.isRTL ? 'right' : 'left',
-  },
-  checkboxRow: {
-    flexDirection: 'row',
+  splashHeader: {
     alignItems: 'center',
-    marginBottom: 24,
-    gap: 12,
+    paddingHorizontal: 24,
+    marginBottom: 28,
   },
-  checkbox: {
-    width: 24,
-    height: 24,
-    borderRadius: 6,
-    borderWidth: 2,
-    borderColor: '#0F766E',
+  shieldIconWrapper: {
+    width: 64,
+    height: 64,
+    borderRadius: 32,
+    backgroundColor: 'rgba(48, 176, 199, 0.15)',
     justifyContent: 'center',
     alignItems: 'center',
-    backgroundColor: '#FFFFFF',
+    marginBottom: 16,
   },
-  checkboxChecked: {
-    backgroundColor: '#0F766E',
+  shieldEmoji: {
+    fontSize: 32,
   },
-  checkmark: {
-    color: '#FFFFFF',
-    fontWeight: 'bold',
-    fontSize: 14,
+  splashTitle: {
+    ...IOSTypography.title1,
+    textAlign: 'center',
+    marginBottom: 8,
   },
-  checkboxLabel: {
+  splashWarning: {
+    ...IOSTypography.subheadline,
+    color: IOSColors.secondaryLabel,
+    textAlign: 'center',
+    lineHeight: 21,
+  },
+  featureList: {
+    paddingHorizontal: 24,
+    gap: 20,
+    marginBottom: 28,
+  },
+  featureRow: {
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+    gap: 16,
+  },
+  featureIcon: {
+    width: 38,
+    height: 38,
+    borderRadius: 10,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  featureEmoji: {
+    fontSize: 20,
+  },
+  featureTextCol: {
     flex: 1,
-    fontSize: 14,
-    color: '#1E293B',
+  },
+  featureTitle: {
+    ...IOSTypography.headline,
+    marginBottom: 2,
+    textAlign: I18nManager.isRTL ? 'right' : 'left',
+  },
+  featureDesc: {
+    ...IOSTypography.subheadline,
+    color: IOSColors.secondaryLabel,
     lineHeight: 20,
     textAlign: I18nManager.isRTL ? 'right' : 'left',
   },
-  primaryBtn: {
-    backgroundColor: '#0F766E',
-    paddingVertical: 16,
-    borderRadius: 12,
-    alignItems: 'center',
+  appleSwitch: {
+    width: 50,
+    height: 30,
+    borderRadius: 15,
+    backgroundColor: IOSColors.systemGray5,
+    padding: 2,
+    justifyContent: 'center',
   },
-  primaryBtnDisabled: {
-    backgroundColor: '#94A3B8',
+  appleSwitchOn: {
+    backgroundColor: IOSColors.systemGreen,
   },
-  primaryBtnText: {
-    color: '#FFFFFF',
-    fontSize: 16,
-    fontWeight: '700',
+  appleSwitchThumb: {
+    width: 26,
+    height: 26,
+    borderRadius: 13,
+    backgroundColor: '#FFFFFF',
+    shadowColor: '#000000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.2,
+    shadowRadius: 2.5,
+  },
+  appleSwitchThumbOn: {
+    alignSelf: 'flex-end',
+  },
+  bottomActionContainer: {
+    paddingHorizontal: 16,
+    marginTop: 8,
+    marginBottom: 24,
   },
 });

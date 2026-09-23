@@ -3,10 +3,10 @@ import {
   View,
   Text,
   StyleSheet,
-  TouchableOpacity,
   ScrollView,
-  TextInput,
   SafeAreaView,
+  TextInput,
+  TouchableOpacity,
   I18nManager,
 } from 'react-native';
 import { useTranslation } from 'react-i18next';
@@ -20,6 +20,14 @@ import {
   YesNoUnknown,
   AnimalBehaviour,
 } from '@tunisia-survey/shared';
+import { IOSColors, IOSTypography } from '../theme/ios';
+import {
+  IOSNavigationBar,
+  IOSGroupedList,
+  IOSListRow,
+  IOSSegmentedControl,
+  IOSButton,
+} from '../components/ios';
 
 interface OpportunisticScreenProps {
   onBack: () => void;
@@ -83,273 +91,281 @@ export const OpportunisticScreen: React.FC<OpportunisticScreenProps> = ({
   };
 
   return (
-    <SafeAreaView style={styles.container}>
-      <View style={styles.topBar}>
-        <TouchableOpacity onPress={onBack} style={styles.backBtn}>
-          <Text style={styles.backBtnText}>✕</Text>
-        </TouchableOpacity>
-        <Text style={styles.topBarTitle}>{t('nav.opportunistic')}</Text>
-        <View style={{ width: 32 }} />
-      </View>
+    <SafeAreaView style={styles.safeArea}>
+      <IOSNavigationBar
+        title={t('nav.opportunistic')}
+        onBack={onBack}
+        backTitle="Annuler"
+        rightAction={
+          <TouchableOpacity onPress={handleSave}>
+            <Text style={styles.saveActionText}>Enregistrer</Text>
+          </TouchableOpacity>
+        }
+      />
 
-      <ScrollView contentContainerStyle={styles.scroll}>
-        {/* Photo Button with Badge */}
-        <TouchableOpacity style={styles.photoCaptureCard} onPress={onOpenPhotoCapture}>
-          <Text style={styles.photoEmoji}>📷</Text>
-          <View style={styles.photoTextCol}>
-            <Text style={styles.photoTitle}>{t('photo.guided_title')}</Text>
-            <Text style={styles.photoSubtitle}>
-              {capturedPhotosCount > 0
-                ? `${capturedPhotosCount} photos ready (Flanks + Face)`
-                : 'Left flank, right flank, face'}
-            </Text>
-          </View>
-          {capturedPhotosCount > 0 && (
-            <View style={styles.photoBadge}>
-              <Text style={styles.photoBadgeText}>✓ {capturedPhotosCount}</Text>
+      <ScrollView contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
+        {/* Photo Capture Inset Group */}
+        <IOSGroupedList header="Photos pour identification individuelle">
+          <IOSListRow
+            title={t('photo.guided_title')}
+            subtitle={
+              capturedPhotosCount > 0
+                ? `${capturedPhotosCount} angle(s) prêt(s) • Flancs & Face`
+                : 'Flanc gauche, flanc droit, face'
+            }
+            icon="📷"
+            iconColor={IOSColors.systemTeal}
+            showDisclosure
+            value={capturedPhotosCount > 0 ? `✓ ${capturedPhotosCount}` : 'À prendre'}
+            isLast
+            onPress={onOpenPhotoCapture}
+          />
+        </IOSGroupedList>
+
+        {/* Taxon & Group Size Group */}
+        <IOSGroupedList header="Taxon & Comptage">
+          <View style={styles.segmentRow}>
+            <Text style={IOSTypography.subheadline}>Espèce</Text>
+            <View style={{ width: 200 }}>
+              <IOSSegmentedControl<Species>
+                selectedValue={species}
+                onValueChange={setSpecies}
+                values={[
+                  { label: '🐱 Chat', value: 'cat' },
+                  { label: '🐶 Chien', value: 'dog' },
+                ]}
+              />
             </View>
-          )}
-        </TouchableOpacity>
+          </View>
 
-        {/* Species Pick */}
-        <View style={styles.section}>
-          <Text style={styles.sectionLabel}>{t('animal.species')}</Text>
-          <View style={styles.toggleRow}>
-            {(['cat', 'dog'] as Species[]).map((sp) => (
+          <View style={[styles.segmentRow, styles.topDivider]}>
+            <Text style={IOSTypography.subheadline}>Taille du groupe</Text>
+            <View style={styles.stepperContainer}>
               <TouchableOpacity
-                key={sp}
-                style={[styles.toggleBtn, species === sp && styles.toggleBtnActive]}
-                onPress={() => setSpecies(sp)}
+                onPress={() => setGroupSize(Math.max(1, groupSize - 1))}
+                style={styles.stepperBtn}
               >
-                <Text style={[styles.toggleBtnText, species === sp && styles.toggleBtnTextActive]}>
-                  {sp === 'cat' ? `🐱 ${t('animal.cat')}` : `🐶 ${t('animal.dog')}`}
-                </Text>
+                <Text style={styles.stepperSign}>−</Text>
               </TouchableOpacity>
-            ))}
+              <Text style={styles.stepperVal}>{groupSize}</Text>
+              <TouchableOpacity
+                onPress={() => setGroupSize(groupSize + 1)}
+                style={styles.stepperBtn}
+              >
+                <Text style={styles.stepperSign}>+</Text>
+              </TouchableOpacity>
+            </View>
           </View>
-        </View>
-
-        {/* Group Size */}
-        <View style={styles.section}>
-          <Text style={styles.sectionLabel}>{t('animal.group_size')}</Text>
-          <View style={styles.counterRow}>
-            <TouchableOpacity
-              style={styles.counterBtn}
-              onPress={() => setGroupSize(Math.max(1, groupSize - 1))}
-            >
-              <Text style={styles.counterBtnText}>-</Text>
-            </TouchableOpacity>
-            <Text style={styles.counterVal}>{groupSize}</Text>
-            <TouchableOpacity
-              style={styles.counterBtn}
-              onPress={() => setGroupSize(groupSize + 1)}
-            >
-              <Text style={styles.counterBtnText}>+</Text>
-            </TouchableOpacity>
-          </View>
-        </View>
+        </IOSGroupedList>
 
         {/* ICAM Body Condition Score (1 to 5) */}
-        <View style={styles.section}>
-          <Text style={styles.sectionLabel}>{t('animal.bcs_title')}</Text>
-          <View style={styles.bcsRow}>
-            {([1, 2, 3, 4, 5] as BodyConditionScore[]).map((score) => (
-              <TouchableOpacity
-                key={score}
-                style={[styles.bcsBtn, bcs === score && styles.bcsBtnActive]}
-                onPress={() => setBcs(score)}
-              >
-                <Text style={[styles.bcsNum, bcs === score && styles.bcsNumActive]}>{score}</Text>
-              </TouchableOpacity>
-            ))}
+        <IOSGroupedList
+          header="Score corporel (Échelle visuelle ICAM)"
+          footer="L'indice corporel permet d'évaluer le bien-être de la population errante selon les critères validés de l'ICAM."
+        >
+          <View style={styles.bcsContainer}>
+            <IOSSegmentedControl<BodyConditionScore>
+              selectedValue={bcs}
+              onValueChange={setBcs}
+              values={[
+                { label: '1', value: 1 },
+                { label: '2', value: 2 },
+                { label: '3', value: 3 },
+                { label: '4', value: 4 },
+                { label: '5', value: 5 },
+              ]}
+            />
+            <View style={styles.bcsDescriptionBadge}>
+              <Text style={styles.bcsDescriptionText}>{t(`animal.bcs_${bcs}`)}</Text>
+            </View>
           </View>
-          <Text style={styles.bcsDescription}>{t(`animal.bcs_${bcs}`)}</Text>
-        </View>
+        </IOSGroupedList>
 
-        {/* Reproductive Status (ICAM Turnover Indicator) */}
-        <View style={styles.section}>
-          <Text style={styles.sectionLabel}>{t('animal.reproductive')}</Text>
-          <View style={styles.chipRow}>
-            {(['none_visible', 'lactating', 'visibly_pregnant'] as ReproductiveStatus[]).map((r) => (
-              <TouchableOpacity
-                key={r}
-                style={[styles.chip, reproductiveStatus === r && styles.chipActive]}
-                onPress={() => setReproductiveStatus(r)}
-              >
-                <Text style={[styles.chipText, reproductiveStatus === r && styles.chipTextActive]}>
-                  {t(`animal.${r}`)}
-                </Text>
-              </TouchableOpacity>
-            ))}
+        {/* Demographics & Reproduction */}
+        <IOSGroupedList header="Démographie & Stérilisation">
+          <View style={styles.segmentRow}>
+            <Text style={IOSTypography.subheadline}>Sexe</Text>
+            <View style={{ width: 220 }}>
+              <IOSSegmentedControl<Sex>
+                selectedValue={sex}
+                onValueChange={setSex}
+                values={[
+                  { label: 'Mâle', value: 'male' },
+                  { label: 'Femelle', value: 'female' },
+                  { label: 'Inconnu', value: 'unknown' },
+                ]}
+              />
+            </View>
           </View>
-        </View>
 
-        {/* Neutering & Ownership Markers */}
-        <View style={styles.section}>
-          <Text style={styles.sectionLabel}>{t('animal.ear_tip')}</Text>
-          <View style={styles.chipRow}>
-            {(['yes', 'no', 'unknown'] as YesNoUnknown[]).map((val) => (
-              <TouchableOpacity
-                key={val}
-                style={[styles.chip, earTip === val && styles.chipActive]}
-                onPress={() => setEarTip(val)}
-              >
-                <Text style={[styles.chipText, earTip === val && styles.chipTextActive]}>
-                  {val.toUpperCase()}
-                </Text>
-              </TouchableOpacity>
-            ))}
+          <View style={[styles.segmentRow, styles.topDivider]}>
+            <Text style={IOSTypography.subheadline}>Stérilisation (TNR)</Text>
+            <View style={{ width: 200 }}>
+              <IOSSegmentedControl<YesNoUnknown>
+                selectedValue={earTip}
+                onValueChange={setEarTip}
+                values={[
+                  { label: 'Entaillée', value: 'yes' },
+                  { label: 'Non', value: 'no' },
+                  { label: '?', value: 'unknown' },
+                ]}
+              />
+            </View>
           </View>
-        </View>
 
-        {/* Behaviour */}
-        <View style={styles.section}>
-          <Text style={styles.sectionLabel}>{t('animal.behaviour')}</Text>
-          <View style={styles.chipRow}>
-            {(['approachable', 'neutral', 'fearful', 'aggressive'] as AnimalBehaviour[]).map((b) => (
-              <TouchableOpacity
-                key={b}
-                style={[styles.chip, behaviour === b && styles.chipActive]}
-                onPress={() => setBehaviour(b)}
-              >
-                <Text style={[styles.chipText, behaviour === b && styles.chipTextActive]}>
-                  {t(`animal.${b}`)}
-                </Text>
-              </TouchableOpacity>
-            ))}
+          <View style={[styles.segmentRow, styles.topDivider]}>
+            <Text style={IOSTypography.subheadline}>Reproduction</Text>
+            <View style={{ width: 220 }}>
+              <IOSSegmentedControl<ReproductiveStatus>
+                selectedValue={reproductiveStatus}
+                onValueChange={setReproductiveStatus}
+                values={[
+                  { label: 'Aucun', value: 'none_visible' },
+                  { label: 'Allaitante', value: 'lactating' },
+                  { label: 'Gestante', value: 'visibly_pregnant' },
+                ]}
+              />
+            </View>
           </View>
-        </View>
+        </IOSGroupedList>
+
+        {/* Visible Health Symptoms */}
+        <IOSGroupedList header="Santé & Symptômes visibles">
+          {[
+            { key: 'none' as HealthIssue, label: t('animal.health_none') },
+            { key: 'skin_lesions_mange' as HealthIssue, label: t('animal.health_skin') },
+            { key: 'wound' as HealthIssue, label: t('animal.health_wound') },
+            { key: 'limp' as HealthIssue, label: t('animal.health_limp') },
+            { key: 'eye_nose_discharge' as HealthIssue, label: t('animal.health_discharge') },
+          ].map((item, idx, arr) => {
+            const isChecked = healthIssues.includes(item.key);
+            return (
+              <IOSListRow
+                key={item.key}
+                title={item.label}
+                onPress={() => toggleHealthIssue(item.key)}
+                rightComponent={
+                  isChecked ? (
+                    <Text style={styles.checkmarkIcon}>✓</Text>
+                  ) : null
+                }
+                isLast={idx === arr.length - 1}
+              />
+            );
+          })}
+        </IOSGroupedList>
 
         {/* Notes */}
-        <View style={styles.section}>
-          <Text style={styles.sectionLabel}>Notes</Text>
-          <TextInput
-            style={styles.textInput}
-            value={notes}
-            onChangeText={setNotes}
-            placeholder="..."
-            multiline
-          />
-        </View>
+        <IOSGroupedList header="Notes de terrain">
+          <View style={styles.notesContainer}>
+            <TextInput
+              style={styles.notesInput}
+              value={notes}
+              onChangeText={setNotes}
+              placeholder="Remarques spécifiques, comportement, couleur du pelage..."
+              placeholderTextColor={IOSColors.tertiaryLabel}
+              multiline
+            />
+          </View>
+        </IOSGroupedList>
 
-        <TouchableOpacity style={styles.submitBtn} onPress={handleSave}>
-          <Text style={styles.submitBtnText}>Enregistrer l'observation</Text>
-        </TouchableOpacity>
+        {/* Bottom Save Action */}
+        <View style={styles.bottomBtnContainer}>
+          <IOSButton title="Enregistrer l'observation" onPress={handleSave} />
+        </View>
       </ScrollView>
     </SafeAreaView>
   );
 };
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: '#F8FAFC' },
-  topBar: {
+  safeArea: {
+    flex: 1,
+    backgroundColor: IOSColors.systemGroupedBackground,
+  },
+  scrollContent: {
+    paddingVertical: 16,
+  },
+  saveActionText: {
+    ...IOSTypography.headline,
+    color: IOSColors.systemTeal,
+  },
+  segmentRow: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    padding: 16,
-    backgroundColor: '#FFFFFF',
-    borderBottomWidth: 1,
-    borderBottomColor: '#E2E8F0',
+    paddingHorizontal: 16,
+    paddingVertical: 10,
+    backgroundColor: IOSColors.secondarySystemGroupedBackground,
   },
-  topBarTitle: { fontSize: 17, fontWeight: '700', color: '#0F172A' },
-  backBtn: { padding: 8 },
-  backBtnText: { fontSize: 18, color: '#64748B' },
-  scroll: { padding: 20, gap: 18 },
-  photoCaptureCard: {
+  topDivider: {
+    borderTopWidth: StyleSheet.hairlineWidth,
+    borderTopColor: IOSColors.separator,
+  },
+  stepperContainer: {
     flexDirection: 'row',
     alignItems: 'center',
+    backgroundColor: IOSColors.systemGray5,
+    borderRadius: 8,
+    padding: 2,
+    gap: 4,
+  },
+  stepperBtn: {
+    width: 32,
+    height: 30,
+    borderRadius: 6,
+    backgroundColor: '#FFFFFF',
+    justifyContent: 'center',
+    alignItems: 'center',
+    shadowColor: '#000000',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.1,
+    shadowRadius: 1,
+  },
+  stepperSign: {
+    fontSize: 18,
+    fontWeight: '600',
+    color: IOSColors.label,
+  },
+  stepperVal: {
+    ...IOSTypography.headline,
+    minWidth: 26,
+    textAlign: 'center',
+  },
+  bcsContainer: {
     padding: 16,
-    borderRadius: 14,
-    backgroundColor: '#ECFDF5',
-    borderWidth: 1,
-    borderColor: '#A7F3D0',
+    backgroundColor: IOSColors.secondarySystemGroupedBackground,
     gap: 12,
   },
-  photoEmoji: { fontSize: 26 },
-  photoTextCol: { flex: 1 },
-  photoTitle: { fontSize: 15, fontWeight: '700', color: '#065F46' },
-  photoSubtitle: { fontSize: 12, color: '#047857' },
-  photoBadge: {
-    backgroundColor: '#059669',
-    paddingHorizontal: 8,
-    paddingVertical: 4,
-    borderRadius: 12,
-  },
-  photoBadgeText: { color: '#FFF', fontSize: 12, fontWeight: '700' },
-  section: { gap: 8 },
-  sectionLabel: {
-    fontSize: 14,
-    fontWeight: '700',
-    color: '#334155',
-    textAlign: I18nManager.isRTL ? 'right' : 'left',
-  },
-  toggleRow: { flexDirection: 'row', gap: 10 },
-  toggleBtn: {
-    flex: 1,
-    paddingVertical: 14,
-    borderRadius: 12,
-    backgroundColor: '#FFFFFF',
-    borderWidth: 1,
-    borderColor: '#E2E8F0',
-    alignItems: 'center',
-  },
-  toggleBtnActive: { backgroundColor: '#0F766E', borderColor: '#0F766E' },
-  toggleBtnText: { fontSize: 15, fontWeight: '600', color: '#334155' },
-  toggleBtnTextActive: { color: '#FFFFFF' },
-  counterRow: { flexDirection: 'row', alignItems: 'center', gap: 16 },
-  counterBtn: {
-    width: 44,
-    height: 44,
-    borderRadius: 10,
-    backgroundColor: '#E2E8F0',
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  counterBtnText: { fontSize: 20, fontWeight: '700', color: '#1E293B' },
-  counterVal: { fontSize: 20, fontWeight: '800', color: '#0F172A', minWidth: 30, textAlign: 'center' },
-  bcsRow: { flexDirection: 'row', gap: 8 },
-  bcsBtn: {
-    flex: 1,
-    height: 44,
-    borderRadius: 10,
-    backgroundColor: '#FFFFFF',
-    borderWidth: 1,
-    borderColor: '#CBD5E1',
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  bcsBtnActive: { backgroundColor: '#0F766E', borderColor: '#0F766E' },
-  bcsNum: { fontSize: 16, fontWeight: '700', color: '#475569' },
-  bcsNumActive: { color: '#FFFFFF' },
-  bcsDescription: { fontSize: 13, color: '#0F766E', fontWeight: '600' },
-  chipRow: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
-  chip: {
+  bcsDescriptionBadge: {
+    backgroundColor: 'rgba(48, 176, 199, 0.10)',
     paddingVertical: 8,
-    paddingHorizontal: 14,
-    borderRadius: 20,
-    backgroundColor: '#FFFFFF',
-    borderWidth: 1,
-    borderColor: '#E2E8F0',
+    paddingHorizontal: 12,
+    borderRadius: 8,
+    alignItems: 'center',
   },
-  chipActive: { backgroundColor: '#0F766E', borderColor: '#0F766E' },
-  chipText: { fontSize: 13, color: '#475569', fontWeight: '500' },
-  chipTextActive: { color: '#FFFFFF', fontWeight: '600' },
-  textInput: {
-    backgroundColor: '#FFFFFF',
-    borderWidth: 1,
-    borderColor: '#E2E8F0',
-    borderRadius: 12,
+  bcsDescriptionText: {
+    ...IOSTypography.subheadline,
+    color: IOSColors.systemTeal,
+    fontWeight: '600',
+  },
+  checkmarkIcon: {
+    fontSize: 18,
+    fontWeight: '700',
+    color: IOSColors.systemTeal,
+  },
+  notesContainer: {
     padding: 12,
-    minHeight: 60,
+    backgroundColor: IOSColors.secondarySystemGroupedBackground,
+  },
+  notesInput: {
+    ...IOSTypography.body,
+    minHeight: 70,
     textAlignVertical: 'top',
   },
-  submitBtn: {
-    backgroundColor: '#0F766E',
-    paddingVertical: 16,
-    borderRadius: 14,
-    alignItems: 'center',
-    marginTop: 10,
-    marginBottom: 30,
+  bottomBtnContainer: {
+    paddingHorizontal: 16,
+    marginTop: 8,
+    marginBottom: 32,
   },
-  submitBtnText: { color: '#FFFFFF', fontSize: 16, fontWeight: '700' },
 });

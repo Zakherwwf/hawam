@@ -3,12 +3,13 @@ import {
   View,
   Text,
   StyleSheet,
-  TouchableOpacity,
-  SafeAreaView,
   ScrollView,
+  SafeAreaView,
   I18nManager,
 } from 'react-native';
 import { useTranslation } from 'react-i18next';
+import { IOSColors, IOSTypography } from '../theme/ios';
+import { IOSNavigationBar, IOSButton, IOSGroupedList, IOSListRow } from '../components/ios';
 
 interface TrainingScreenProps {
   onBack: () => void;
@@ -83,65 +84,74 @@ export const TrainingScreen: React.FC<TrainingScreenProps> = ({ onBack }) => {
   const slide = slides[currentSlide];
 
   return (
-    <SafeAreaView style={styles.container}>
-      <View style={styles.topBar}>
-        <TouchableOpacity onPress={onBack} style={styles.backBtn}>
-          <Text style={styles.backBtnText}>✕</Text>
-        </TouchableOpacity>
-        <Text style={styles.topBarTitle}>Guide Méthodologique ({currentSlide + 1}/5)</Text>
-        <View style={{ width: 32 }} />
-      </View>
+    <SafeAreaView style={styles.safeArea}>
+      <IOSNavigationBar
+        title={`Guide Méthodologique (${currentSlide + 1}/5)`}
+        onBack={onBack}
+        backTitle="Accueil"
+      />
 
-      <ScrollView contentContainerStyle={styles.scroll}>
-        <View style={styles.card}>
-          <Text style={styles.icon}>{slide.icon}</Text>
-          <Text style={styles.title}>{t(slide.titleKey)}</Text>
-          <Text style={styles.subtitle}>{slide.subtitle}</Text>
-
-          <View style={styles.pointsList}>
-            {slide.points.map((pt, idx) => (
-              <View key={idx} style={styles.pointRow}>
-                <Text style={styles.pointDot}>•</Text>
-                <Text style={styles.pointText}>{pt}</Text>
-              </View>
-            ))}
+      <ScrollView contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
+        {/* Apple Hero Header Card */}
+        <View style={styles.heroCard}>
+          <View style={styles.iconCircle}>
+            <Text style={styles.heroEmoji}>{slide.icon}</Text>
           </View>
+          <Text style={styles.heroTitle}>{t(slide.titleKey)}</Text>
+          <Text style={styles.heroSubtitle}>{slide.subtitle}</Text>
         </View>
 
-        {/* Carousel Navigation */}
-        <View style={styles.navRow}>
-          <TouchableOpacity
-            style={[styles.navBtn, currentSlide === 0 && styles.navBtnDisabled]}
-            disabled={currentSlide === 0}
-            onPress={() => setCurrentSlide((prev) => prev - 1)}
-          >
-            <Text style={styles.navBtnText}>Précédent</Text>
-          </TouchableOpacity>
+        {/* Grouped Inset Points */}
+        <IOSGroupedList header="Directives de terrain">
+          {slide.points.map((pt, idx) => (
+            <IOSListRow
+              key={idx}
+              title={pt}
+              icon="✓"
+              iconColor={IOSColors.systemTeal}
+              isLast={idx === slide.points.length - 1}
+            />
+          ))}
+        </IOSGroupedList>
 
-          <View style={styles.dotsRow}>
-            {slides.map((_, i) => (
-              <View
-                key={i}
-                style={[styles.dot, i === currentSlide && styles.dotActive]}
+        {/* iOS UIPageControl Style Pagination Dots */}
+        <View style={styles.paginationRow}>
+          {slides.map((_, i) => (
+            <View
+              key={i}
+              style={[
+                styles.pageDot,
+                i === currentSlide && styles.pageDotActive,
+              ]}
+            />
+          ))}
+        </View>
+
+        {/* Navigation Action Buttons */}
+        <View style={styles.actionRow}>
+          {currentSlide > 0 ? (
+            <View style={{ flex: 1 }}>
+              <IOSButton
+                title="Précédent"
+                variant="secondary"
+                onPress={() => setCurrentSlide((prev) => prev - 1)}
               />
-            ))}
-          </View>
+            </View>
+          ) : null}
 
-          {currentSlide < slides.length - 1 ? (
-            <TouchableOpacity
-              style={[styles.navBtn, styles.navBtnPrimary]}
-              onPress={() => setCurrentSlide((prev) => prev + 1)}
-            >
-              <Text style={styles.navBtnPrimaryText}>Suivant</Text>
-            </TouchableOpacity>
-          ) : (
-            <TouchableOpacity
-              style={[styles.navBtn, styles.navBtnPrimary]}
-              onPress={onBack}
-            >
-              <Text style={styles.navBtnPrimaryText}>Prêt pour le terrain !</Text>
-            </TouchableOpacity>
-          )}
+          <View style={{ flex: 1 }}>
+            {currentSlide < slides.length - 1 ? (
+              <IOSButton
+                title="Suivant"
+                onPress={() => setCurrentSlide((prev) => prev + 1)}
+              />
+            ) : (
+              <IOSButton
+                title="Prêt pour le terrain !"
+                onPress={onBack}
+              />
+            )}
+          </View>
         </View>
       </ScrollView>
     </SafeAreaView>
@@ -149,65 +159,70 @@ export const TrainingScreen: React.FC<TrainingScreenProps> = ({ onBack }) => {
 };
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: '#F8FAFC' },
-  topBar: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    padding: 16,
-    backgroundColor: '#FFFFFF',
-    borderBottomWidth: 1,
-    borderBottomColor: '#E2E8F0',
+  safeArea: {
+    flex: 1,
+    backgroundColor: IOSColors.systemGroupedBackground,
   },
-  topBarTitle: { fontSize: 16, fontWeight: '700', color: '#0F172A' },
-  backBtn: { padding: 8 },
-  backBtnText: { fontSize: 18, color: '#64748B' },
-  scroll: { padding: 20, gap: 20 },
-  card: {
-    backgroundColor: '#FFFFFF',
-    borderRadius: 20,
-    padding: 24,
-    borderWidth: 1,
-    borderColor: '#E2E8F0',
-    alignItems: 'center',
-    gap: 14,
+  scrollContent: {
+    paddingVertical: 16,
   },
-  icon: { fontSize: 56, marginBottom: 8 },
-  title: {
-    fontSize: 18,
-    fontWeight: '800',
-    color: '#0F172A',
+  heroCard: {
+    alignItems: 'center',
+    paddingHorizontal: 24,
+    marginBottom: 20,
+  },
+  iconCircle: {
+    width: 72,
+    height: 72,
+    borderRadius: 36,
+    backgroundColor: IOSColors.secondarySystemGroupedBackground,
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginBottom: 14,
+    borderWidth: StyleSheet.hairlineWidth,
+    borderColor: 'rgba(60, 60, 67, 0.12)',
+    shadowColor: '#000000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.05,
+    shadowRadius: 6,
+    elevation: 2,
+  },
+  heroEmoji: {
+    fontSize: 36,
+  },
+  heroTitle: {
+    ...IOSTypography.title2,
     textAlign: 'center',
+    marginBottom: 8,
   },
-  subtitle: {
-    fontSize: 14,
-    color: '#0F766E',
+  heroSubtitle: {
+    ...IOSTypography.subheadline,
+    color: IOSColors.systemTeal,
     fontWeight: '600',
     textAlign: 'center',
     lineHeight: 20,
-    marginBottom: 8,
   },
-  pointsList: { alignSelf: 'stretch', gap: 12, marginTop: 8 },
-  pointRow: { flexDirection: 'row', gap: 10, alignItems: 'flex-start' },
-  pointDot: { fontSize: 18, color: '#0F766E', lineHeight: 22 },
-  pointText: { flex: 1, fontSize: 14, color: '#334155', lineHeight: 22 },
-  navRow: {
+  paginationRow: {
     flexDirection: 'row',
-    justifyContent: 'space-between',
+    justifyContent: 'center',
     alignItems: 'center',
-    marginTop: 10,
+    gap: 8,
+    marginVertical: 16,
   },
-  navBtn: {
-    paddingVertical: 12,
-    paddingHorizontal: 20,
-    borderRadius: 12,
-    backgroundColor: '#E2E8F0',
+  pageDot: {
+    width: 7,
+    height: 7,
+    borderRadius: 3.5,
+    backgroundColor: IOSColors.systemGray4,
   },
-  navBtnDisabled: { opacity: 0.4 },
-  navBtnText: { color: '#334155', fontWeight: '600', fontSize: 14 },
-  navBtnPrimary: { backgroundColor: '#0F766E' },
-  navBtnPrimaryText: { color: '#FFFFFF', fontWeight: '700', fontSize: 14 },
-  dotsRow: { flexDirection: 'row', gap: 6 },
-  dot: { width: 8, height: 8, borderRadius: 4, backgroundColor: '#CBD5E1' },
-  dotActive: { width: 20, backgroundColor: '#0F766E' },
+  pageDotActive: {
+    width: 18,
+    backgroundColor: IOSColors.systemTeal,
+  },
+  actionRow: {
+    flexDirection: 'row',
+    gap: 12,
+    paddingHorizontal: 16,
+    marginTop: 8,
+  },
 });
