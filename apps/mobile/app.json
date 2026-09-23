@@ -1,0 +1,40 @@
+{
+  "expo": {
+    "name": "Tunisia Cat & Dog Survey",
+    "slug": "tunisia-cat-dog-survey",
+    "version": "1.0.0",
+    "orientation": "portrait",
+    "icon": "./assets/icon.png",
+    "userInterfaceStyle": "light",
+    "splash": {
+      "image": "./assets/splash.png",
+      "resizeMode": "contain",
+      "backgroundColor": "#ffffff"
+    },
+    "ios": {
+      "supportsTablet": true,
+      "bundleIdentifier": "tn.pasteur.dogcat.survey",
+      "infoPlist": {
+        "NSLocationWhenInUseUsageDescription": "Your location is needed to record animal encounters and survey transect tracks. Locations are generalized to 1 km before any public sharing to protect animals.",
+        "NSCameraUsageDescription": "Camera access is needed to capture photos of cats and dogs for individual re-identification."
+      }
+    },
+    "android": {
+      "adaptiveIcon": {
+        "foregroundImage": "./assets/adaptive-icon.png",
+        "backgroundColor": "#ffffff"
+      },
+      "package": "tn.pasteur.dogcat.survey",
+      "permissions": [
+        "ACCESS_COARSE_LOCATION",
+        "ACCESS_FINE_LOCATION",
+        "CAMERA"
+      ]
+    },
+    "plugins": [
+      [
+        "expo-localization"
+      ]
+    ]
+  }
+}
