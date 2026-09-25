@@ -19,6 +19,7 @@ import { InteractiveMapView, MapMarker, FocusCoordinate } from '../components/ma
 import { SightingItem } from './SightingsScreen';
 import { useColoniesStore, CatColony } from '../features/colonies/coloniesStore';
 import { ColonyInspectorModal } from '../components/colonies/ColonyInspectorModal';
+import { CreateColonyModal } from '../components/colonies/CreateColonyModal';
 import {
   hapticModalClose,
   hapticButtonPress,
@@ -86,6 +87,7 @@ export const MapOverviewScreen: React.FC<MapOverviewScreenProps> = ({
 
   const { colonies } = useColoniesStore();
   const [selectedColony, setSelectedColony] = useState<CatColony | null>(null);
+  const [showCreateColonyModal, setShowCreateColonyModal] = useState<boolean>(false);
 
   const hasActiveAdvancedFilters =
     filterBcs !== 'all' || filterOnlyWithPhotos || filterProtocol !== 'all';
@@ -418,8 +420,21 @@ export const MapOverviewScreen: React.FC<MapOverviewScreenProps> = ({
                     activeFilter === 'colonies' && styles.filterPillTextActive,
                   ]}
                 >
-                  Colonies ({colonies.length})
+                  Colonies & Packs ({colonies.length})
                 </Text>
+              </TouchableOpacity>
+
+              {/* Quick Register Colony/Pack Button */}
+              <TouchableOpacity
+                style={styles.registerColonyPill}
+                onPress={() => {
+                  hapticButtonPress();
+                  setShowCreateColonyModal(true);
+                }}
+                activeOpacity={0.8}
+              >
+                <IOSIcon name="plus" size={12} color="#7C3AED" />
+                <Text style={styles.registerColonyPillText}>+ Register Group</Text>
               </TouchableOpacity>
 
               <TouchableOpacity
@@ -508,6 +523,7 @@ export const MapOverviewScreen: React.FC<MapOverviewScreenProps> = ({
             colonyMarkers={displayColonies.map((c) => ({
               id: c.id,
               name: c.name,
+              species: c.species,
               latitude: c.latitude,
               longitude: c.longitude,
               estimatedPopulation: c.estimatedPopulation,
@@ -557,15 +573,25 @@ export const MapOverviewScreen: React.FC<MapOverviewScreenProps> = ({
           {/* Floating Quick Action Button */}
           {!selectedSighting && (
             <TouchableOpacity
-              style={styles.floatingActionBtn}
+              style={[
+                styles.floatingActionBtn,
+                activeFilter === 'colonies' && styles.floatingActionBtnColony,
+              ]}
               onPress={() => {
-                hapticQuickLog();
-                onQuickSighting();
+                if (activeFilter === 'colonies') {
+                  hapticButtonPress();
+                  setShowCreateColonyModal(true);
+                } else {
+                  hapticQuickLog();
+                  onQuickSighting();
+                }
               }}
               activeOpacity={0.85}
             >
               <IOSIcon name="plus" size={16} color="#FFFFFF" />
-              <Text style={styles.floatingActionText}>Record Observation</Text>
+              <Text style={styles.floatingActionText}>
+                {activeFilter === 'colonies' ? 'Register Colony / Pack' : 'Record Observation'}
+              </Text>
             </TouchableOpacity>
           )}
 
@@ -942,6 +968,14 @@ export const MapOverviewScreen: React.FC<MapOverviewScreenProps> = ({
           colony={selectedColony}
           onClose={handleCloseColonyModal}
         />
+
+        {/* Create Colony / Pack Modal */}
+        <CreateColonyModal
+          visible={showCreateColonyModal}
+          onClose={() => setShowCreateColonyModal(false)}
+          initialLat={focusCoordinate?.latitude || 36.8065}
+          initialLon={focusCoordinate?.longitude || 10.1815}
+        />
       </SafeAreaView>
     </View>
   );
@@ -1169,6 +1203,22 @@ const styles = StyleSheet.create({
   filterPillTextActive: {
     color: '#FFFFFF',
   },
+  registerColonyPill: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+    backgroundColor: '#F5F3FF',
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+    borderRadius: 20,
+    borderWidth: 1,
+    borderColor: '#DDD6FE',
+  },
+  registerColonyPillText: {
+    fontSize: 12,
+    fontWeight: '700',
+    color: '#7C3AED',
+  },
   mapWrapper: {
     flex: 1,
     position: 'relative',
@@ -1223,6 +1273,9 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.25,
     shadowRadius: 10,
     elevation: 8,
+  },
+  floatingActionBtnColony: {
+    backgroundColor: '#7C3AED',
   },
   floatingActionText: {
     color: '#FFFFFF',

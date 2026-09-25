@@ -21,6 +21,7 @@ export interface MapMarker {
 export interface ColonyMarker {
   id: string;
   name: string;
+  species?: 'cat' | 'dog' | 'mixed';
   latitude: number;
   longitude: number;
   estimatedPopulation: number;
@@ -281,6 +282,10 @@ export const InteractiveMapView: React.FC<InteractiveMapViewProps> = ({
       background: linear-gradient(135deg, #7C3AED, #6D28D9);
       transition: transform 0.15s ease;
     }
+    .colony-pin.dog-pack-pin {
+      background: linear-gradient(135deg, #EA580C, #C2410C);
+      box-shadow: 0 4px 10px rgba(234, 88, 12, 0.45);
+    }
     .colony-pin:active {
       transform: scale(0.92);
     }
@@ -294,6 +299,10 @@ export const InteractiveMapView: React.FC<InteractiveMapViewProps> = ({
       margin-bottom: 4px;
       background: #F5F3FF;
       color: #6D28D9;
+    }
+    .popup-dog-pack-badge {
+      background: #FFEDD5;
+      color: #C2410C;
     }
     .popup-coords {
       font-size: 10px;
@@ -497,16 +506,20 @@ export const InteractiveMapView: React.FC<InteractiveMapViewProps> = ({
         });
       }
 
-      // 2b. Render colony markers
+      // 2b. Render colony / dog pack markers
       if (data.colonyMarkers && data.colonyMarkers.length > 0) {
         data.colonyMarkers.forEach(function(c) {
+          var isDogPack = c.species === 'dog';
           var pinEl = document.createElement('div');
-          pinEl.className = 'colony-pin';
-          pinEl.innerText = 'COLONY';
+          pinEl.className = 'colony-pin' + (isDogPack ? ' dog-pack-pin' : '');
+          pinEl.innerText = isDogPack ? 'PACK' : 'COLONY';
 
+          var badgeClass = 'popup-colony-badge' + (isDogPack ? ' popup-dog-pack-badge' : '');
+          var animalNoun = isDogPack ? 'dogs' : 'cats';
+          var groupLabel = isDogPack ? 'Dog Pack' : 'Cat Colony';
           var popupHtml =
-            '<div class="popup-colony-badge">' + c.name + '</div>' +
-            '<div style="font-size:12px;font-weight:600;margin-top:2px;">Pop: ~' + c.estimatedPopulation + ' cats (' + c.tnrPercent + '% TNR)</div>' +
+            '<div class="' + badgeClass + '">' + groupLabel + ': ' + c.name + '</div>' +
+            '<div style="font-size:12px;font-weight:600;margin-top:2px;">Pop: ~' + c.estimatedPopulation + ' ' + animalNoun + ' (' + c.tnrPercent + '% TNR)</div>' +
             '<div class="popup-coords">' + c.latitude.toFixed(5) + '° N, ' + c.longitude.toFixed(5) + '° E</div>';
 
           var popup = new mapboxgl.Popup({ offset: 18, closeButton: true }).setHTML(popupHtml);

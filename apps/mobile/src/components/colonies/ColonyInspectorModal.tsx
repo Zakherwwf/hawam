@@ -27,13 +27,22 @@ interface ColonyInspectorModalProps {
   onClose: () => void;
 }
 
-const WELFARE_QUICK_TAGS = [
+const WELFARE_QUICK_TAGS_CAT = [
   'Water Station Replenished',
   'Food Available',
   'Unsterilized Cat Spotted',
   'Shelter Inspected',
   'Injured Cat Observed',
   'All Cats Healthy',
+];
+
+const WELFARE_QUICK_TAGS_DOG = [
+  'Water Station Replenished',
+  'Food Available',
+  'Unsterilized Dog Spotted',
+  'Shelter Inspected',
+  'Injured Dog Observed',
+  'Pack Calm & Healthy',
 ];
 
 export const ColonyInspectorModal: React.FC<ColonyInspectorModalProps> = ({
@@ -47,6 +56,12 @@ export const ColonyInspectorModal: React.FC<ColonyInspectorModalProps> = ({
   const [isLoggingInspection, setIsLoggingInspection] = useState(false);
 
   if (!colony) return null;
+
+  const isDog = colony.species === 'dog';
+  const groupLabel = isDog ? 'Dog Pack' : 'Cat Colony';
+  const animalNoun = isDog ? 'Dogs' : 'Cats';
+  const animalNounLower = isDog ? 'dogs' : 'cats';
+  const quickTags = isDog ? WELFARE_QUICK_TAGS_DOG : WELFARE_QUICK_TAGS_CAT;
 
   const tnrPercent = Math.round(
     (colony.tnrSterilizedCount / Math.max(1, colony.estimatedPopulation)) * 100
@@ -93,7 +108,7 @@ export const ColonyInspectorModal: React.FC<ColonyInspectorModalProps> = ({
           <TouchableOpacity onPress={handleCloseModal} style={styles.navBtn}>
             <Text style={styles.navBtnText}>Done</Text>
           </TouchableOpacity>
-          <Text style={styles.navTitle}>Colony Dossier</Text>
+          <Text style={styles.navTitle}>{isDog ? 'Dog Pack Dossier' : 'Colony Dossier'}</Text>
           <View style={styles.navPlaceholder} />
         </View>
 
@@ -101,17 +116,21 @@ export const ColonyInspectorModal: React.FC<ColonyInspectorModalProps> = ({
           {/* Header Card */}
           <View style={styles.headerCard}>
             <View style={styles.zoneRow}>
-              <View style={styles.zoneBadge}>
-                <IOSIcon name="shield" size={13} color="#8B5CF6" />
-                <Text style={styles.zoneBadgeText}>{colony.zone.toUpperCase()}</Text>
+              <View style={[styles.zoneBadge, isDog && styles.zoneBadgeDog]}>
+                <IOSIcon name="shield" size={13} color={isDog ? '#EA580C' : '#8B5CF6'} />
+                <Text style={[styles.zoneBadgeText, isDog && styles.zoneBadgeTextDog]}>
+                  {isDog ? '🐶 DOG PACK' : '🐱 CAT COLONY'} • {colony.zone.toUpperCase()}
+                </Text>
               </View>
-              <View style={styles.popBadge}>
-                <Text style={styles.popBadgeText}>~{colony.estimatedPopulation} Cats</Text>
+              <View style={[styles.popBadge, isDog && styles.popBadgeDog]}>
+                <Text style={[styles.popBadgeText, isDog && styles.popBadgeTextDog]}>
+                  ~{colony.estimatedPopulation} {animalNoun}
+                </Text>
               </View>
             </View>
 
             <Text style={styles.colonyName}>{colony.name}</Text>
-            <Text style={styles.colonyNameAr}>{colony.nameAr}</Text>
+            {colony.nameAr ? <Text style={styles.colonyNameAr}>{colony.nameAr}</Text> : null}
             <Text style={styles.coordsText}>
               {colony.latitude.toFixed(5)}° N, {colony.longitude.toFixed(5)}° E
             </Text>
@@ -129,7 +148,7 @@ export const ColonyInspectorModal: React.FC<ColonyInspectorModalProps> = ({
                 </View>
                 <View style={styles.territoryInfoBar}>
                   <View style={styles.territoryPinBadge}>
-                    <Text style={styles.territoryPinText}>Colony Station Core</Text>
+                    <Text style={styles.territoryPinText}>{isDog ? 'Pack Territory Core' : 'Colony Station Core'}</Text>
                   </View>
                   <View style={styles.territoryRadiusPill}>
                     <Text style={styles.territoryRadiusText}>Core Radius: ~150m</Text>
@@ -159,7 +178,7 @@ export const ColonyInspectorModal: React.FC<ColonyInspectorModalProps> = ({
 
             <View style={styles.tnrStatsRow}>
               <Text style={styles.tnrStatsText}>
-                {colony.tnrSterilizedCount} of {colony.estimatedPopulation} ear-tipped & sterilized
+                {colony.tnrSterilizedCount} of {colony.estimatedPopulation} {isDog ? 'vaccinated & sterilized' : 'ear-tipped & sterilized'}
               </Text>
               <Text style={styles.tnrTargetText}>
                 {tnrPercent >= 75 ? 'Target achieved (≥75%)' : 'Needs sterilization drive'}
@@ -246,7 +265,7 @@ export const ColonyInspectorModal: React.FC<ColonyInspectorModalProps> = ({
             </View>
 
             <View style={styles.quickTagsGrid}>
-              {WELFARE_QUICK_TAGS.map((tag) => {
+              {quickTags.map((tag) => {
                 const isSelected = selectedQuickTags.includes(tag);
                 return (
                   <TouchableOpacity
@@ -411,11 +430,17 @@ const styles = StyleSheet.create({
     paddingVertical: 4,
     borderRadius: 8,
   },
+  zoneBadgeDog: {
+    backgroundColor: '#FFF7ED',
+  },
   zoneBadgeText: {
     fontSize: 11,
     fontWeight: '800',
     color: '#7C3AED',
     letterSpacing: 0.4,
+  },
+  zoneBadgeTextDog: {
+    color: '#EA580C',
   },
   popBadge: {
     backgroundColor: '#EEF2FF',
@@ -423,10 +448,16 @@ const styles = StyleSheet.create({
     paddingVertical: 4,
     borderRadius: 8,
   },
+  popBadgeDog: {
+    backgroundColor: '#FFF7ED',
+  },
   popBadgeText: {
     fontSize: 12,
     fontWeight: '700',
     color: IOSColors.systemIndigo,
+  },
+  popBadgeTextDog: {
+    color: '#C2410C',
   },
   colonyName: {
     fontSize: 20,

@@ -11,20 +11,23 @@
 
 import { create } from 'zustand';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { useGamificationStore } from '../gamification/gamificationStore';
+import { useGamificationStore } from '../gamification/gamificationStore.ts';
+
+export type ColonySpecies = 'cat' | 'dog' | 'mixed';
 
 export interface CatColony {
   id: string;
   name: string;
-  nameAr: string;
+  nameAr?: string;
+  species: ColonySpecies;
   zone: string;
   latitude: number;
   longitude: number;
   estimatedPopulation: number;
   tnrSterilizedCount: number;
-  caretakerName: string;
-  feedingSchedule: string;
-  feedingScheduleAr: string;
+  caretakerName?: string;
+  feedingSchedule?: string;
+  feedingScheduleAr?: string;
   hasWaterStation: boolean;
   hasShelter: boolean;
   lastInspectedAt: string;
@@ -37,6 +40,7 @@ export const INITIAL_COLONIES: CatColony[] = [
     id: 'colony-bab-bhar',
     name: 'Colonie Bab Bhar - Porte de France',
     nameAr: 'مستعمرة باب بحر - باب فرنسا',
+    species: 'cat',
     zone: 'Tunis Centre',
     latitude: 36.7992,
     longitude: 10.1760,
@@ -55,6 +59,7 @@ export const INITIAL_COLONIES: CatColony[] = [
     id: 'colony-byrsa',
     name: 'Station Byrsa Amphithéâtre',
     nameAr: 'محطة مسرح بيرصا الأثري',
+    species: 'cat',
     zone: 'Carthage',
     latitude: 36.8528,
     longitude: 10.3235,
@@ -73,6 +78,7 @@ export const INITIAL_COLONIES: CatColony[] = [
     id: 'colony-sidibou',
     name: 'Colonie Corniche Sidi Bou Said',
     nameAr: 'مستعمرة كورنيش سيدي بوسعيد',
+    species: 'cat',
     zone: 'Sidi Bou Said',
     latitude: 36.8712,
     longitude: 10.3421,
@@ -91,6 +97,7 @@ export const INITIAL_COLONIES: CatColony[] = [
     id: 'colony-belvedere',
     name: 'Station Parc Belvédère',
     nameAr: 'محطة حديقة البلفيدير',
+    species: 'cat',
     zone: 'Tunis Belvédère',
     latitude: 36.8214,
     longitude: 10.1712,
@@ -109,6 +116,7 @@ export const INITIAL_COLONIES: CatColony[] = [
     id: 'colony-bab-el-khadra',
     name: 'Colonie Bab El Khadra',
     nameAr: 'مستعمرة باب الخضراء',
+    species: 'cat',
     zone: 'Tunis Médina',
     latitude: 36.8091,
     longitude: 10.1738,
@@ -122,6 +130,44 @@ export const INITIAL_COLONIES: CatColony[] = [
     lastInspectedAt: new Date(Date.now() - 86400000 * 6).toISOString(),
     inspectionsCount: 4,
     notes: 'Needs water station installation and welfare sterilization drive.',
+  },
+  {
+    id: 'pack-marche-central',
+    name: 'Meute Marché Central - Bab El Khadra',
+    nameAr: 'قطيع السوق المركزي - باب الخضراء',
+    species: 'dog',
+    zone: 'Tunis Centre',
+    latitude: 36.8015,
+    longitude: 10.1785,
+    estimatedPopulation: 6,
+    tnrSterilizedCount: 4,
+    caretakerName: 'Commerçants du Marché & SOS Animaux',
+    feedingSchedule: 'Evenings at 20:00 (Post-market closure)',
+    feedingScheduleAr: 'مساءً الساعة 20:00 (بعد إغلاق السوق)',
+    hasWaterStation: true,
+    hasShelter: false,
+    lastInspectedAt: new Date(Date.now() - 86400000 * 2).toISOString(),
+    inspectionsCount: 9,
+    notes: 'Stable community dog pack. Vaccinated against rabies by municipal vet campaign.',
+  },
+  {
+    id: 'pack-port-rades',
+    name: 'Meute Zone Portuaire Radès',
+    nameAr: 'قطيع المنطقة المينائية برادس',
+    species: 'dog',
+    zone: 'Radès Port',
+    latitude: 36.8045,
+    longitude: 10.2780,
+    estimatedPopulation: 8,
+    tnrSterilizedCount: 5,
+    caretakerName: 'Gardiens du Dépôt & Bénévoles',
+    feedingSchedule: 'Daily at 06:30',
+    feedingScheduleAr: 'يومياً الساعة 06:30',
+    hasWaterStation: true,
+    hasShelter: true,
+    lastInspectedAt: new Date(Date.now() - 86400000 * 5).toISOString(),
+    inspectionsCount: 5,
+    notes: 'Industrial perimeter community pack. Peaceful and monitored by logistics warehouse staff.',
   },
 ];
 
@@ -144,9 +190,11 @@ export const useColoniesStore = create<ColoniesState>((set, get) => ({
 
   loadColonies: async () => {
     try {
-      const stored = await AsyncStorage.getItem(STORAGE_KEY);
-      if (stored) {
-        set({ colonies: JSON.parse(stored) });
+      if (AsyncStorage && typeof AsyncStorage.getItem === 'function') {
+        const stored = await AsyncStorage.getItem(STORAGE_KEY);
+        if (stored) {
+          set({ colonies: JSON.parse(stored) });
+        }
       }
     } catch (e) {
       console.warn('Error loading colonies:', e);
@@ -164,6 +212,7 @@ export const useColoniesStore = create<ColoniesState>((set, get) => ({
   recordInspection: (id: string, notes?: string) => {
     const { colonies } = get();
     const now = new Date().toISOString();
+    const target = colonies.find((c) => c.id === id);
 
     const updated = colonies.map((c) => {
       if (c.id === id) {
@@ -178,27 +227,34 @@ export const useColoniesStore = create<ColoniesState>((set, get) => ({
     });
 
     set({ colonies: updated });
-    AsyncStorage.setItem(STORAGE_KEY, JSON.stringify(updated)).catch(() => {});
+    if (AsyncStorage && typeof AsyncStorage.setItem === 'function') {
+      AsyncStorage.setItem(STORAGE_KEY, JSON.stringify(updated)).catch(() => {});
+    }
 
     // Award +10 XP in gamification store and unlock colony_keeper badge
-    useGamificationStore.getState().awardXp(10, 'Colony Welfare Inspection Completed');
+    const label = target?.species === 'dog' ? 'Dog Pack Welfare Inspection Logged' : 'Cat Colony Welfare Inspection Logged';
+    useGamificationStore.getState().awardXp(10, label);
     useGamificationStore.getState().unlockBadge('colony_keeper');
   },
 
   addColony: (newColonyData) => {
     const { colonies } = get();
+    const prefix = newColonyData.species === 'dog' ? 'pack' : 'colony';
     const newColony: CatColony = {
       ...newColonyData,
-      id: `colony-${Date.now()}`,
+      id: `${prefix}-${Date.now()}`,
       inspectionsCount: 1,
       lastInspectedAt: new Date().toISOString(),
     };
 
     const updated = [newColony, ...colonies];
     set({ colonies: updated });
-    AsyncStorage.setItem(STORAGE_KEY, JSON.stringify(updated)).catch(() => {});
+    if (AsyncStorage && typeof AsyncStorage.setItem === 'function') {
+      AsyncStorage.setItem(STORAGE_KEY, JSON.stringify(updated)).catch(() => {});
+    }
 
-    useGamificationStore.getState().awardXp(20, 'Registered New Cat Colony');
+    const label = newColonyData.species === 'dog' ? 'Registered New Dog Pack' : 'Registered New Cat Colony';
+    useGamificationStore.getState().awardXp(20, label);
     useGamificationStore.getState().unlockBadge('colony_keeper');
   },
 
