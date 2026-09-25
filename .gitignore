@@ -1,6 +1,6 @@
 node_modules/
-dist/
-!packages/shared/dist/**
+apps/dashboard/dist/
+supabase/dist/
 .expo/
 .DS_Store
 *.log

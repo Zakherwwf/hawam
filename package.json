@@ -11,6 +11,7 @@
     "test": "pnpm -r test",
     "typecheck": "pnpm --filter @tunisia-survey/shared build && pnpm --filter @tunisia-survey/design-tokens build && cd apps/mobile && npx tsc --noEmit",
     "build": "pnpm -r build",
+    "postinstall": "pnpm --filter @tunisia-survey/shared build && pnpm --filter @tunisia-survey/design-tokens build",
     "mobile": "pnpm --filter @tunisia-survey/mobile start",
     "dashboard": "pnpm --filter @tunisia-survey/dashboard dev"
   },
