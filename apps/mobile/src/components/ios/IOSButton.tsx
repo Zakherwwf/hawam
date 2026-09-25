@@ -40,6 +40,8 @@ export const IOSButton: React.FC<IOSButtonProps> = ({
         />
       ) : (
         <Text
+          numberOfLines={1}
+          ellipsizeMode="tail"
           style={[
             isSmall ? IOSTypography.subheadline : IOSTypography.headline,
             styles.textBase,
@@ -62,14 +64,17 @@ const styles = StyleSheet.create({
     borderRadius: 14,
     justifyContent: 'center',
     alignItems: 'center',
+    minHeight: 46,
   },
   regular: {
     height: 50,
-    paddingHorizontal: 20,
+    minHeight: 50,
+    paddingHorizontal: 16,
   },
   small: {
     height: 36,
-    paddingHorizontal: 14,
+    minHeight: 36,
+    paddingHorizontal: 12,
     borderRadius: 10,
   },
   primary: {
@@ -90,6 +95,7 @@ const styles = StyleSheet.create({
   },
   textBase: {
     fontWeight: '600',
+    textAlign: 'center',
   },
   primaryText: {
     color: '#FFFFFF',

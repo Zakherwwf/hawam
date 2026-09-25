@@ -12,8 +12,8 @@ const resources = {
   en: { translation: en },
 };
 
-// Default language is Arabic (ar) for Tunisia
-const DEFAULT_LANGUAGE = 'ar';
+// Default language is English
+const DEFAULT_LANGUAGE = 'en';
 
 i18n
   .use(initReactI18next)
@@ -21,7 +21,7 @@ i18n
     compatibilityJSON: 'v4',
     resources,
     lng: DEFAULT_LANGUAGE,
-    fallbackLng: 'ar',
+    fallbackLng: 'en',
     interpolation: {
       escapeValue: false,
     },

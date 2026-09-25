@@ -1,10 +1,16 @@
 {
-  "app_name": "Observatoire Chiens & Chats Tunisie",
-  "tagline": "Science citoyenne pour le suivi éthique des animaux errants",
+  "app_name": "Hawem",
+  "tagline": "Observatoire de la faune errante en Tunisie",
   "nav": {
+    "map": "Carte",
+    "survey": "Enquête",
+    "animals": "Animaux",
+    "progress": "Progrès",
+    "profile": "Profil",
+    "sightings": "Observations",
+    "account": "Compte",
     "home": "Accueil",
     "opportunistic": "Observation rapide",
-    "survey": "Enquête structurée",
     "training": "Formation",
     "settings": "Paramètres"
   },

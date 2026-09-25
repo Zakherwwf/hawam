@@ -1,16 +1,12 @@
 {
   "expo": {
-    "name": "Tunisia Cat & Dog Survey",
+    "name": "Hawem - Cat & Dog Survey",
     "slug": "tunisia-cat-dog-survey",
+    "scheme": "hawem",
     "version": "1.0.0",
     "orientation": "portrait",
-    "icon": "./assets/icon.png",
     "userInterfaceStyle": "light",
-    "splash": {
-      "image": "./assets/splash.png",
-      "resizeMode": "contain",
-      "backgroundColor": "#ffffff"
-    },
+    "icon": "./assets/cat_avatar_icon.png",
     "ios": {
       "supportsTablet": true,
       "bundleIdentifier": "tn.pasteur.dogcat.survey",
@@ -20,16 +16,25 @@
       }
     },
     "android": {
-      "adaptiveIcon": {
-        "foregroundImage": "./assets/adaptive-icon.png",
-        "backgroundColor": "#ffffff"
-      },
       "package": "tn.pasteur.dogcat.survey",
+      "adaptiveIcon": {
+        "foregroundImage": "./assets/cat_avatar_icon.png",
+        "backgroundColor": "#FAF5EE"
+      },
       "permissions": [
         "ACCESS_COARSE_LOCATION",
         "ACCESS_FINE_LOCATION",
         "CAMERA"
       ]
-    }
+    },
+    "plugins": [
+      "expo-sqlite"
+    ],
+    "extra": {
+      "eas": {
+        "projectId": "62f0a9dc-b739-4aea-acd4-1bb1589ec134"
+      }
+    },
+    "owner": "zakher21"
   }
 }

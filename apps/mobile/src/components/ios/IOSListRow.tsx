@@ -1,11 +1,12 @@
 import React from 'react';
 import { View, Text, TouchableOpacity, StyleSheet, I18nManager } from 'react-native';
 import { IOSColors, IOSTypography } from '../../theme/ios';
+import { IOSIcon, IconName } from './IOSIcon';
 
 interface IOSListRowProps {
   title: string;
   subtitle?: string;
-  icon?: string;
+  icon?: IconName | React.ReactNode;
   iconColor?: string;
   value?: string;
   showDisclosure?: boolean;
@@ -27,13 +28,25 @@ export const IOSListRow: React.FC<IOSListRowProps> = ({
   rightComponent,
   destructive = false,
 }) => {
+  const renderIcon = () => {
+    if (!icon) return null;
+    if (typeof icon === 'string') {
+      return (
+        <View style={[styles.iconWrapper, { backgroundColor: iconColor }]}>
+          <IOSIcon name={icon as IconName} size={16} color="#FFFFFF" />
+        </View>
+      );
+    }
+    return (
+      <View style={[styles.iconWrapper, { backgroundColor: iconColor }]}>
+        {icon}
+      </View>
+    );
+  };
+
   const content = (
     <View style={styles.container}>
-      {icon ? (
-        <View style={[styles.iconWrapper, { backgroundColor: iconColor }]}>
-          <Text style={styles.iconText}>{icon}</Text>
-        </View>
-      ) : null}
+      {renderIcon()}
 
       <View style={[styles.contentRow, !isLast && styles.contentDivider]}>
         <View style={styles.labelCol}>
@@ -66,9 +79,11 @@ export const IOSListRow: React.FC<IOSListRowProps> = ({
             <>
               {value ? <Text style={styles.valueText}>{value}</Text> : null}
               {showDisclosure ? (
-                <Text style={styles.disclosureChevron}>
-                  {I18nManager.isRTL ? '‹' : '›'}
-                </Text>
+                <IOSIcon
+                  name={I18nManager.isRTL ? 'chevronLeft' : 'chevronRight'}
+                  size={16}
+                  color={IOSColors.systemGray3}
+                />
               ) : null}
             </>
           )}
@@ -104,9 +119,6 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     marginRight: 12,
   },
-  iconText: {
-    fontSize: 16,
-  },
   contentRow: {
     flex: 1,
     flexDirection: 'row',
@@ -135,12 +147,5 @@ const styles = StyleSheet.create({
   valueText: {
     ...IOSTypography.body,
     color: IOSColors.secondaryLabel,
-  },
-  disclosureChevron: {
-    fontSize: 20,
-    color: IOSColors.systemGray3,
-    fontWeight: '600',
-    lineHeight: 22,
-    marginLeft: 2,
   },
 });

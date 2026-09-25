@@ -4,13 +4,19 @@ import {
   Text,
   StyleSheet,
   ScrollView,
-  SafeAreaView,
   I18nManager,
   TouchableOpacity,
 } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { useTranslation } from 'react-i18next';
+import { LinearGradient } from 'expo-linear-gradient';
 import { IOSColors, IOSTypography } from '../theme/ios';
-import { IOSSegmentedControl, IOSButton, IOSGroupedList, IOSListRow } from '../components/ios';
+import { IOSSegmentedControl, IOSButton, IOSGroupedList, IOSListRow, IOSIcon } from '../components/ios';
+import {
+  hapticTabSwitch,
+  hapticButtonPress,
+  hapticSuccess,
+} from '../utils/haptics';
 
 interface ConsentScreenProps {
   onAccept: (version: string) => void;
@@ -24,16 +30,26 @@ export const ConsentScreen: React.FC<ConsentScreenProps> = ({ onAccept, onLangua
   const [agreed, setAgreed] = useState(false);
 
   return (
-    <SafeAreaView style={styles.safeArea}>
+    <View style={styles.outerContainer}>
+      <LinearGradient
+        colors={['#FDF2EC', '#FAF5EE', '#F3F6F2']}
+        start={{ x: 0, y: 0 }}
+        end={{ x: 1, y: 1 }}
+        style={StyleSheet.absoluteFill}
+      />
+      <SafeAreaView style={styles.safeArea} edges={['top', 'left', 'right']}>
       <View style={styles.topLanguageRow}>
-        <View style={{ width: 220 }}>
+        <View style={{ width: 280, maxWidth: '92%' }}>
           <IOSSegmentedControl<'ar' | 'fr' | 'en'>
             selectedValue={i18n.language as 'ar' | 'fr' | 'en'}
-            onValueChange={onLanguageChange}
+            onValueChange={(lang) => {
+              hapticTabSwitch();
+              onLanguageChange(lang);
+            }}
             values={[
-              { label: 'العربية', value: 'ar' },
-              { label: 'Français', value: 'fr' },
               { label: 'English', value: 'en' },
+              { label: 'Français', value: 'fr' },
+              { label: 'العربية', value: 'ar' },
             ]}
           />
         </View>
@@ -43,7 +59,7 @@ export const ConsentScreen: React.FC<ConsentScreenProps> = ({ onAccept, onLangua
         {/* Apple Privacy Splash Header */}
         <View style={styles.splashHeader}>
           <View style={styles.shieldIconWrapper}>
-            <Text style={styles.shieldEmoji}>🛡️</Text>
+            <IOSIcon name="shield" size={40} color={IOSColors.systemTeal} />
           </View>
           <Text style={styles.splashTitle}>{t('ethics.title')}</Text>
           <Text style={styles.splashWarning}>{t('ethics.warning')}</Text>
@@ -53,30 +69,30 @@ export const ConsentScreen: React.FC<ConsentScreenProps> = ({ onAccept, onLangua
         <View style={styles.featureList}>
           <View style={styles.featureRow}>
             <View style={[styles.featureIcon, { backgroundColor: IOSColors.systemTeal }]}>
-              <Text style={styles.featureEmoji}>🔒</Text>
+              <IOSIcon name="shield" size={18} color="#FFFFFF" />
             </View>
             <View style={styles.featureTextCol}>
-              <Text style={styles.featureTitle}>Chiffrement & Accès Restreint</Text>
+              <Text style={styles.featureTitle}>Encrypted Scientific Access</Text>
               <Text style={styles.featureDesc}>{t('ethics.points.0')}</Text>
             </View>
           </View>
 
           <View style={styles.featureRow}>
             <View style={[styles.featureIcon, { backgroundColor: IOSColors.systemGreen }]}>
-              <Text style={styles.featureEmoji}>🌐</Text>
+              <IOSIcon name="location" size={18} color="#FFFFFF" />
             </View>
             <View style={styles.featureTextCol}>
-              <Text style={styles.featureTitle}>Généralisation Spatiale (1 km²)</Text>
+              <Text style={styles.featureTitle}>Spatial Capture-Recapture Modeling</Text>
               <Text style={styles.featureDesc}>{t('ethics.points.1')}</Text>
             </View>
           </View>
 
           <View style={styles.featureRow}>
             <View style={[styles.featureIcon, { backgroundColor: IOSColors.systemIndigo }]}>
-              <Text style={styles.featureEmoji}>🗑️</Text>
+              <IOSIcon name="trash" size={18} color="#FFFFFF" />
             </View>
             <View style={styles.featureTextCol}>
-              <Text style={styles.featureTitle}>Droit à l'Oubli Garanti</Text>
+              <Text style={styles.featureTitle}>Observer Autonomy & Data Right</Text>
               <Text style={styles.featureDesc}>{t('ethics.points.2')}</Text>
             </View>
           </View>
@@ -86,7 +102,10 @@ export const ConsentScreen: React.FC<ConsentScreenProps> = ({ onAccept, onLangua
         <IOSGroupedList>
           <IOSListRow
             title={t('ethics.consent_checkbox')}
-            onPress={() => setAgreed(!agreed)}
+            onPress={() => {
+              hapticButtonPress();
+              setAgreed(!agreed);
+            }}
             rightComponent={
               <View style={[styles.appleSwitch, agreed && styles.appleSwitchOn]}>
                 <View style={[styles.appleSwitchThumb, agreed && styles.appleSwitchThumbOn]} />
@@ -100,66 +119,73 @@ export const ConsentScreen: React.FC<ConsentScreenProps> = ({ onAccept, onLangua
           <IOSButton
             title={t('ethics.accept_btn')}
             disabled={!agreed}
-            onPress={() => onAccept(CURRENT_CONSENT_VERSION)}
+            onPress={() => {
+              hapticSuccess();
+              onAccept(CURRENT_CONSENT_VERSION);
+            }}
           />
         </View>
       </ScrollView>
     </SafeAreaView>
-  );
+  </View>
+);
 };
 
 const styles = StyleSheet.create({
+  outerContainer: {
+    flex: 1,
+    position: 'relative',
+    backgroundColor: '#FAF5EE',
+  },
   safeArea: {
     flex: 1,
-    backgroundColor: IOSColors.systemGroupedBackground,
+    backgroundColor: 'transparent',
   },
   topLanguageRow: {
     alignItems: 'center',
-    paddingVertical: 12,
-    backgroundColor: IOSColors.systemBackground,
+    paddingVertical: 10,
+    backgroundColor: 'transparent',
     borderBottomWidth: StyleSheet.hairlineWidth,
-    borderBottomColor: IOSColors.separator,
+    borderBottomColor: 'rgba(226, 232, 240, 0.7)',
   },
   scrollContent: {
-    paddingVertical: 20,
+    paddingBottom: 32,
   },
   splashHeader: {
     alignItems: 'center',
     paddingHorizontal: 24,
-    marginBottom: 28,
+    paddingTop: 28,
+    paddingBottom: 20,
   },
   shieldIconWrapper: {
-    width: 64,
-    height: 64,
-    borderRadius: 32,
-    backgroundColor: 'rgba(48, 176, 199, 0.15)',
+    width: 76,
+    height: 76,
+    borderRadius: 20,
+    backgroundColor: 'rgba(48, 176, 199, 0.12)',
     justifyContent: 'center',
     alignItems: 'center',
     marginBottom: 16,
   },
-  shieldEmoji: {
-    fontSize: 32,
-  },
   splashTitle: {
     ...IOSTypography.title1,
     textAlign: 'center',
-    marginBottom: 8,
+    marginBottom: 10,
   },
   splashWarning: {
-    ...IOSTypography.subheadline,
+    ...IOSTypography.body,
     color: IOSColors.secondaryLabel,
     textAlign: 'center',
-    lineHeight: 21,
+    lineHeight: 22,
   },
   featureList: {
-    paddingHorizontal: 24,
-    gap: 20,
-    marginBottom: 28,
+    paddingHorizontal: 20,
+    marginBottom: 24,
+    gap: 18,
   },
   featureRow: {
     flexDirection: 'row',
     alignItems: 'flex-start',
-    gap: 16,
+    gap: 14,
   },
   featureIcon: {
     width: 38,
@@ -167,51 +193,47 @@ const styles = StyleSheet.create({
     borderRadius: 10,
     justifyContent: 'center',
     alignItems: 'center',
-  },
-  featureEmoji: {
-    fontSize: 20,
+    marginTop: 2,
   },
   featureTextCol: {
     flex: 1,
   },
   featureTitle: {
     ...IOSTypography.headline,
-    marginBottom: 2,
-    textAlign: I18nManager.isRTL ? 'right' : 'left',
+    marginBottom: 3,
   },
   featureDesc: {
-    ...IOSTypography.subheadline,
+    ...IOSTypography.footnote,
     color: IOSColors.secondaryLabel,
-    lineHeight: 20,
-    textAlign: I18nManager.isRTL ? 'right' : 'left',
+    lineHeight: 18,
   },
   appleSwitch: {
-    width: 50,
-    height: 30,
-    borderRadius: 15,
+    width: 48,
+    height: 28,
+    borderRadius: 14,
     backgroundColor: IOSColors.systemGray5,
     padding: 2,
     justifyContent: 'center',
   },
   appleSwitchOn: {
-    backgroundColor: IOSColors.systemGreen,
+    backgroundColor: IOSColors.systemTeal,
   },
   appleSwitchThumb: {
-    width: 26,
-    height: 26,
-    borderRadius: 13,
+    width: 24,
+    height: 24,
+    borderRadius: 12,
     backgroundColor: '#FFFFFF',
     shadowColor: '#000000',
     shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.2,
-    shadowRadius: 2.5,
+    shadowOpacity: 0.15,
+    shadowRadius: 2,
+    elevation: 2,
   },
   appleSwitchThumbOn: {
     alignSelf: 'flex-end',
   },
   bottomActionContainer: {
-    paddingHorizontal: 16,
-    marginTop: 8,
-    marginBottom: 24,
+    paddingHorizontal: 20,
+    marginTop: 16,
   },
 });

@@ -1,4 +1,5 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
+import { getLiveRoutes, createRoute } from '../services/supabase';
 
 interface FixedRoute {
   id: string;
@@ -48,17 +49,63 @@ export const RouteManager: React.FC = () => {
   const [newDelegation, setNewDelegation] = useState('');
   const [newLength, setNewLength] = useState('2.0');
   const [newHabitat, setNewHabitat] = useState('');
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
-  const handleAddRoute = (e: React.FormEvent) => {
+  useEffect(() => {
+    async function loadRoutes() {
+      try {
+        const live = await getLiveRoutes();
+        if (live.length > 0) {
+          const mapped: FixedRoute[] = live.map((r: any) => ({
+            id: r.id,
+            name: r.name,
+            governorate: r.governorate || 'Tunis',
+            delegation: r.delegation || 'Centre',
+            lengthKm: r.length_km || 1.8,
+            habitatNotes: r.habitat_notes || 'Transect urbain',
+            surveyCount: 0,
+          }));
+          setRoutes([...mapped, ...INITIAL_ROUTES]);
+        }
+      } catch (err) {
+        console.warn('Error loading live routes:', err);
+      }
+    }
+    loadRoutes();
+  }, []);
+
+  const handleAddRoute = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!newRouteName) return;
+
+    setIsSubmitting(true);
+    const lengthVal = parseFloat(newLength) || 1.5;
+
+    try {
+      await createRoute({
+        name: newRouteName,
+        length_km: lengthVal,
+        governorate: newGov,
+        delegation: newDelegation || 'Centre',
+        habitat_notes: newHabitat || 'Urban street transect',
+        geometry: {
+          type: 'LineString',
+          coordinates: [
+            [10.1695, 36.8028],
+            [10.1712, 36.8042],
+          ],
+        },
+      });
+    } catch (err) {
+      console.warn('Failed creating route in DB, saving locally:', err);
+    }
 
     const newR: FixedRoute = {
       id: `route-${Date.now()}`,
       name: newRouteName,
       governorate: newGov,
       delegation: newDelegation || 'Centre',
-      lengthKm: parseFloat(newLength) || 1.5,
+      lengthKm: lengthVal,
       habitatNotes: newHabitat || 'Urban street transect',
       surveyCount: 0,
     };
@@ -67,6 +114,7 @@ export const RouteManager: React.FC = () => {
     setShowAddModal(false);
     setNewRouteName('');
     setNewHabitat('');
+    setIsSubmitting(false);
   };
 
   return (
@@ -188,9 +236,10 @@ export const RouteManager: React.FC = () => {
                 </button>
                 <button
                   type="submit"
-                  className="px-4 py-2 bg-teal-700 hover:bg-teal-800 text-white text-sm font-semibold rounded-lg shadow-sm"
+                  disabled={isSubmitting}
+                  className="px-4 py-2 bg-teal-700 hover:bg-teal-800 disabled:opacity-50 text-white text-sm font-semibold rounded-lg shadow-sm"
                 >
-                  Enregistrer l'itinéraire
+                  {isSubmitting ? 'Enregistrement...' : "Enregistrer l'itinéraire"}
                 </button>
               </div>
             </form>

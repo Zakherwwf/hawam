@@ -3,10 +3,15 @@
   "compilerOptions": {
     "strict": true,
     "skipLibCheck": true,
-    "jsx": "react-native"
+    "jsx": "react-native",
+    "allowImportingTsExtensions": true,
+    "noEmit": true
   },
   "include": [
     "src/**/*",
     "App.tsx"
+  ],
+  "exclude": [
+    "src/__tests__"
   ]
 }

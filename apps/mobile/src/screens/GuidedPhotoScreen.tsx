@@ -4,13 +4,24 @@ import {
   Text,
   StyleSheet,
   TouchableOpacity,
-  SafeAreaView,
   ScrollView,
   I18nManager,
+  Image,
 } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { useTranslation } from 'react-i18next';
 import { PhotoAngle, CoatPattern } from '@tunisia-survey/shared';
 import { IOSColors, IOSTypography } from '../theme/ios';
+import { LinearGradient } from 'expo-linear-gradient';
+import { IOSIcon } from '../components/ios';
+import { capturePhotoFromCamera, pickPhotoFromLibrary } from '../services/cameraService';
+import {
+  hapticQuickLog,
+  hapticButtonPress,
+  hapticSuccess,
+  hapticTabSwitch,
+  hapticModalClose,
+} from '../utils/haptics';
 
 interface CapturedPhotoItem {
   angle: PhotoAngle;
@@ -43,21 +54,39 @@ export const GuidedPhotoScreen: React.FC<GuidedPhotoScreenProps> = ({
 
   const activeAngle = angles[currentStep];
 
-  const handleSnap = () => {
-    const uri = `file:///photos/animal_${activeAngle}_${Date.now()}.jpg`;
-    setCapturedPhotos((prev) => ({ ...prev, [activeAngle]: uri }));
-    if (currentStep < 2) {
-      setCurrentStep((prev) => (prev + 1) as 1 | 2);
+  const handleSnap = async () => {
+    hapticQuickLog();
+    const photo = await capturePhotoFromCamera();
+    if (photo?.uri) {
+      hapticSuccess();
+      setCapturedPhotos((prev) => ({ ...prev, [activeAngle]: photo.uri }));
+      if (currentStep < 2) {
+        setCurrentStep((prev) => (prev + 1) as 1 | 2);
+      }
+    }
+  };
+
+  const handlePickFromGallery = async () => {
+    hapticButtonPress();
+    const photo = await pickPhotoFromLibrary();
+    if (photo?.uri) {
+      hapticSuccess();
+      setCapturedPhotos((prev) => ({ ...prev, [activeAngle]: photo.uri }));
+      if (currentStep < 2) {
+        setCurrentStep((prev) => (prev + 1) as 1 | 2);
+      }
     }
   };
 
   const handleSkip = () => {
+    hapticTabSwitch();
     if (currentStep < 2) {
       setCurrentStep((prev) => (prev + 1) as 1 | 2);
     }
   };
 
   const handleComplete = () => {
+    hapticSuccess();
     const list: CapturedPhotoItem[] = [];
     for (const angle of angles) {
       const uri = capturedPhotos[angle];
@@ -75,11 +104,17 @@ export const GuidedPhotoScreen: React.FC<GuidedPhotoScreenProps> = ({
   ];
 
   return (
-    <SafeAreaView style={styles.cameraContainer}>
+    <SafeAreaView style={styles.cameraContainer} edges={['top', 'left', 'right']}>
       {/* Top Controls Chrome */}
       <View style={styles.topBar}>
-        <TouchableOpacity onPress={onBack} hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}>
-          <Text style={styles.topBarAction}>Annuler</Text>
+        <TouchableOpacity
+          onPress={() => {
+            hapticModalClose();
+            onBack();
+          }}
+          hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+        >
+          <Text style={styles.topBarAction}>{t('common.cancel')}</Text>
         </TouchableOpacity>
 
         <View style={styles.stepCapsules}>
@@ -89,36 +124,59 @@ export const GuidedPhotoScreen: React.FC<GuidedPhotoScreenProps> = ({
             return (
               <TouchableOpacity
                 key={ang}
-                onPress={() => setCurrentStep(idx as 0 | 1 | 2)}
+                onPress={() => {
+                  hapticButtonPress();
+                  setCurrentStep(idx as 0 | 1 | 2);
+                }}
                 style={[styles.stepDot, isCurrent && styles.stepDotActive]}
               >
-                <Text style={[styles.stepDotText, isCurrent && styles.stepDotTextActive]}>
-                  {idx + 1} {isDone ? '✓' : ''}
-                </Text>
+                <View style={{ flexDirection: 'row', alignItems: 'center', gap: 3 }}>
+                  <Text style={[styles.stepDotText, isCurrent && styles.stepDotTextActive]}>
+                    Step {idx + 1}
+                  </Text>
+                  {isDone ? (
+                    <IOSIcon
+                      name="check"
+                      size={12}
+                      color={isCurrent ? '#000000' : '#FFFFFF'}
+                    />
+                  ) : null}
+                </View>
               </TouchableOpacity>
             );
           })}
         </View>
 
         <TouchableOpacity onPress={handleComplete}>
-          <Text style={[styles.topBarAction, styles.topBarActionDone]}>OK</Text>
+          <Text style={[styles.topBarAction, styles.topBarActionDone]}>{t('common.done')}</Text>
         </TouchableOpacity>
       </View>
 
       {/* Target Angle Instruction Pill */}
       <View style={styles.targetBanner}>
-        <Text style={styles.targetText}>
-          {activeAngle === 'left_flank'
-            ? '🎯 Cadrer le FLANC GAUCHE (asymétrique)'
-            : activeAngle === 'right_flank'
-            ? '🎯 Cadrer le FLANC DROIT'
-            : '🎯 Cadrer la FACE (yeux & museau)'}
-        </Text>
+        <View style={styles.targetPill}>
+          <IOSIcon name="camera" size={14} color={IOSColors.systemYellow} />
+          <Text style={styles.targetText}>
+            {activeAngle === 'left_flank'
+              ? 'FRAME LEFT FLANK (Asymmetric Pattern)'
+              : activeAngle === 'right_flank'
+              ? 'FRAME RIGHT FLANK'
+              : 'FRAME FACE (Eyes & Nose Markings)'}
+          </Text>
+        </View>
       </View>
 
       {/* Viewfinder Window with Apple Camera Framing Brackets */}
       <View style={styles.viewfinderWrapper}>
         <View style={styles.viewfinderBox}>
+          {capturedPhotos[activeAngle] ? (
+            <Image
+              source={{ uri: capturedPhotos[activeAngle]! }}
+              style={StyleSheet.absoluteFill}
+              resizeMode="cover"
+            />
+          ) : null}
+
           {/* Yellow Framing Corner Accents */}
           <View style={[styles.corner, styles.cornerTL]} />
           <View style={[styles.corner, styles.cornerTR]} />
@@ -126,12 +184,26 @@ export const GuidedPhotoScreen: React.FC<GuidedPhotoScreenProps> = ({
           <View style={[styles.corner, styles.cornerBR]} />
 
           {capturedPhotos[activeAngle] ? (
-            <View style={styles.photoCapturedPill}>
-              <Text style={styles.photoCapturedText}>Photo capturée ✓</Text>
+            <View style={styles.capturedOverlayContainer}>
+              <View style={styles.photoCapturedPill}>
+                <IOSIcon name="check" size={15} color="#FFFFFF" />
+                <Text style={styles.photoCapturedText}>Photo Captured</Text>
+              </View>
+              <TouchableOpacity
+                style={styles.retakeBtn}
+                onPress={() => {
+                  hapticButtonPress();
+                  setCapturedPhotos((prev) => ({ ...prev, [activeAngle]: null }));
+                }}
+                activeOpacity={0.8}
+              >
+                <IOSIcon name="camera" size={14} color="#FFFFFF" />
+                <Text style={styles.retakeBtnText}>Retake Angle</Text>
+              </TouchableOpacity>
             </View>
           ) : (
             <Text style={styles.viewfinderHelp}>
-              Gardez l'animal dans le cadre. Évitez les mouvements brusques.
+              Tap shutter to take photo or choose from library.
             </Text>
           )}
         </View>
@@ -139,35 +211,55 @@ export const GuidedPhotoScreen: React.FC<GuidedPhotoScreenProps> = ({
         {/* Quality Banner */}
         {qualityWarning ? (
           <View style={styles.qualityWarningPill}>
-            <Text style={styles.qualityWarningText}>⚠️ {t(qualityWarning)}</Text>
+            <IOSIcon name="info" size={14} color="#000000" />
+            <Text style={styles.qualityWarningText}>{t(qualityWarning)}</Text>
           </View>
         ) : null}
       </View>
 
       {/* Coat Pattern Horizontal Selector */}
       <View style={styles.patternBar}>
-        <Text style={styles.patternLabel}>{t('photo.coat_pattern')} :</Text>
-        <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.patternScroll}>
-          {coatPatterns.map((pat) => (
-            <TouchableOpacity
-              key={pat.key}
-              onPress={() => setSelectedPattern(pat.key)}
-              style={[
-                styles.patternPill,
-                selectedPattern === pat.key && styles.patternPillActive,
-              ]}
-            >
-              <Text
+        <Text style={styles.patternLabel}>{t('photo.coat_pattern')}:</Text>
+        <View style={styles.scrollWrapper}>
+          <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.patternScroll}>
+            {coatPatterns.map((pat) => (
+              <TouchableOpacity
+                key={pat.key}
+                onPress={() => {
+                  hapticTabSwitch();
+                  setSelectedPattern(pat.key);
+                }}
                 style={[
-                  styles.patternPillText,
-                  selectedPattern === pat.key && styles.patternPillTextActive,
+                  styles.patternPill,
+                  selectedPattern === pat.key && styles.patternPillActive,
                 ]}
               >
-                {pat.label}
-              </Text>
-            </TouchableOpacity>
-          ))}
-        </ScrollView>
+                <Text
+                  style={[
+                    styles.patternPillText,
+                    selectedPattern === pat.key && styles.patternPillTextActive,
+                  ]}
+                >
+                  {pat.label}
+                </Text>
+              </TouchableOpacity>
+            ))}
+          </ScrollView>
+          <LinearGradient
+            colors={['rgba(0, 0, 0, 0.95)', 'rgba(0, 0, 0, 0)']}
+            start={{ x: 0, y: 0 }}
+            end={{ x: 1, y: 0 }}
+            style={styles.fadeLeft}
+            pointerEvents="none"
+          />
+          <LinearGradient
+            colors={['rgba(0, 0, 0, 0)', 'rgba(0, 0, 0, 0.95)']}
+            start={{ x: 0, y: 0 }}
+            end={{ x: 1, y: 0 }}
+            style={styles.fadeRight}
+            pointerEvents="none"
+          />
+        </View>
       </View>
 
       {/* Bottom Shutter Controls */}
@@ -181,11 +273,10 @@ export const GuidedPhotoScreen: React.FC<GuidedPhotoScreenProps> = ({
           <View style={styles.shutterInner} />
         </TouchableOpacity>
 
-        <TouchableOpacity
-          style={styles.skipButton}
-          onPress={() => setQualityWarning((prev) => (prev ? null : 'photo.quality_warning_blur'))}
-        >
-          <Text style={styles.testBlurText}>Simuler flou</Text>
+        {/* Photo Library Picker Button */}
+        <TouchableOpacity style={styles.galleryButton} onPress={handlePickFromGallery}>
+          <IOSIcon name="photo" size={22} color="#FFFFFF" />
+          <Text style={styles.galleryButtonText}>Library</Text>
         </TouchableOpacity>
       </View>
     </SafeAreaView>
@@ -212,7 +303,7 @@ const styles = StyleSheet.create({
   },
   topBarActionDone: {
     color: IOSColors.systemTeal,
-    fontWeight: '600',
+    fontWeight: '700',
   },
   stepCapsules: {
     flexDirection: 'row',
@@ -241,10 +332,20 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     paddingVertical: 6,
   },
+  targetPill: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    backgroundColor: 'rgba(255, 204, 0, 0.15)',
+    paddingHorizontal: 12,
+    paddingVertical: 5,
+    borderRadius: 12,
+  },
   targetText: {
-    ...IOSTypography.subheadline,
+    ...IOSTypography.caption1,
     color: IOSColors.systemYellow,
-    fontWeight: '600',
+    fontWeight: '700',
+    letterSpacing: 0.5,
   },
   viewfinderWrapper: {
     flex: 1,
@@ -278,19 +379,51 @@ const styles = StyleSheet.create({
     textAlign: 'center',
     paddingHorizontal: 40,
   },
+  capturedOverlayContainer: {
+    alignItems: 'center',
+    gap: 12,
+  },
   photoCapturedPill: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
     backgroundColor: IOSColors.systemGreen,
     paddingHorizontal: 16,
     paddingVertical: 8,
     borderRadius: 20,
+    shadowColor: '#000000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.35,
+    shadowRadius: 4,
+    elevation: 3,
   },
   photoCapturedText: {
     ...IOSTypography.headline,
     color: '#FFFFFF',
+    fontSize: 14,
+  },
+  retakeBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    backgroundColor: 'rgba(0, 0, 0, 0.65)',
+    borderWidth: 1,
+    borderColor: 'rgba(255, 255, 255, 0.4)',
+    paddingHorizontal: 14,
+    paddingVertical: 6,
+    borderRadius: 16,
+  },
+  retakeBtnText: {
+    ...IOSTypography.caption1,
+    color: '#FFFFFF',
+    fontWeight: '600',
   },
   qualityWarningPill: {
     position: 'absolute',
     bottom: 16,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
     backgroundColor: 'rgba(255, 204, 0, 0.95)',
     paddingHorizontal: 14,
     paddingVertical: 6,
@@ -313,6 +446,26 @@ const styles = StyleSheet.create({
   },
   patternScroll: {
     gap: 8,
+    paddingHorizontal: 8,
+  },
+  scrollWrapper: {
+    position: 'relative',
+  },
+  fadeLeft: {
+    position: 'absolute',
+    left: 0,
+    top: 0,
+    bottom: 0,
+    width: 16,
+    zIndex: 2,
+  },
+  fadeRight: {
+    position: 'absolute',
+    right: 0,
+    top: 0,
+    bottom: 0,
+    width: 16,
+    zIndex: 2,
   },
   patternPill: {
     paddingHorizontal: 12,
@@ -360,8 +513,14 @@ const styles = StyleSheet.create({
     ...IOSTypography.subheadline,
     color: 'rgba(255,255,255,0.7)',
   },
-  testBlurText: {
+  galleryButton: {
+    minWidth: 80,
+    alignItems: 'center',
+    gap: 4,
+  },
+  galleryButtonText: {
     ...IOSTypography.caption2,
-    color: 'rgba(255,255,255,0.4)',
+    color: 'rgba(255,255,255,0.85)',
+    fontWeight: '600',
   },
 });

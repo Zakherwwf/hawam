@@ -24,7 +24,7 @@ export const IOSNavigationBar: React.FC<IOSNavigationBarProps> = ({
       <View style={styles.topRow}>
         <View style={styles.leftCol}>
           {onBack ? (
-            <TouchableOpacity onPress={onBack} hitSlop={{ top: 12, bottom: 12, left: 12, right: 12 }} style={styles.backBtn}>
+            <TouchableOpacity onPress={onBack} hitSlop={{ top: 14, bottom: 14, left: 14, right: 14 }} style={styles.backBtn}>
               <Text style={styles.backText}>{I18nManager.isRTL ? '›' : '‹'} {backTitle.replace(/[‹›]/g, '').trim()}</Text>
             </TouchableOpacity>
           ) : null}
@@ -63,7 +63,7 @@ const styles = StyleSheet.create({
     borderBottomColor: IOSColors.separator,
   },
   topRow: {
-    height: 48,
+    height: 52,
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',

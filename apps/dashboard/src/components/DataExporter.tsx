@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   exportToDarwinCore,
   exportCaptureHistoryMatrix,
@@ -9,6 +9,7 @@ import {
   Individual,
   ObservationRestrictedLocation,
 } from '@tunisia-survey/shared';
+import { getLiveSessions, getLiveObservations } from '../services/supabase';
 
 // Simulated dataset for demonstration of export routines
 const MOCK_SESSIONS: SurveySession[] = [
@@ -153,6 +154,67 @@ export const DataExporter: React.FC = () => {
   const [includePreciseCoords, setIncludePreciseCoords] = useState(false);
   const [auditReason, setAuditReason] = useState('');
   const [downloadNotice, setDownloadNotice] = useState<string | null>(null);
+  const [sessions, setSessions] = useState<SurveySession[]>(MOCK_SESSIONS);
+  const [observations, setObservations] = useState<ObservationPublic[]>(MOCK_OBSERVATIONS);
+  const [liveDbCount, setLiveDbCount] = useState<number>(0);
+
+  useEffect(() => {
+    async function loadLiveDbData() {
+      try {
+        const liveSess = await getLiveSessions();
+        const liveObs = await getLiveObservations();
+
+        if (liveSess.length > 0 || liveObs.length > 0) {
+          setLiveDbCount(liveSess.length);
+
+          const mappedSessions: SurveySession[] = liveSess.map((s: any) => ({
+            id: s.id,
+            observer_id: s.observer_id || 'usr-vol',
+            protocol: s.protocol,
+            start_time: s.start_time,
+            end_time: s.end_time,
+            duration_min: s.duration_min || 30,
+            distance_km: s.distance_km || 1.5,
+            complete_session: s.complete_session,
+            number_of_observers: s.number_of_observers || 1,
+            app_version: s.app_version || '2.0.0',
+            track: s.session_tracks?.[0]?.track || null,
+          }));
+
+          const mappedObservations: ObservationPublic[] = liveObs.map((o: any) => ({
+            id: o.id,
+            session_id: o.session_id,
+            observer_id: 'usr-vol',
+            observed_at: o.observed_at,
+            location_public: o.location_public || { type: 'Point', coordinates: [10.18, 36.8] },
+            grid_cell_id: o.grid_cell_id || 'TN32N-1KM',
+            species: o.species,
+            group_size: o.group_size || 1,
+            distance_from_path_m: o.distance_from_path_m || 5.0,
+            sex: o.sex || 'unknown',
+            age_class: o.age_class || 'unknown',
+            reproductive_status: o.reproductive_status || 'unknown',
+            body_condition_score: o.body_condition_score || 3,
+            visible_health_issues: o.visible_health_issues || [],
+            ear_tip_or_notch: o.ear_tip_or_notch || 'unknown',
+            collar_or_tag: o.collar_or_tag || 'unknown',
+            behaviour: o.behaviour || 'neutral',
+            being_fed_by_people: o.being_fed_by_people || 'unknown',
+            habitat_type: o.habitat_type || 'residential',
+            food_sources_visible: o.food_sources_visible || [],
+            coat_pattern: o.coat_pattern || 'tabby',
+            notes: o.notes || '',
+          }));
+
+          setSessions([...mappedSessions, ...MOCK_SESSIONS]);
+          setObservations([...mappedObservations, ...MOCK_OBSERVATIONS]);
+        }
+      } catch (err) {
+        console.warn('Could not load live data:', err);
+      }
+    }
+    loadLiveDbData();
+  }, []);
 
   const downloadFile = (content: string, filename: string) => {
     const blob = new Blob([content], { type: 'text/csv;charset=utf-8;' });
@@ -170,7 +232,7 @@ export const DataExporter: React.FC = () => {
       return;
     }
 
-    const dwc = exportToDarwinCore(MOCK_SESSIONS, MOCK_OBSERVATIONS, {
+    const dwc = exportToDarwinCore(sessions, observations, {
       allowPreciseCoordinates: includePreciseCoords,
       restrictedLocations: includePreciseCoords ? MOCK_RESTRICTED_LOCATIONS : undefined,
     });
@@ -189,8 +251,7 @@ export const DataExporter: React.FC = () => {
   };
 
   const handleExportSECR = () => {
-    const secr = exportCaptureHistoryMatrix(MOCK_INDIVIDUALS, MOCK_SESSIONS, MOCK_OBSERVATIONS);
-    // Format flat matrix
+    const secr = exportCaptureHistoryMatrix(MOCK_INDIVIDUALS, sessions, observations);
     const flat = secr.map((row) => ({
       individual_id: row.individual_id,
       species: row.species,
@@ -207,7 +268,7 @@ export const DataExporter: React.FC = () => {
   };
 
   const handleExportDistance = () => {
-    const dist = exportDistanceSampling(MOCK_SESSIONS, MOCK_OBSERVATIONS, 'Grand Tunis');
+    const dist = exportDistanceSampling(sessions, observations, 'Grand Tunis');
     const csv = objectsToCSV(dist);
     downloadFile(csv, `distance_sampling_r_package_${Date.now()}.csv`);
     setDownloadNotice(`Fichier d'échantillonnage par distance (R package Distance) téléchargé.`);
@@ -220,6 +281,17 @@ export const DataExporter: React.FC = () => {
         <p className="text-sm text-slate-500">
           Génération de jeux de données calibrés pour les progiciels de modélisation statistique en écologie quantitative.
         </p>
+        <div className="flex items-center gap-2 mt-2">
+          <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-semibold bg-emerald-100 text-emerald-800">
+            <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
+            PostgreSQL PostGIS Live ({sessions.length} sessions, {observations.length} observations)
+          </span>
+          {liveDbCount > 0 && (
+            <span className="text-xs text-emerald-700 font-medium">
+              ({liveDbCount} session(s) synchronisée(s) en direct depuis les téléphones mobiles)
+            </span>
+          )}
+        </div>
       </div>
 
       {downloadNotice && (

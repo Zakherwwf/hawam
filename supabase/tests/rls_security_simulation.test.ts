@@ -23,6 +23,34 @@ interface RestrictedLocationRecord {
   gps_accuracy_m: number;
 }
 
+interface RouteRecord {
+  id: string;
+  name: string;
+  is_active: boolean;
+}
+
+/**
+ * Evaluates RLS policy on public.routes:
+ * CREATE POLICY "Allow public read on routes"
+ * ON public.routes FOR SELECT TO anon, authenticated
+ * USING (is_active = true);
+ */
+function evaluateRoutesRLS(ctx: SecurityContext, routes: RouteRecord[]): RouteRecord[] {
+  // Both anon and authenticated can read active routes
+  return routes.filter((r) => r.is_active);
+}
+
+/**
+ * Evaluates RLS policy on public.observations:
+ * CREATE POLICY "Allow public read on generalized observations"
+ * ON public.observations FOR SELECT TO anon, authenticated
+ * USING (true);
+ */
+function evaluateObservationsRLS(ctx: SecurityContext, observations: ObservationRecord[]): ObservationRecord[] {
+  // Both anon and authenticated can read generalized observations
+  return observations;
+}
+
 /**
  * Exact implementation of the PostgreSQL Row Level Security (RLS) policies:
  *
@@ -142,3 +170,32 @@ test('Public Density Map suppresses cells below k-anonymity threshold to prevent
   const isolatedCell = mapData.find((c) => c.grid_cell_id === 'CELL-B-ISOLATED');
   assert.equal(isolatedCell, undefined, 'Isolated sighting cell must NOT appear on public map');
 });
+
+test('RLS Policy: Anonymous and unauthenticated visitors CAN read active routes and generalized observations', () => {
+  const routes: RouteRecord[] = [
+    { id: 'route-1', name: 'Medina Bab Souika', is_active: true },
+    { id: 'route-2-inactive', name: 'Archived Route', is_active: false },
+  ];
+  const observations: ObservationRecord[] = [
+    {
+      id: 'obs-1',
+      observer_id: 'u1',
+      location_public: { lon: 10.18, lat: 36.80 },
+      grid_cell_id: 'C1',
+      species: 'cat',
+    },
+  ];
+
+  const anonCtx: SecurityContext = { userId: null, role: 'anonymous' };
+
+  // 1. Can view active routes, cannot view inactive routes
+  const accessibleRoutes = evaluateRoutesRLS(anonCtx, routes);
+  assert.equal(accessibleRoutes.length, 1);
+  assert.equal(accessibleRoutes[0].id, 'route-1');
+
+  // 2. Can view generalized public observations
+  const accessibleObs = evaluateObservationsRLS(anonCtx, observations);
+  assert.equal(accessibleObs.length, 1);
+  assert.equal(accessibleObs[0].id, 'obs-1');
+});
+
