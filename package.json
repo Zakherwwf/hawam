@@ -2,6 +2,7 @@
   "name": "tunisia-cat-dog-survey",
   "version": "1.0.0",
   "private": true,
+  "packageManager": "pnpm@10.13.1",
   "description": "Citizen-Science Platform for Free-Roaming Cats and Dogs in Tunisia",
   "scripts": {
     "test:security": "pnpm --filter @tunisia-survey/supabase test",
