@@ -354,6 +354,9 @@ export const AuthGateScreen: React.FC<AuthGateScreenProps> = ({ onAuthenticated 
                 </View>
                 <Text style={styles.googleBtnText}>Continue with Google</Text>
               </TouchableOpacity>
+              <Text style={styles.googleSubNotice}>
+                Tip: You can also register directly with your Gmail using Create Account above.
+              </Text>
             </View>
           </View>
 

@@ -124,7 +124,7 @@ export async function signInWithGoogle(): Promise<GoogleAuthResult> {
       return {
         success: false,
         error:
-          'Sign-in closed. Note: In Expo Go on Android, Chrome restricts external OAuth deep-links ("site can\'t be reached"). Please use Email Sign In below, or a standalone development build.',
+          'Sign-in was closed or could not connect. If Google showed "Something went wrong", make sure your Gmail is added under Google Cloud Console > OAuth consent screen > Test users, and Supabase Redirect URLs includes exp://** and hawem://**. You can also register directly with your Gmail via "Create Account" above.',
       };
     }
 
