@@ -6,7 +6,7 @@
     "version": "1.0.0",
     "orientation": "portrait",
     "userInterfaceStyle": "light",
-    "icon": "./assets/cat_avatar_icon.png",
+    "icon": "./assets/icon_app_square.png",
     "ios": {
       "supportsTablet": true,
       "bundleIdentifier": "tn.pasteur.dogcat.survey",
@@ -18,7 +18,7 @@
     "android": {
       "package": "tn.pasteur.dogcat.survey",
       "adaptiveIcon": {
-        "foregroundImage": "./assets/cat_avatar_icon.png",
+        "foregroundImage": "./assets/icon_app_square.png",
         "backgroundColor": "#FAF5EE"
       },
       "permissions": [
