@@ -605,10 +605,10 @@ export const InteractiveMapView: React.FC<InteractiveMapViewProps> = ({
         data.transectMarkers.forEach(function(t) {
           var pinEl = document.createElement('div');
           pinEl.className = 'transect-pin' + (t.isAdopted ? ' adopted' : '') + (t.isSelected ? ' selected' : '');
-          pinEl.innerText = t.isAdopted ? '★ ROUTE' : 'ROUTE';
+          pinEl.innerText = t.isAdopted ? 'GUARDIAN' : 'TRANSECT';
 
           var popupHtml =
-            '<div class="popup-transect-badge">' + (t.isAdopted ? '★ ' : '') + 'Transect: ' + t.name + '</div>' +
+            '<div class="popup-transect-badge">' + (t.isAdopted ? '[Adopted] ' : '') + 'Transect: ' + t.name + '</div>' +
             '<div style="font-size:12px;font-weight:600;margin-top:2px;">Length: ' + t.distanceKm + ' km ' + (t.isAdopted ? '(Adopted)' : '') + '</div>' +
             '<div class="popup-coords">' + t.latitude.toFixed(5) + '° N, ' + t.longitude.toFixed(5) + '° E</div>';
 

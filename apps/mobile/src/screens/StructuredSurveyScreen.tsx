@@ -1151,13 +1151,32 @@ export const StructuredSurveyScreen: React.FC<StructuredSurveyScreenProps> = ({
       >
         <View style={styles.sheetOverlay}>
           <View style={styles.sheetContainer}>
-            <View style={IOSLayout.sheetHandle} />
-            <Text style={styles.sheetTitle}>
-              {editingDetection ? t('survey.edit_detection') : 'Record Animal Detection'}
-            </Text>
+            {/* Sticky Sheet Header with Safe Area and Close Button */}
+            <View style={styles.sheetHeader}>
+              <View style={IOSLayout.sheetHandle} />
+              <View style={styles.sheetHeaderRow}>
+                <Text style={styles.sheetTitle}>
+                  {editingDetection ? t('survey.edit_detection') : 'Record Animal Detection'}
+                </Text>
+                <TouchableOpacity
+                  onPress={handleCloseObservationModal}
+                  style={styles.sheetCloseBtn}
+                  hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+                >
+                  <IOSIcon name="xmark" size={15} color={IOSColors.secondaryLabel} />
+                </TouchableOpacity>
+              </View>
+            </View>
 
-            {/* Species Selector */}
-            <View style={{ marginBottom: 16 }}>
+            {/* Scrollable Form Body */}
+            <ScrollView
+              style={styles.sheetScroll}
+              contentContainerStyle={styles.sheetScrollContent}
+              showsVerticalScrollIndicator={true}
+              keyboardShouldPersistTaps="handled"
+            >
+              {/* Species Selector */}
+              <View style={{ marginBottom: 16 }}>
               <IOSSegmentedControl<Species>
                 selectedValue={sightingSpecies}
                 onValueChange={(val) => {
@@ -1366,20 +1385,24 @@ export const StructuredSurveyScreen: React.FC<StructuredSurveyScreenProps> = ({
               </Text>
             </TouchableOpacity>
 
-            {/* Sheet Actions */}
-            <View style={styles.sheetBtnRow}>
-              <View style={{ flex: 1 }}>
-                <IOSButton
-                  title={t('common.cancel')}
-                  variant="secondary"
-                  onPress={handleCloseObservationModal}
-                />
-              </View>
-              <View style={{ flex: 1 }}>
-                <IOSButton
-                  title={editingDetection ? t('common.save') : 'Log Detection'}
-                  onPress={handleSaveDetection}
-                />
+            </ScrollView>
+
+            {/* Sticky Fixed Bottom Actions */}
+            <View style={styles.sheetFixedFooter}>
+              <View style={styles.sheetBtnRow}>
+                <View style={{ flex: 1 }}>
+                  <IOSButton
+                    title={t('common.cancel')}
+                    variant="secondary"
+                    onPress={handleCloseObservationModal}
+                  />
+                </View>
+                <View style={{ flex: 1 }}>
+                  <IOSButton
+                    title={editingDetection ? t('common.save') : 'Log Detection'}
+                    onPress={handleSaveDetection}
+                  />
+                </View>
               </View>
             </View>
           </View>
@@ -1875,13 +1898,54 @@ const styles = StyleSheet.create({
     backgroundColor: IOSColors.systemBackground,
     borderTopLeftRadius: 20,
     borderTopRightRadius: 20,
-    padding: 20,
-    paddingBottom: 36,
+    maxHeight: '92%',
+    display: 'flex',
+    flexDirection: 'column',
+    overflow: 'hidden',
+  },
+  sheetHeader: {
+    paddingHorizontal: 20,
+    paddingTop: 12,
+    paddingBottom: 10,
+    borderBottomWidth: StyleSheet.hairlineWidth,
+    borderBottomColor: IOSColors.separator,
+    backgroundColor: IOSColors.systemBackground,
+  },
+  sheetHeaderRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    marginTop: 6,
   },
   sheetTitle: {
-    ...IOSTypography.title3,
-    textAlign: 'center',
-    marginBottom: 16,
+    ...IOSTypography.headline,
+    fontWeight: '700',
+    color: IOSColors.label,
+  },
+  sheetCloseBtn: {
+    width: 28,
+    height: 28,
+    borderRadius: 14,
+    backgroundColor: IOSColors.systemGray6,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  sheetScroll: {
+    flexGrow: 1,
+    flexShrink: 1,
+  },
+  sheetScrollContent: {
+    paddingHorizontal: 20,
+    paddingTop: 14,
+    paddingBottom: 24,
+  },
+  sheetFixedFooter: {
+    paddingHorizontal: 20,
+    paddingTop: 12,
+    paddingBottom: 28,
+    borderTopWidth: StyleSheet.hairlineWidth,
+    borderTopColor: IOSColors.separator,
+    backgroundColor: IOSColors.systemBackground,
   },
   fieldLabel: {
     ...IOSTypography.caption1,

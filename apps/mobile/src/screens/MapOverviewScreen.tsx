@@ -625,7 +625,8 @@ export const MapOverviewScreen: React.FC<MapOverviewScreenProps> = ({
                         </View>
                         {route.isAdopted && (
                           <View style={styles.adoptedGuardianTag}>
-                            <Text style={styles.adoptedGuardianTagText}>★ Adopted</Text>
+                            <IOSIcon name="star" size={10} color="#CA8A04" />
+                            <Text style={styles.adoptedGuardianTagText}>Adopted</Text>
                           </View>
                         )}
                       </View>
@@ -921,7 +922,7 @@ export const MapOverviewScreen: React.FC<MapOverviewScreenProps> = ({
                       selectedRoute.isAdopted && styles.starAdoptBtnTextActive,
                     ]}
                   >
-                    {selectedRoute.isAdopted ? '★ Adopted Guardian' : '☆ Star / Adopt Route'}
+                    {selectedRoute.isAdopted ? 'Adopted Guardian' : 'Adopt Route'}
                   </Text>
                 </TouchableOpacity>
 

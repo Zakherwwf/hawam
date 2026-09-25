@@ -136,9 +136,9 @@ export const BearingDistanceInput: React.FC<BearingDistanceInputProps> = ({
     onBearingChange(normalizeBearing(normalizedBearing + delta));
   };
 
-  // Compass Radar Canvas Math (Size 210 x 210, Center: 105, 105)
-  const dialCenter = 105;
-  const outerRadius = 88;
+  // Compass Radar Canvas Math (Compact 170 x 170, Center: 85, 85)
+  const dialCenter = 85;
+  const outerRadius = 72;
 
   // Convert touch coordinate to bearing angle (0° = North = Top)
   const handleDialTouch = (evt: GestureResponderEvent) => {
@@ -147,7 +147,7 @@ export const BearingDistanceInput: React.FC<BearingDistanceInputProps> = ({
     const dy = locationY - dialCenter;
 
     // Small deadzone around center
-    if (Math.hypot(dx, dy) < 14) return;
+    if (Math.hypot(dx, dy) < 12) return;
 
     let deg = (Math.atan2(dx, -dy) * 180) / Math.PI;
     if (deg < 0) deg += 360;
@@ -174,9 +174,9 @@ export const BearingDistanceInput: React.FC<BearingDistanceInputProps> = ({
 
   // Calculate target reticle position based on bearing and distance
   const bearingRad = (normalizedBearing * Math.PI) / 180;
-  // Scaled distance radius (min 30px, max 80px)
+  // Scaled distance radius (min 22px, max 64px)
   const distScale = Math.min(1, Math.max(0.15, distanceMeters / 30));
-  const targetRadius = 30 + distScale * 50;
+  const targetRadius = 22 + distScale * 42;
 
   const targetX = dialCenter + targetRadius * Math.sin(bearingRad);
   const targetY = dialCenter - targetRadius * Math.cos(bearingRad);
@@ -364,13 +364,10 @@ export const BearingDistanceInput: React.FC<BearingDistanceInputProps> = ({
               </SvgText>
 
               {/* Animal Target Reticle */}
-              <Circle cx="210" cy="40" r="14" fill="#DD4B34" />
-              <Circle cx="210" cy="40" r="11" fill="#FFFFFF" />
-              <SvgText x="210" y="44" fontSize="11" textAnchor="middle">
-                {species === 'dog' ? '🐶' : '🐱'}
-              </SvgText>
-              <SvgText x="210" y="20" fontSize="10" fontWeight="700" fill="#DD4B34" textAnchor="middle">
-                Animal
+              <Circle cx="210" cy="40" r="12" fill={species === 'dog' ? '#EA580C' : '#0284C7'} />
+              <Circle cx="210" cy="40" r="5" fill="#FFFFFF" />
+              <SvgText x="210" y="20" fontSize="10" fontWeight="700" fill={species === 'dog' ? '#EA580C' : '#0284C7'} textAnchor="middle">
+                {species === 'dog' ? 'Dog' : 'Cat'}
               </SvgText>
 
               {/* Perpendicular Distance Line g(x) */}
@@ -445,7 +442,7 @@ export const BearingDistanceInput: React.FC<BearingDistanceInputProps> = ({
             <Circle
               cx={dialCenter}
               cy={dialCenter}
-              r={28}
+              r={22}
               fill="none"
               stroke="rgba(148, 163, 184, 0.3)"
               strokeWidth="1"
@@ -454,7 +451,7 @@ export const BearingDistanceInput: React.FC<BearingDistanceInputProps> = ({
             <Circle
               cx={dialCenter}
               cy={dialCenter}
-              r={54}
+              r={44}
               fill="none"
               stroke="rgba(148, 163, 184, 0.3)"
               strokeWidth="1"
@@ -463,7 +460,7 @@ export const BearingDistanceInput: React.FC<BearingDistanceInputProps> = ({
             <Circle
               cx={dialCenter}
               cy={dialCenter}
-              r={78}
+              r={64}
               fill="none"
               stroke="rgba(148, 163, 184, 0.35)"
               strokeWidth="1"
@@ -473,9 +470,9 @@ export const BearingDistanceInput: React.FC<BearingDistanceInputProps> = ({
             {/* Transect Line of Travel (North-South Path Line) */}
             <Line
               x1={dialCenter}
-              y1={dialCenter * 2 - 12}
+              y1={dialCenter * 2 - 10}
               x2={dialCenter}
-              y2={12}
+              y2={10}
               stroke="#0284C7"
               strokeWidth="2"
               strokeDasharray="4 4"
@@ -483,22 +480,22 @@ export const BearingDistanceInput: React.FC<BearingDistanceInputProps> = ({
 
             {/* Path Forward Indicator Arrow */}
             <Polygon
-              points={`${dialCenter},8 ${dialCenter - 5},16 ${dialCenter + 5},16`}
+              points={`${dialCenter},6 ${dialCenter - 4},14 ${dialCenter + 4},14`}
               fill="#0284C7"
             />
 
             {/* 8-Point Compass Tick Marks & Labels */}
             {CARDINAL_TICKS.map((t) => {
               const rad = (t.deg * Math.PI) / 180;
-              const innerTickR = t.isMajor ? outerRadius - 9 : outerRadius - 5;
+              const innerTickR = t.isMajor ? outerRadius - 8 : outerRadius - 4;
               const x1 = dialCenter + outerRadius * Math.sin(rad);
               const y1 = dialCenter - outerRadius * Math.cos(rad);
               const x2 = dialCenter + innerTickR * Math.sin(rad);
               const y2 = dialCenter - innerTickR * Math.cos(rad);
 
-              const labelR = outerRadius - 16;
+              const labelR = outerRadius - 14;
               const lx = dialCenter + labelR * Math.sin(rad);
-              const ly = dialCenter - labelR * Math.cos(rad) + 3.5;
+              const ly = dialCenter - labelR * Math.cos(rad) + 3;
 
               return (
                 <G key={t.deg}>
@@ -508,12 +505,12 @@ export const BearingDistanceInput: React.FC<BearingDistanceInputProps> = ({
                     x2={x2}
                     y2={y2}
                     stroke={t.isMajor ? '#0F172A' : '#94A3B8'}
-                    strokeWidth={t.isMajor ? 2 : 1}
+                    strokeWidth={t.isMajor ? 1.5 : 1}
                   />
                   <SvgText
                     x={lx}
                     y={ly}
-                    fontSize={t.isMajor ? 10 : 8}
+                    fontSize={t.isMajor ? 9 : 7.5}
                     fontWeight={t.isMajor ? '800' : '600'}
                     fill={t.deg === 0 ? '#0284C7' : t.isMajor ? '#0F172A' : '#64748B'}
                     textAnchor="middle"
@@ -531,7 +528,7 @@ export const BearingDistanceInput: React.FC<BearingDistanceInputProps> = ({
               x2={rimX}
               y2={rimY}
               stroke="#06B6D4"
-              strokeWidth="2"
+              strokeWidth="1.5"
               strokeDasharray="3 3"
             />
             <Line
@@ -540,7 +537,7 @@ export const BearingDistanceInput: React.FC<BearingDistanceInputProps> = ({
               x2={targetX}
               y2={targetY}
               stroke="#0891B2"
-              strokeWidth="3"
+              strokeWidth="2.5"
             />
 
             {/* Outer Aim Arrow on Rim */}
@@ -550,20 +547,27 @@ export const BearingDistanceInput: React.FC<BearingDistanceInputProps> = ({
             />
 
             {/* Observer Center Pin */}
-            <Circle cx={dialCenter} cy={dialCenter} r={10} fill="#0F172A" />
-            <Circle cx={dialCenter} cy={dialCenter} r={5} fill="#38BDF8" />
+            <Circle cx={dialCenter} cy={dialCenter} r={8} fill="#0F172A" />
+            <Circle cx={dialCenter} cy={dialCenter} r={4} fill="#38BDF8" />
 
             {/* Animal Target Badge at Radial Distance */}
             <Circle
               cx={targetX}
               cy={targetY}
-              r={12}
-              fill="#FFFFFF"
-              stroke="#0891B2"
-              strokeWidth="2"
+              r={10}
+              fill={species === 'dog' ? '#EA580C' : '#0284C7'}
+              stroke="#FFFFFF"
+              strokeWidth="1.5"
             />
-            <SvgText x={targetX} y={targetY + 4} fontSize="11" textAnchor="middle">
-              {species === 'dog' ? '🐶' : '🐱'}
+            <SvgText
+              x={targetX}
+              y={targetY + 3.5}
+              fontSize="9"
+              fontWeight="800"
+              fill="#FFFFFF"
+              textAnchor="middle"
+            >
+              {species === 'dog' ? 'D' : 'C'}
             </SvgText>
           </Svg>
         </View>
@@ -650,18 +654,24 @@ export const BearingDistanceInput: React.FC<BearingDistanceInputProps> = ({
         onPress={handleToggleLiveSensor}
         activeOpacity={0.8}
       >
-        <IOSIcon
-          name="compass"
-          size={16}
-          color={isLiveSensorActive ? '#FFFFFF' : DesignTokens.colors.label}
-        />
-        <Text
-          style={[styles.liveSensorButtonText, isLiveSensorActive && styles.liveSensorButtonTextActive]}
-        >
-          {isLiveSensorActive
-            ? '🟢 Aiming... Point Top of Phone at Animal [Tap to Lock]'
-            : '📡 Point Phone to Aim (Live Compass)'}
-        </Text>
+        <View style={styles.liveSensorRow}>
+          {isLiveSensorActive ? (
+            <View style={styles.livePulseDotWhite} />
+          ) : (
+            <IOSIcon
+              name="compass"
+              size={15}
+              color={DesignTokens.colors.label}
+            />
+          )}
+          <Text
+            style={[styles.liveSensorButtonText, isLiveSensorActive && styles.liveSensorButtonTextActive]}
+          >
+            {isLiveSensorActive
+              ? 'Aiming... Point Top of Phone at Animal [Tap to Lock]'
+              : 'Point Phone to Aim (Live Compass)'}
+          </Text>
+        </View>
       </TouchableOpacity>
 
       {/* ----------------- CALCULATED PERPENDICULAR DISTANCE ----------------- */}
@@ -916,13 +926,24 @@ const styles = StyleSheet.create({
   radarWrapper: {
     alignItems: 'center',
     justifyContent: 'center',
-    marginVertical: 10,
+    marginVertical: 8,
   },
   radarTouchArea: {
-    width: 210,
-    height: 210,
+    width: 170,
+    height: 170,
     alignItems: 'center',
     justifyContent: 'center',
+  },
+  liveSensorRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 7,
+  },
+  livePulseDotWhite: {
+    width: 6,
+    height: 6,
+    borderRadius: 3,
+    backgroundColor: '#FFFFFF',
   },
   radarLegendRow: {
     marginTop: 4,

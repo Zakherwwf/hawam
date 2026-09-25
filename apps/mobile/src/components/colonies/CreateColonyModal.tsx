@@ -127,7 +127,7 @@ export const CreateColonyModal: React.FC<CreateColonyModalProps> = ({
     });
 
     Alert.alert(
-      isDog ? '🐶 Dog Pack Registered' : '🐱 Cat Colony Registered',
+      isDog ? 'Dog Pack Registered' : 'Cat Colony Registered',
       `"${name.trim()}" has been saved and pinned to the map!\n+20 XP awarded!`,
       [{ text: 'OK', onPress: handleClose }]
     );
@@ -169,7 +169,7 @@ export const CreateColonyModal: React.FC<CreateColonyModalProps> = ({
                 }}
                 activeOpacity={0.8}
               >
-                <Text style={styles.speciesSegmentEmoji}>🐱</Text>
+                <IOSIcon name="paw" size={18} color={!isDog ? '#8B5CF6' : '#94A3B8'} />
                 <View>
                   <Text style={[styles.speciesSegmentTitle, !isDog && styles.speciesSegmentTitleActive]}>
                     Cat Colony
@@ -186,7 +186,7 @@ export const CreateColonyModal: React.FC<CreateColonyModalProps> = ({
                 }}
                 activeOpacity={0.8}
               >
-                <Text style={styles.speciesSegmentEmoji}>🐶</Text>
+                <IOSIcon name="paw" size={18} color={isDog ? '#EA580C' : '#94A3B8'} />
                 <View>
                   <Text style={[styles.speciesSegmentTitle, isDog && styles.speciesSegmentTitleActiveDog]}>
                     Dog Pack

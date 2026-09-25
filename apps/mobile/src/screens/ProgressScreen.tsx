@@ -307,7 +307,7 @@ export const ProgressScreen: React.FC<ProgressScreenProps> = ({ userAccount }) =
                         hapticSuccess();
                         claimQuestReward(quest.id);
                         Alert.alert(
-                          'XP Claimed! 🌟',
+                          'XP Claimed!',
                           `You received +${quest.xpReward} XP for advancing public health research.`
                         );
                       }}

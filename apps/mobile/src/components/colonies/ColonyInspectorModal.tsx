@@ -119,7 +119,7 @@ export const ColonyInspectorModal: React.FC<ColonyInspectorModalProps> = ({
               <View style={[styles.zoneBadge, isDog && styles.zoneBadgeDog]}>
                 <IOSIcon name="shield" size={13} color={isDog ? '#EA580C' : '#8B5CF6'} />
                 <Text style={[styles.zoneBadgeText, isDog && styles.zoneBadgeTextDog]}>
-                  {isDog ? '🐶 DOG PACK' : '🐱 CAT COLONY'} • {colony.zone.toUpperCase()}
+                  {isDog ? 'DOG PACK' : 'CAT COLONY'} • {colony.zone.toUpperCase()}
                 </Text>
               </View>
               <View style={[styles.popBadge, isDog && styles.popBadgeDog]}>

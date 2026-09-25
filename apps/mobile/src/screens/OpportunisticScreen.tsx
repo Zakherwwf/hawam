@@ -599,9 +599,9 @@ export const OpportunisticScreen: React.FC<OpportunisticScreenProps> = ({
                   contentContainerStyle={styles.chipsScrollRow}
                 >
                   {[
-                    { label: 'Male ♂', value: 'male' as Sex },
-                    { label: 'Female ♀', value: 'female' as Sex },
-                    { label: 'Unknown ?', value: 'unknown' as Sex },
+                    { label: 'Male', value: 'male' as Sex },
+                    { label: 'Female', value: 'female' as Sex },
+                    { label: 'Unknown', value: 'unknown' as Sex },
                   ].map((opt) => {
                     const isSelected = sex === opt.value;
                     return (
