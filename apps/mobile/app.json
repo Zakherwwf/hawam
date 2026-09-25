@@ -12,7 +12,12 @@
       "bundleIdentifier": "tn.pasteur.dogcat.survey",
       "infoPlist": {
         "NSLocationWhenInUseUsageDescription": "Your location is needed to record animal encounters and survey transect tracks. Locations are generalized to 1 km before any public sharing to protect animals.",
-        "NSCameraUsageDescription": "Camera access is needed to capture photos of cats and dogs for individual re-identification."
+        "NSLocationAlwaysAndWhenInUseUsageDescription": "Your location is required in the background to record continuous transect routes and effort while surveying.",
+        "NSLocationAlwaysUsageDescription": "Your location is required in the background to record continuous transect routes.",
+        "NSCameraUsageDescription": "Camera access is needed to capture photos of cats and dogs for individual re-identification.",
+        "UIBackgroundModes": [
+          "location"
+        ]
       }
     },
     "android": {
@@ -24,6 +29,9 @@
       "permissions": [
         "ACCESS_COARSE_LOCATION",
         "ACCESS_FINE_LOCATION",
+        "ACCESS_BACKGROUND_LOCATION",
+        "FOREGROUND_SERVICE",
+        "FOREGROUND_SERVICE_LOCATION",
         "CAMERA"
       ]
     },

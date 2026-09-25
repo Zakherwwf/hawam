@@ -9,6 +9,7 @@ import {
   Modal,
   TextInput,
   Image,
+  ActivityIndicator,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useTranslation } from 'react-i18next';
@@ -21,12 +22,15 @@ import {
   IOSButton,
   IOSIcon,
 } from '../components/ios';
+import { useSyncStore } from '../features/sync/syncStore';
+import { Icon } from '../components/design-system/Icon';
 import {
   hapticModalClose,
   hapticButtonPress,
   hapticTabSwitch,
   hapticQuickLog,
 } from '../utils/haptics';
+import { generateScientificObservationCode } from '../utils/scientificCodes';
 
 export interface SightingItem {
   id: string;
@@ -61,6 +65,8 @@ export const SightingsScreen: React.FC<SightingsScreenProps> = ({
   embedded = false,
 }) => {
   const { t } = useTranslation();
+  const pendingCount = useSyncStore((s) => s.pendingCount);
+  const isSyncing = useSyncStore((s) => s.isSyncing);
   const [filterSpecies, setFilterSpecies] = useState<'all' | 'cat' | 'dog'>('all');
   const [filterOnlyPhotos, setFilterOnlyPhotos] = useState<boolean>(false);
   const [filterTnrOnly, setFilterTnrOnly] = useState<boolean>(false);
@@ -177,6 +183,19 @@ export const SightingsScreen: React.FC<SightingsScreenProps> = ({
               </TouchableOpacity>
             }
           />
+        )}
+
+        {/* Offline Pending Sync Banner */}
+        {pendingCount > 0 && (
+          <View style={styles.offlineBanner}>
+            <View style={styles.offlineBannerLeft}>
+              <Icon name="cloud-offline" size={16} color="#E65100" />
+              <Text style={styles.offlineBannerText}>
+                {pendingCount} {pendingCount === 1 ? 'survey observation' : 'survey observations'} saved on device · {isSyncing ? 'Syncing...' : 'Pending sync'}
+              </Text>
+            </View>
+            {isSyncing && <ActivityIndicator size="small" color="#E65100" />}
+          </View>
         )}
 
         {/* Search Bar & Species Filter Tabs */}
@@ -352,8 +371,9 @@ export const SightingsScreen: React.FC<SightingsScreenProps> = ({
             </View>
           </View>
         ) : (
-          filtered.map((item) => {
+          filtered.map((item, index) => {
             const isCat = item.species === 'cat';
+            const scientificCode = item.identifier || generateScientificObservationCode(item.species, index + 1);
             return (
               <View key={item.id} style={styles.card}>
                 <View style={styles.cardHeader}>
@@ -375,12 +395,11 @@ export const SightingsScreen: React.FC<SightingsScreenProps> = ({
                     </View>
                     <View>
                       <Text style={styles.speciesTitle}>
-                        {item.identifier ? item.identifier : (isCat ? t('animal.cat') : t('animal.dog'))}
+                        {scientificCode}
                         {item.group_size > 1 ? ` (${item.group_size})` : ''}
                       </Text>
                       <Text style={styles.timestampText}>
-                        {item.identifier ? `${isCat ? 'Cat' : 'Dog'} • ` : ''}
-                        {item.observer_name ? `${item.observer_name} • ` : ''}
+                        {isCat ? 'Cat' : 'Dog'} • {item.observer_name ? `${item.observer_name} • ` : ''}
                         {formatTime(item.observed_at)}
                       </Text>
                     </View>
@@ -891,5 +910,30 @@ const styles = StyleSheet.create({
     fontSize: 9,
     fontWeight: '700',
     color: '#D9F944',
+  },
+  offlineBanner: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    backgroundColor: '#FFF7ED',
+    borderWidth: 1,
+    borderColor: '#FFEDD5',
+    marginHorizontal: 16,
+    marginTop: 8,
+    marginBottom: 4,
+    paddingHorizontal: 12,
+    paddingVertical: 9,
+    borderRadius: 10,
+  },
+  offlineBannerLeft: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+    flex: 1,
+  },
+  offlineBannerText: {
+    fontSize: 12,
+    fontWeight: '600',
+    color: '#9A3412',
   },
 });

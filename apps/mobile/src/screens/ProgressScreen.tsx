@@ -67,8 +67,7 @@ interface ProgressScreenProps {
 }
 
 export const ProgressScreen: React.FC<ProgressScreenProps> = ({ userAccount, stats }) => {
-  const { t, i18n } = useTranslation();
-  const isArabic = i18n.language === 'ar';
+  const { t } = useTranslation();
 
   const userGov = userAccount?.governorate || 'Tunis';
   const governorateList = React.useMemo(() => {
@@ -194,7 +193,7 @@ export const ProgressScreen: React.FC<ProgressScreenProps> = ({ userAccount, sta
         style={StyleSheet.absoluteFill}
       />
       <SafeAreaView style={styles.safeArea} edges={['top', 'left', 'right']}>
-        <IOSNavigationBar title={isArabic ? 'التقدم والمساهمات' : 'Scientific Progress'} />
+        <IOSNavigationBar title="Scientific Progress" />
 
       <ScrollView contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
         {/* Level & Scientific Rank Hero Card */}
@@ -207,7 +206,7 @@ export const ProgressScreen: React.FC<ProgressScreenProps> = ({ userAccount, sta
               />
               <View>
                 <Text style={styles.levelNumber}>LEVEL {level}</Text>
-                <Text style={styles.rankTitle}>{isArabic ? rankTitleAr : rankTitle}</Text>
+                <Text style={styles.rankTitle}>{rankTitle}</Text>
               </View>
             </View>
             <View style={styles.xpBadge}>
@@ -287,7 +286,7 @@ export const ProgressScreen: React.FC<ProgressScreenProps> = ({ userAccount, sta
         <View style={styles.sectionContainer}>
           <View style={styles.sectionHeaderRow}>
             <Text style={styles.sectionTitle}>
-              {isArabic ? 'المهام العلمية لهذا الأسبوع' : 'Weekly Research Quests'}
+              Weekly Research Quests
             </Text>
             <Text style={styles.sectionBadge}>3 ACTIVE</Text>
           </View>
@@ -312,7 +311,7 @@ export const ProgressScreen: React.FC<ProgressScreenProps> = ({ userAccount, sta
                         (quest.completed || isClaimed) && styles.questTitleDone,
                       ]}
                     >
-                      {isArabic ? quest.titleAr : quest.title}
+                      {quest.title}
                     </Text>
                   </View>
                   <View style={styles.questRewardPill}>
@@ -378,7 +377,7 @@ export const ProgressScreen: React.FC<ProgressScreenProps> = ({ userAccount, sta
         <View style={styles.sectionContainer}>
           <View style={styles.sectionHeaderRow}>
             <Text style={styles.sectionTitle}>
-              {isArabic ? 'الأوسمة والشهادات الميدانية' : 'Surveyor Badges'}
+              Surveyor Badges
             </Text>
             <Text style={styles.sectionBadge}>
               {badges.filter((b) => b.unlockedAt).length} / {badges.length} UNLOCKED
@@ -433,7 +432,7 @@ export const ProgressScreen: React.FC<ProgressScreenProps> = ({ userAccount, sta
                     style={[styles.badgeName, !isUnlocked && styles.badgeTextLocked]}
                     numberOfLines={1}
                   >
-                    {isArabic ? badge.nameAr : badge.name}
+                    {badge.name}
                   </Text>
                   <Text style={styles.badgeTier}>{badge.tier.toUpperCase()}</Text>
                 </TouchableOpacity>
@@ -446,7 +445,7 @@ export const ProgressScreen: React.FC<ProgressScreenProps> = ({ userAccount, sta
         <View style={styles.sectionContainer}>
           <View style={styles.sectionHeaderRow}>
             <Text style={styles.sectionTitle}>
-              {isArabic ? 'لوحة الشرف للمسح الميداني' : 'Effort Leaderboard'}
+              Effort Leaderboard
             </Text>
             <Text style={styles.sectionSubtitle}>Ranked strictly by survey effort</Text>
           </View>
@@ -686,7 +685,7 @@ export const ProgressScreen: React.FC<ProgressScreenProps> = ({ userAccount, sta
                 </View>
 
                 <Text style={styles.modalBadgeTitle}>
-                  {isArabic ? selectedBadge.nameAr : selectedBadge.name}
+                  {selectedBadge.name}
                 </Text>
 
                 <Text style={styles.modalBadgeDesc}>{selectedBadge.description}</Text>

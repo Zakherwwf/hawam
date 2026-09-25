@@ -249,7 +249,7 @@ export const InteractiveMapView: React.FC<InteractiveMapViewProps> = ({
       0% { transform: scale(0.5); opacity: 0.9; }
       100% { transform: scale(2.2); opacity: 0; }
     }
-    .mapboxgl-popup-content {
+    .mapboxgl-popup-content, .maplibregl-popup-content {
       border-radius: 14px;
       padding: 10px 14px;
       box-shadow: 0 10px 25px rgba(0, 0, 0, 0.25);
@@ -258,7 +258,7 @@ export const InteractiveMapView: React.FC<InteractiveMapViewProps> = ({
       color: #0F172A;
       min-width: 150px;
     }
-    .mapboxgl-popup-close-button {
+    .mapboxgl-popup-close-button, .maplibregl-popup-close-button {
       font-size: 16px;
       color: #94A3B8;
       padding: 4px 8px;
@@ -539,10 +539,11 @@ export const InteractiveMapView: React.FC<InteractiveMapViewProps> = ({
           var pinEl = document.createElement('div');
           pinEl.className = 'custom-pin ' + (isCat ? 'cat-pin' : 'dog-pin');
 
-          var pinLabel = m.label || m.identifier || ((isCat ? 'CAT' : 'DOG') + ' #' + (idx + 1));
+          var seqCode = (isCat ? 'CAT' : 'DOG') + '-' + String(idx + 1).padStart(3, '0');
+          var pinLabel = m.identifier || m.label || seqCode;
           pinEl.innerText = pinLabel;
 
-          var displayTitle = m.identifier || m.title || ((isCat ? 'Cat' : 'Dog') + ' #' + (idx + 1));
+          var displayTitle = (m.identifier || m.title || seqCode) + ' • ' + (isCat ? 'Cat' : 'Dog');
           var popupHtml =
             '<div class="popup-species-badge ' + (isCat ? 'popup-cat-badge' : 'popup-dog-badge') + '">' +
               displayTitle +
@@ -661,13 +662,32 @@ export const InteractiveMapView: React.FC<InteractiveMapViewProps> = ({
       }
     };
 
-    map.on('load', function() {
+    var readyNotified = false;
+    function notifyReady() {
+      if (readyNotified) return;
+      readyNotified = true;
       if (window.ReactNativeWebView) {
         window.ReactNativeWebView.postMessage(JSON.stringify({ type: 'map_ready' }));
       }
-      renderRouteCorridor();
-      renderRouteLine();
+      try {
+        if (map.isStyleLoaded()) {
+          renderRouteCorridor();
+          renderRouteLine();
+        }
+        if (lastData) {
+          window.updateMapboxData(lastData);
+        }
+      } catch (e) {}
+    }
+
+    map.on('load', function() {
+      notifyReady();
+      try {
+        renderRouteCorridor();
+        renderRouteLine();
+      } catch (e) {}
     });
+    setTimeout(notifyReady, 1500);
   </script>
 </body>
 </html>
@@ -678,8 +698,11 @@ export const InteractiveMapView: React.FC<InteractiveMapViewProps> = ({
       <WebView
         ref={webViewRef}
         originWhitelist={['*']}
-        source={{ html: mapHtml }}
+        source={{ html: mapHtml, baseUrl: 'https://localhost' }}
         style={styles.webView}
+        javaScriptEnabled={true}
+        domStorageEnabled={true}
+        startInLoadingState={false}
         onMessage={(event) => {
           try {
             const data = JSON.parse(event.nativeEvent.data);
@@ -751,7 +774,7 @@ export const InteractiveMapView: React.FC<InteractiveMapViewProps> = ({
         <View style={styles.accuracyTag}>
           <View style={styles.pulseDot} />
           <Text style={styles.accuracyText}>
-            Mapbox GPS ±{userLocation.acc.toFixed(1)}m • Live
+            GPS ±{userLocation.acc.toFixed(1)}m · Live
           </Text>
         </View>
       ) : null}

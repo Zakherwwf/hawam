@@ -33,6 +33,7 @@ import {
   IOSButton,
   IOSIcon,
 } from '../components/ios';
+import { generateOpportunisticCode } from '../utils/scientificCodes';
 import {
   hapticTabSwitch,
   hapticButtonPress,
@@ -227,8 +228,9 @@ export const OpportunisticScreen: React.FC<OpportunisticScreenProps> = ({
 
   const handleSave = () => {
     hapticButtonPress();
+    const cleanId = identifier.trim() || generateOpportunisticCode(species, Math.floor(Date.now() / 1000) % 1000);
     onSaveObservation({
-      identifier: identifier.trim() || undefined,
+      identifier: cleanId,
       species,
       group_size: groupSize,
       sex,

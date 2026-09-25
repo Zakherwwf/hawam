@@ -27,8 +27,7 @@ interface AuthGateScreenProps {
 }
 
 export const AuthGateScreen: React.FC<AuthGateScreenProps> = ({ onAuthenticated }) => {
-  const { t, i18n } = useTranslation();
-  const currentLang = (i18n.language || 'en') as 'ar' | 'fr' | 'en';
+  const { t } = useTranslation();
 
   const [authMode, setAuthMode] = useState<'signin' | 'signup'>('signin');
   const [email, setEmail] = useState('');
@@ -37,10 +36,6 @@ export const AuthGateScreen: React.FC<AuthGateScreenProps> = ({ onAuthenticated 
   const [fullName, setFullName] = useState('');
   const [organization, setOrganization] = useState('Tunisia Fauna Observatory');
   const [isLoading, setIsLoading] = useState(false);
-
-  const handleLanguageChange = (lng: 'ar' | 'fr' | 'en') => {
-    setAppLanguage(lng);
-  };
 
   const handleGoogleSignIn = async () => {
     setIsLoading(true);
@@ -218,27 +213,9 @@ export const AuthGateScreen: React.FC<AuthGateScreenProps> = ({ onAuthenticated 
           showsVerticalScrollIndicator={false}
           keyboardShouldPersistTaps="handled"
         >
-          {/* Language Switcher Bar */}
-          <View style={styles.langBar}>
-            {(['en', 'fr', 'ar'] as const).map((lang) => (
-              <TouchableOpacity
-                key={lang}
-                onPress={() => handleLanguageChange(lang)}
-                style={[
-                  styles.langBtn,
-                  currentLang === lang && styles.langBtnActive,
-                ]}
-              >
-                <Text
-                  style={[
-                    styles.langBtnText,
-                    currentLang === lang && styles.langBtnTextActive,
-                  ]}
-                >
-                  {lang === 'en' ? 'English' : lang === 'fr' ? 'Français' : 'العربية'}
-                </Text>
-              </TouchableOpacity>
-            ))}
+          {/* Scientific App Badge */}
+          <View style={styles.badgeContainer}>
+            <Text style={styles.badgeText}>HAWEM V2.0 · CITIZEN SCIENCE</Text>
           </View>
 
           {/* Hero Branding Header */}
@@ -251,7 +228,6 @@ export const AuthGateScreen: React.FC<AuthGateScreenProps> = ({ onAuthenticated 
             </View>
 
             <Text style={styles.brandTitle}>Hawem</Text>
-            <Text style={styles.brandArabic}>حايم</Text>
             <Text style={styles.brandSubtitle}>
               National Fauna & Stray Animal Observatory of Tunisia
             </Text>
@@ -406,36 +382,21 @@ const styles = StyleSheet.create({
     paddingVertical: 16,
     alignItems: 'center',
   },
-  langBar: {
-    flexDirection: 'row',
+  badgeContainer: {
     alignSelf: 'center',
-    backgroundColor: 'rgba(118, 118, 128, 0.12)',
-    borderRadius: 8,
-    padding: 3,
-    marginBottom: 20,
-    gap: 4,
-  },
-  langBtn: {
+    backgroundColor: '#E0F2FE',
+    borderRadius: 12,
     paddingHorizontal: 12,
     paddingVertical: 5,
-    borderRadius: 6,
+    marginBottom: 20,
+    borderWidth: 1,
+    borderColor: '#BAE6FD',
   },
-  langBtnActive: {
-    backgroundColor: '#FFFFFF',
-    shadowColor: '#000000',
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.12,
-    shadowRadius: 2,
-    elevation: 2,
-  },
-  langBtnText: {
-    fontSize: 12,
-    fontWeight: '600',
-    color: IOSColors.secondaryLabel,
-  },
-  langBtnTextActive: {
-    color: IOSColors.label,
-    fontWeight: '700',
+  badgeText: {
+    fontSize: 11,
+    fontWeight: '800',
+    color: '#0284C7',
+    letterSpacing: 0.8,
   },
   heroSection: {
     alignItems: 'center',
@@ -458,12 +419,6 @@ const styles = StyleSheet.create({
     fontWeight: '800',
     color: IOSColors.label,
     letterSpacing: -0.5,
-  },
-  brandArabic: {
-    fontSize: 20,
-    fontWeight: '700',
-    color: IOSColors.systemTeal,
-    marginTop: -2,
     marginBottom: 6,
   },
   brandSubtitle: {

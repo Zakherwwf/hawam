@@ -46,9 +46,11 @@ import { useGamificationStore } from '../features/gamification/gamificationStore
 import { useRoutesStore, FixedRoute } from '../features/routes/routesStore';
 import { useColoniesStore, CatColony } from '../features/colonies/coloniesStore';
 import { useSyncStore } from '../features/sync/syncStore';
+import { useSurveyStore } from '../features/survey/surveyStore';
 import { generateUUID } from '../utils/uuid';
 import { promptPhotoCaptureChoice } from '../services/cameraService';
 import { calculateDistanceKm, simplifyGpsTrack, computeAnimalLocation } from '../services/georef/geoUtils';
+import { generateScientificObservationCode, getNextSessionObservationCode } from '../utils/scientificCodes';
 
 export interface SurveyDetection {
   id: string;
@@ -65,6 +67,8 @@ export interface SurveyDetection {
   bearing_deg?: number;
   animalLat?: number;
   animalLon?: number;
+  body_condition_score?: number;
+  gps_accuracy_m?: number;
 }
 
 interface StructuredSurveyScreenProps {
@@ -136,6 +140,8 @@ export const StructuredSurveyScreen: React.FC<StructuredSurveyScreenProps> = ({
   const [sightingBearing, setSightingBearing] = useState<number>(45);
   const [detectionNotes, setDetectionNotes] = useState<string>('');
   const [attachedPhotos, setAttachedPhotos] = useState<string[]>([]);
+  const [bodyConditionScore, setBodyConditionScore] = useState<number>(3);
+  const surveyStartedAtRef = useRef<string | null>(null);
 
   // Re-identification candidate matcher & Welfare Alert
   const [showMatcherModal, setShowMatcherModal] = useState<boolean>(false);
@@ -145,16 +151,13 @@ export const StructuredSurveyScreen: React.FC<StructuredSurveyScreenProps> = ({
   // Success banner
   const [toastMessage, setToastMessage] = useState<string | null>(null);
 
-  // eBird Complete Checklist modal
-  const [showEndModal, setShowEndModal] = useState<boolean>(false);
-
   // Hardware GPS & Track state
-  const [currentLat, setCurrentLat] = useState<number>(36.8065);
-  const [currentLon, setCurrentLon] = useState<number>(10.1815);
+  const [currentLat, setCurrentLat] = useState<number>(0);
+  const [currentLon, setCurrentLon] = useState<number>(0);
   const [currentHeading, setCurrentHeading] = useState<number | null>(null);
-  const [gpsAccuracy, setGpsAccuracy] = useState<number>(3.2);
-  const [activeTrack, setActiveTrack] = useState<[number, number][]>([[36.8065, 10.1815]]);
-  const [gpsMode, setGpsMode] = useState<'hardware' | 'simulated'>('simulated');
+  const [gpsAccuracy, setGpsAccuracy] = useState<number>(0);
+  const [activeTrack, setActiveTrack] = useState<[number, number][]>([]);
+  const [gpsMode, setGpsMode] = useState<'hardware' | 'acquiring_fix'>('acquiring_fix');
   const [gpsPermissionGranted, setGpsPermissionGranted] = useState<boolean>(false);
   const locationSubRef = useRef<Location.LocationSubscription | null>(null);
   const lastCoordRef = useRef<{ lat: number; lon: number; timestamp: number } | null>(null);
@@ -168,7 +171,6 @@ export const StructuredSurveyScreen: React.FC<StructuredSurveyScreenProps> = ({
         if (status === 'granted') {
           if (!isMounted) return;
           setGpsPermissionGranted(true);
-          setGpsMode('hardware');
           const loc = await Location.getCurrentPositionAsync({ accuracy: Location.Accuracy.High });
           if (isMounted && loc?.coords) {
             setCurrentLat(loc.coords.latitude);
@@ -177,6 +179,7 @@ export const StructuredSurveyScreen: React.FC<StructuredSurveyScreenProps> = ({
               setCurrentHeading(loc.coords.heading);
             }
             setGpsAccuracy(loc.coords.accuracy || 3.0);
+            setGpsMode('hardware');
             if (!isSurveyActive) {
               setActiveTrack([[loc.coords.latitude, loc.coords.longitude]]);
             }
@@ -184,12 +187,12 @@ export const StructuredSurveyScreen: React.FC<StructuredSurveyScreenProps> = ({
         } else {
           if (isMounted) {
             setGpsPermissionGranted(false);
-            setGpsMode('simulated');
+            setGpsMode('acquiring_fix');
           }
         }
       } catch (err) {
-        console.warn('GPS initialization error, using simulated coords:', err);
-        if (isMounted) setGpsMode('simulated');
+        console.warn('[StructuredSurveyScreen] GPS initialization error:', err);
+        if (isMounted) setGpsMode('acquiring_fix');
       }
     }
     initGps();
@@ -240,14 +243,17 @@ export const StructuredSurveyScreen: React.FC<StructuredSurveyScreenProps> = ({
                   );
 
                   // Threshold filter: Ignore micro-jitter (< 2m = 0.002 km)
-                  // Velocity filter: Ignore impossible jumps (> 40 m/s = 144 km/h)
+                  // Velocity filter: Enforce ≤ 4.17 m/s (15 km/h) walking limit per CLAUDE.md §2.2
                   const timeDiffSec = (Date.now() - lastCoordRef.current.timestamp) / 1000;
                   const speedMs = timeDiffSec > 0 ? (deltaKm * 1000) / timeDiffSec : 0;
 
-                  if (deltaKm >= 0.002 && speedMs <= 40) {
+                  if (deltaKm >= 0.002 && speedMs <= 4.17) {
                     setDistanceKm((prev) => parseFloat((prev + deltaKm).toFixed(3)));
                     setActiveTrack((prev) => [...prev, [latitude, longitude]]);
                     lastCoordRef.current = { lat: latitude, lon: longitude, timestamp: Date.now() };
+
+                    // Wire into centralized surveyStore
+                    useSurveyStore.getState().addTrackPoint(latitude, longitude, accuracy ?? undefined, speedMs);
 
                     // Off-route corridor check (> 50m deviation from fixed transect)
                     if (selectedRouteObj) {
@@ -259,14 +265,15 @@ export const StructuredSurveyScreen: React.FC<StructuredSurveyScreenProps> = ({
                 } else {
                   lastCoordRef.current = { lat: latitude, lon: longitude, timestamp: Date.now() };
                   setActiveTrack((prev) => [...prev, [latitude, longitude]]);
+                  useSurveyStore.getState().addTrackPoint(latitude, longitude, accuracy ?? undefined, 0);
                 }
               }
             }
           );
           locationSubRef.current = sub;
         } catch (err) {
-          console.warn('Location watch error, falling back to simulated:', err);
-          setGpsMode('simulated');
+          console.warn('[StructuredSurveyScreen] Location watch error:', err);
+          setGpsMode('acquiring_fix');
         }
       })();
     }
@@ -278,32 +285,17 @@ export const StructuredSurveyScreen: React.FC<StructuredSurveyScreenProps> = ({
     };
   }, [isSurveyActive, isPaused, gpsPermissionGranted, protocol, selectedRouteObj, checkOffRoute]);
 
-  // 3. Timer loop for active session (respects pause, handles fallback simulated increments if no GPS)
+  // 3. Timer loop for active session (increments timer; distance is derived strictly from real GPS fixes)
   useEffect(() => {
     let timer: any;
     if (isSurveyActive && !isPaused) {
       timer = setInterval(() => {
         setElapsedSeconds((prev) => prev + 1);
-
-        // Fallback simulation when running in simulator without hardware GPS
-        if (gpsMode === 'simulated' && protocol === 'transect') {
-          setDistanceKm((prev) => prev + 0.0015);
-          const nextLat = currentLat + (Math.random() * 0.00004 - 0.00001);
-          const nextLon = currentLon + 0.00003;
-          setCurrentLat(nextLat);
-          setCurrentLon(nextLon);
-          setActiveTrack((prev) => [...prev, [nextLat, nextLon]]);
-
-          if (selectedRouteObj) {
-            const check = checkOffRoute(nextLat, nextLon, selectedRouteObj.id);
-            setIsOffRoute(check.isOffRoute);
-            setOffRouteDistanceM(check.distanceM);
-          }
-        }
+        useSurveyStore.getState().tickTimer();
       }, 1000);
     }
     return () => clearInterval(timer);
-  }, [isSurveyActive, isPaused, protocol, gpsMode, currentLat, currentLon, selectedRouteObj, checkOffRoute]);
+  }, [isSurveyActive, isPaused]);
 
   // Haptic feedback alert on waypoint deviation (> 50m off route corridor)
   const prevOffRouteRef = useRef<boolean>(false);
@@ -329,20 +321,75 @@ export const StructuredSurveyScreen: React.FC<StructuredSurveyScreenProps> = ({
     setToastMessage(null);
     setIsOffRoute(false);
     setOffRouteDistanceM(0);
+    surveyStartedAtRef.current = new Date().toISOString();
     lastCoordRef.current = { lat: currentLat, lon: currentLon, timestamp: Date.now() };
     setActiveTrack([[currentLat, currentLon]]);
+    useSurveyStore.getState().startSurvey(protocol, selectedRouteObj?.id);
   };
 
   const openNewDetectionModalWithSpecies = (species: Species) => {
-    setEditingDetection(null);
-    setSightingSpecies(species);
-    setSightingIdentifier('');
-    setGroupSize(1);
-    setDistanceFromPathM('5.0');
     // Default to current movement heading if available, or 0° (Straight Ahead along path)
     const initialHeading = currentHeading !== null && currentHeading >= 0
       ? Math.round(currentHeading)
       : 0;
+    const initialDist = 5.0;
+
+    // Scientifically compute true animal location immediately
+    const geo = computeAnimalLocation(
+      currentLat,
+      currentLon,
+      initialDist,
+      initialHeading,
+      selectedRouteObj?.waypoints
+    );
+
+    const scientificCode = getNextSessionObservationCode(species, sessionDetections);
+
+    const newDetection: SurveyDetection = {
+      id: `det-${Date.now()}`,
+      species,
+      identifier: scientificCode,
+      group_size: 1,
+      distance_from_path_m: geo.perpendicularDistanceM ?? initialDist,
+      bearing_deg: initialHeading,
+      animalLat: geo.animalLat,
+      animalLon: geo.animalLon,
+      body_condition_score: 3,
+      gps_accuracy_m: gpsAccuracy,
+      latitude: currentLat,
+      longitude: currentLon,
+      observed_at: new Date().toISOString(),
+      notes: '',
+      photoUri: null,
+      photoUris: [],
+    };
+
+    // Immediately save to local state and SQLite persistence so sighting is preserved even if sheet is dismissed
+    setSessionDetections((prev) => [...prev, newDetection]);
+    onLogAnimal({ ...newDetection, protocol });
+
+    useSurveyStore.getState().logDetection({
+      species,
+      identifier: scientificCode,
+      group_size: 1,
+      distance_estimate_m: initialDist,
+      bearing_deg: initialHeading,
+      body_condition_score: 3,
+      notes: '',
+      photoUri: null,
+      photoUris: [],
+      observer_lat: currentLat,
+      observer_lon: currentLon,
+      gps_accuracy_m: gpsAccuracy,
+    });
+
+    // Populate editor sheet with this new detection for optional refinement
+    setEditingDetection(newDetection);
+    setSightingSpecies(species);
+    setSightingIdentifier(scientificCode);
+    setGroupSize(1);
+    setDistanceFromPathM('5.0');
+    setBodyConditionScore(3);
     setSightingBearing(initialHeading);
     setDetectionNotes('');
     setAttachedPhotos([]);
@@ -352,6 +399,7 @@ export const StructuredSurveyScreen: React.FC<StructuredSurveyScreenProps> = ({
     setNearbyCandidates(candidates);
 
     setIsModalOpen(true);
+    showToast(`Recorded ${species} sighting`);
   };
 
   const openNewDetectionModal = () => {
@@ -366,6 +414,7 @@ export const StructuredSurveyScreen: React.FC<StructuredSurveyScreenProps> = ({
     setGroupSize(item.group_size);
     setDistanceFromPathM(item.distance_from_path_m.toString());
     setSightingBearing(item.bearing_deg ?? 0);
+    setBodyConditionScore(item.body_condition_score || 3);
     setDetectionNotes(item.notes || '');
     setAttachedPhotos(item.photoUris || (item.photoUri ? [item.photoUri] : []));
     setIsModalOpen(true);
@@ -420,6 +469,8 @@ export const StructuredSurveyScreen: React.FC<StructuredSurveyScreenProps> = ({
               bearing_deg: sightingBearing,
               animalLat: geo.animalLat,
               animalLon: geo.animalLon,
+              body_condition_score: bodyConditionScore,
+              gps_accuracy_m: gpsAccuracy,
               notes: detectionNotes,
               photoUri: primaryPhoto,
               photoUris: attachedPhotos,
@@ -439,6 +490,8 @@ export const StructuredSurveyScreen: React.FC<StructuredSurveyScreenProps> = ({
         bearing_deg: sightingBearing,
         animalLat: geo.animalLat,
         animalLon: geo.animalLon,
+        body_condition_score: bodyConditionScore,
+        gps_accuracy_m: gpsAccuracy,
         latitude: currentLat,
         longitude: currentLon,
         observed_at: new Date().toISOString(),
@@ -451,6 +504,21 @@ export const StructuredSurveyScreen: React.FC<StructuredSurveyScreenProps> = ({
       onLogAnimal({
         ...newDetection,
         protocol,
+      });
+
+      // Synchronize with centralized surveyStore
+      useSurveyStore.getState().logDetection({
+        species: sightingSpecies,
+        group_size: groupSize,
+        distance_estimate_m: dist,
+        bearing_deg: sightingBearing,
+        body_condition_score: bodyConditionScore,
+        notes: detectionNotes,
+        photoUri: primaryPhoto,
+        photoUris: attachedPhotos,
+        observer_lat: currentLat,
+        observer_lon: currentLon,
+        gps_accuracy_m: gpsAccuracy,
       });
 
       showToast(`Recorded ${cleanIdentifier || (groupSize > 1 ? `group of ${groupSize} ${sightingSpecies}s` : sightingSpecies)}`);
@@ -486,7 +554,6 @@ export const StructuredSurveyScreen: React.FC<StructuredSurveyScreenProps> = ({
 
   const confirmEnd = (completeChecklist: boolean) => {
     hapticButtonPress();
-    setShowEndModal(false);
     setIsSurveyActive(false);
 
     // Calculate scientifically calibrated XP
@@ -538,13 +605,35 @@ export const StructuredSurveyScreen: React.FC<StructuredSurveyScreenProps> = ({
     setShowSummaryModal(true);
   };
 
-  const handleFinalizeFromSummary = () => {
+  const handleFinalizeFromSummary = (checklistComplete?: boolean) => {
     if (!pendingSyncPayload) {
       setShowSummaryModal(false);
       return;
     }
 
-    const { sessionId, totalXp, reason, completeChecklist } = pendingSyncPayload;
+    const effectiveChecklist =
+      typeof checklistComplete === 'boolean'
+        ? checklistComplete
+        : pendingSyncPayload.completeChecklist;
+
+    // Recalculate scientific XP based on final checklist verification
+    const effortXp = Math.min(60, Math.max(10, Math.floor(elapsedSeconds / 600) * 10));
+    const completeBonus = effectiveChecklist ? 20 : 0;
+    const animalsBonus = Math.min(20, sessionDetections.length * 2);
+    const routeBonus = selectedRouteObj ? (selectedRouteObj.bonusXp || 15) : 0;
+    const isCertified = useGamificationStore.getState().isAcademyCertified;
+    const subtotal = effortXp + completeBonus + animalsBonus + routeBonus;
+    const certifiedBonus = isCertified ? Math.round(subtotal * 0.1) : 0;
+    const totalXp = subtotal + certifiedBonus;
+
+    const reason =
+      effectiveChecklist && sessionDetections.length === 0
+        ? 'Completed Zero-Detection Survey (eBird scientific non-detection)'
+        : 'Completed Structured Transect Survey';
+
+    const { sessionId } = pendingSyncPayload;
+
+    useSurveyStore.getState().setCompleteChecklist(effectiveChecklist);
 
     // 1. Award calibrated scientific XP
     useGamificationStore.getState().awardXp(totalXp, reason);
@@ -570,11 +659,18 @@ export const StructuredSurveyScreen: React.FC<StructuredSurveyScreenProps> = ({
         species: d.species,
         group_size: d.group_size || 1,
         distance_from_path_m: d.distance_from_path_m,
-        body_condition_score: 3,
+        body_condition_score: d.body_condition_score || 3,
         location: {
           type: 'Point' as const,
           coordinates: [d.animalLon ?? d.longitude ?? currentLon, d.animalLat ?? d.latitude ?? currentLat] as [number, number],
         },
+        observer_location: {
+          type: 'Point' as const,
+          coordinates: [d.longitude ?? currentLon, d.latitude ?? currentLat] as [number, number],
+        },
+        bearing_deg: d.bearing_deg ?? null,
+        distance_estimate_m: d.distance_from_path_m ?? null,
+        gps_accuracy_m: d.gps_accuracy_m ?? (gpsAccuracy || null),
         notes: d.notes,
       };
     });
@@ -601,21 +697,38 @@ export const StructuredSurveyScreen: React.FC<StructuredSurveyScreenProps> = ({
       });
     });
 
+    const trueStartTime =
+      surveyStartedAtRef.current || new Date(Date.now() - elapsedSeconds * 1000).toISOString();
+
+    const rawPoints = useSurveyStore.getState().rawTrackPoints;
+    const effectiveTrackPoints = rawPoints.length > 0
+      ? rawPoints
+      : activeTrack.map(([lat, lon]) => ({
+          recorded_at: new Date().toISOString(),
+          latitude: lat,
+          longitude: lon,
+          accuracy_m: gpsAccuracy || null,
+        }));
+
     useSyncStore.getState().enqueueSurvey({
       session: {
         id: sessionId,
         protocol,
-        start_time: new Date(Date.now() - elapsedSeconds * 1000).toISOString(),
+        start_time: trueStartTime,
         end_time: new Date().toISOString(),
         distance_km: parseFloat(distanceKm.toFixed(3)),
-        complete_session: completeChecklist,
+        complete_session: effectiveChecklist,
         number_of_observers: 1,
         app_version: '2.0.0',
+        device_gps_accuracy_avg: gpsAccuracy || null,
       },
       track: trackCoords.length >= 2 ? { type: 'LineString', coordinates: trackCoords } : null,
+      track_points: effectiveTrackPoints,
       observations: observationsPayload,
       photos: photosPayload,
     });
+
+    useSurveyStore.getState().finishSurvey();
 
     hapticSuccess();
     setShowSummaryModal(false);
@@ -625,7 +738,7 @@ export const StructuredSurveyScreen: React.FC<StructuredSurveyScreenProps> = ({
       route_id: selectedRouteObj?.id || null,
       duration_min: parseFloat((elapsedSeconds / 60).toFixed(2)),
       distance_km: parseFloat(distanceKm.toFixed(3)),
-      complete_session: completeChecklist,
+      complete_session: effectiveChecklist,
       detections_count: sessionDetections.length,
       number_of_observers: 1,
       xp_earned: totalXp,
@@ -915,7 +1028,7 @@ export const StructuredSurveyScreen: React.FC<StructuredSurveyScreenProps> = ({
                       {route.name}
                     </Text>
                     <Text style={styles.routeCardSub} numberOfLines={1}>
-                      {route.nameAr}
+                      {route.zone}
                     </Text>
 
                     <View style={styles.routeMetricsRow}>
@@ -1007,12 +1120,12 @@ export const StructuredSurveyScreen: React.FC<StructuredSurveyScreenProps> = ({
               initialLat={currentLat}
               initialLon={currentLon}
               initialZoom={16}
-              markers={sessionDetections.map((d) => ({
+              markers={sessionDetections.map((d, idx) => ({
                 id: d.id,
                 latitude: d.latitude,
                 longitude: d.longitude,
                 species: d.species,
-                identifier: d.identifier,
+                identifier: d.identifier || generateScientificObservationCode(d.species, idx + 1),
                 distance_from_path_m: d.distance_from_path_m,
               }))}
               colonyMarkers={colonies.map((c) => ({
@@ -1046,10 +1159,11 @@ export const StructuredSurveyScreen: React.FC<StructuredSurveyScreenProps> = ({
             catsCount={sessionDetections.filter((d) => d.species === 'cat').length}
             dogsCount={sessionDetections.filter((d) => d.species === 'dog').length}
             isPaused={isPaused}
+            gpsAccuracyM={gpsAccuracy}
             onPauseToggle={() => setIsPaused(!isPaused)}
             onLogCat={() => openNewDetectionModalWithSpecies('cat')}
             onLogDog={() => openNewDetectionModalWithSpecies('dog')}
-            onFinish={() => setShowEndModal(true)}
+            onFinish={() => confirmEnd(true)}
           />
 
           {/* In-Survey Recorded Detections List (CRUD) */}
@@ -1080,10 +1194,12 @@ export const StructuredSurveyScreen: React.FC<StructuredSurveyScreenProps> = ({
                             { backgroundColor: isCat ? IOSColors.systemTeal : IOSColors.systemOrange },
                           ]}
                         >
-                          <Text style={styles.detectionBadgeText}>#{index + 1}</Text>
+                          <Text style={styles.detectionBadgeText}>
+                            {det.identifier || generateScientificObservationCode(det.species, index + 1)}
+                          </Text>
                         </View>
                         <Text style={styles.detectionSpecies}>
-                          {det.identifier ? det.identifier : (isCat ? t('animal.cat') : t('animal.dog'))}
+                          {isCat ? 'Cat' : 'Dog'}
                           {det.group_size > 1 ? ` (Group: ${det.group_size})` : ''}
                         </Text>
                         <View style={styles.distanceTag}>
@@ -1281,6 +1397,44 @@ export const StructuredSurveyScreen: React.FC<StructuredSurveyScreenProps> = ({
               species={sightingSpecies}
             />
 
+            {/* Body Condition Score (BCS 1 to 5) */}
+            <View style={{ marginBottom: 14 }}>
+              <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 6 }}>
+                <Text style={styles.fieldLabel}>Body Condition Score (BCS)</Text>
+                <Text style={styles.groupSizeHint}>
+                  {bodyConditionScore === 1 ? '1 - Emaciated' :
+                   bodyConditionScore === 2 ? '2 - Underweight' :
+                   bodyConditionScore === 3 ? '3 - Ideal / Normal' :
+                   bodyConditionScore === 4 ? '4 - Overweight' : '5 - Obese'}
+                </Text>
+              </View>
+              <View style={styles.quickPresetRow}>
+                {[1, 2, 3, 4, 5].map((bcs) => (
+                  <TouchableOpacity
+                    key={bcs}
+                    style={[
+                      styles.quickPresetPill,
+                      bodyConditionScore === bcs && styles.quickPresetPillActive,
+                    ]}
+                    onPress={() => {
+                      hapticTabSwitch();
+                      setBodyConditionScore(bcs);
+                    }}
+                    activeOpacity={0.7}
+                  >
+                    <Text
+                      style={[
+                        styles.quickPresetPillText,
+                        bodyConditionScore === bcs && styles.quickPresetPillTextActive,
+                      ]}
+                    >
+                      BCS {bcs}
+                    </Text>
+                  </TouchableOpacity>
+                ))}
+              </View>
+            </View>
+
             {/* Known Animals Nearby Candidate Link */}
             {nearbyCandidates.length > 0 ? (
               <TouchableOpacity
@@ -1457,48 +1611,6 @@ export const StructuredSurveyScreen: React.FC<StructuredSurveyScreenProps> = ({
         }}
       />
 
-      {/* eBird Complete Checklist Modal (Non-Detections) */}
-      <Modal
-        visible={showEndModal}
-        transparent
-        animationType="fade"
-        onRequestClose={() => {
-          hapticModalClose();
-          setShowEndModal(false);
-        }}
-      >
-        <View style={styles.alertOverlay}>
-          <View style={styles.alertCard}>
-            <View style={styles.alertIconCircle}>
-              <IOSIcon name="check" size={28} color={IOSColors.systemTeal} />
-            </View>
-            <Text style={styles.alertTitle}>{t('survey.complete_question')}</Text>
-            <Text style={styles.alertMessage}>{t('survey.complete_explanation')}</Text>
-
-            <View style={styles.alertBtnStack}>
-              <IOSButton
-                title={t('survey.yes_complete')}
-                onPress={() => confirmEnd(true)}
-              />
-              <IOSButton
-                title={t('survey.no_incomplete')}
-                variant="secondary"
-                onPress={() => confirmEnd(false)}
-              />
-              <TouchableOpacity
-                style={styles.cancelEndSurveyBtn}
-                onPress={() => {
-                  hapticModalClose();
-                  setShowEndModal(false);
-                }}
-                activeOpacity={0.7}
-              >
-                <Text style={styles.cancelEndSurveyText}>Cancel & Continue Survey</Text>
-              </TouchableOpacity>
-            </View>
-          </View>
-        </View>
-      </Modal>
 
       {/* Fixed Route Picker & "Adopt a Route" Catalog Modal */}
       <RoutePickerModal

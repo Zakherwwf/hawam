@@ -99,8 +99,12 @@ export function generateOfflineHeuristicAnalysis(
   };
 }
 
+import { supabase } from '../supabase.ts';
+
 /**
- * Main multimodal analysis function
+ * Main multimodal analysis function.
+ * Proxies through Supabase Edge Function 'analyze-photo' so client bundles do NOT leak Gemini keys.
+ * Falls back to offline heuristic if offline or when API call fails.
  */
 export async function analyzeAnimalPhoto(
   photoUriOrBase64: string,
@@ -110,73 +114,80 @@ export async function analyzeAnimalPhoto(
     speciesHint?: 'cat' | 'dog';
   }
 ): Promise<AnimalVisionAnalysis> {
-  const apiKey =
-    options?.apiKey ||
-    process.env.EXPO_PUBLIC_GEMINI_API_KEY ||
-    process.env.GEMINI_API_KEY ||
-    '';
+  // If an explicit API key is provided (e.g. in automated unit tests), execute direct fetch
+  if (options?.apiKey) {
+    const model = options.model || 'gemini-3-flash';
+    const apiEndpoint = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${options.apiKey}`;
 
-  // If no API key is provided, return offline heuristic immediately
-  if (!apiKey) {
-    return generateOfflineHeuristicAnalysis({ speciesHint: options?.speciesHint });
+    try {
+      let base64Data = photoUriOrBase64;
+      let mimeType = 'image/jpeg';
+
+      if (photoUriOrBase64.startsWith('data:')) {
+        const parts = photoUriOrBase64.split(',');
+        const match = parts[0].match(/:(.*?);/);
+        if (match) mimeType = match[1];
+        base64Data = parts[1];
+      }
+
+      const payload = {
+        contents: [
+          {
+            parts: [
+              { text: SYSTEM_PROMPT },
+              {
+                inline_data: {
+                  mime_type: mimeType,
+                  data: base64Data,
+                },
+              },
+            ],
+          },
+        ],
+        generationConfig: {
+          temperature: 0.1,
+          response_mime_type: 'application/json',
+        },
+      };
+
+      const res = await fetch(apiEndpoint, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload),
+      });
+
+      if (!res.ok) {
+        return generateOfflineHeuristicAnalysis({ speciesHint: options?.speciesHint });
+      }
+
+      const data = await res.json();
+      const candidateText = data.candidates?.[0]?.content?.parts?.[0]?.text || '';
+
+      if (!candidateText) {
+        return generateOfflineHeuristicAnalysis({ speciesHint: options?.speciesHint });
+      }
+
+      return parseGeminiVisionResponse(candidateText, model);
+    } catch {
+      return generateOfflineHeuristicAnalysis({ speciesHint: options?.speciesHint });
+    }
   }
 
-  const model = options?.model || 'gemini-3-flash';
-  const apiEndpoint = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${apiKey}`;
-
+  // Production path: Secure Supabase Edge Function without client secret exposure
   try {
-    let base64Data = photoUriOrBase64;
-    let mimeType = 'image/jpeg';
-
-    if (photoUriOrBase64.startsWith('data:')) {
-      const parts = photoUriOrBase64.split(',');
-      const match = parts[0].match(/:(.*?);/);
-      if (match) mimeType = match[1];
-      base64Data = parts[1];
-    }
-
-    const payload = {
-      contents: [
-        {
-          parts: [
-            { text: SYSTEM_PROMPT },
-            {
-              inline_data: {
-                mime_type: mimeType,
-                data: base64Data,
-              },
-            },
-          ],
-        },
-      ],
-      generationConfig: {
-        temperature: 0.1,
-        response_mime_type: 'application/json',
+    const { data, error } = await supabase.functions.invoke('analyze-photo', {
+      body: {
+        photo_base64: photoUriOrBase64,
+        species_hint: options?.speciesHint,
       },
-    };
-
-    const res = await fetch(apiEndpoint, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(payload),
     });
 
-    if (!res.ok) {
-      console.warn(`Gemini API returned status ${res.status}, falling back to offline analysis`);
+    if (error || !data?.data) {
       return generateOfflineHeuristicAnalysis({ speciesHint: options?.speciesHint });
     }
 
-    const data = await res.json();
-    const candidateText =
-      data.candidates?.[0]?.content?.parts?.[0]?.text || '';
-
-    if (!candidateText) {
-      return generateOfflineHeuristicAnalysis({ speciesHint: options?.speciesHint });
-    }
-
-    return parseGeminiVisionResponse(candidateText, model);
-  } catch (err) {
-    console.warn('Network error calling Gemini API:', err);
+    return data.data as AnimalVisionAnalysis;
+  } catch {
     return generateOfflineHeuristicAnalysis({ speciesHint: options?.speciesHint });
   }
 }

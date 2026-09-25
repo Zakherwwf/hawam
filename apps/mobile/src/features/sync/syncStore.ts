@@ -10,9 +10,10 @@
  */
 
 import { create } from 'zustand';
-import AsyncStorage from '@react-native-async-storage/async-storage';
-import { pushSurveyBundle, SurveyBundlePayload } from '../../services/supabase';
-import { uploadAnimalPhoto } from '../../services/storageService';
+import { storage } from '../../services/storageAdapter.ts';
+import { localDb } from '../../db/localDb.ts';
+import { pushSurveyBundle, type SurveyBundlePayload } from '../../services/supabase.ts';
+import { uploadAnimalPhoto } from '../../services/storageService.ts';
 
 export interface OutboxItem {
   id: string;
@@ -47,18 +48,58 @@ export const useSyncStore = create<SyncState>((set, get) => ({
 
   loadOutbox: async () => {
     try {
-      const stored = await AsyncStorage.getItem('hawem_outbox_v2');
+      await localDb.migrateFromAsyncStorage().catch(() => {});
+      const dbItems = await localDb.getAllOutbox().catch(() => []);
+      if (dbItems.length > 0) {
+        const outboxList: OutboxItem[] = dbItems
+          .filter((i) => i.status !== 'synced')
+          .map((i) => {
+            let payload: SurveyBundlePayload;
+            try {
+              payload = JSON.parse(i.payloadJson);
+            } catch {
+              payload = { session: { id: i.sessionId } } as any;
+            }
+            return {
+              id: i.id,
+              payload,
+              created_at: i.createdAt,
+              status: i.status as any,
+              attempts: i.attempts,
+              lastError: i.lastError ?? undefined,
+            };
+          });
+        set({ outbox: outboxList, pendingCount: outboxList.length });
+        return;
+      }
+
+      const stored = await storage.getItem('hawem_outbox_v2');
       if (stored) {
         const parsed: OutboxItem[] = JSON.parse(stored);
-        set({ outbox: parsed, pendingCount: parsed.length });
+        if (Array.isArray(parsed)) {
+          set({ outbox: parsed, pendingCount: parsed.length });
+        }
       }
     } catch (err) {
-      console.warn('Failed loading outbox from storage:', err);
+      console.warn('[syncStore] Failed loading outbox from storage:', err);
     }
   },
 
   enqueueSurvey: async (bundle: SurveyBundlePayload) => {
-    const { outbox } = get();
+    // If cold start or store not loaded yet, pull existing items first to prevent overwriting
+    let currentOutbox = get().outbox;
+    if (currentOutbox.length === 0) {
+      try {
+        const stored = await storage.getItem('hawem_outbox_v2');
+        if (stored) {
+          const parsed = JSON.parse(stored);
+          if (Array.isArray(parsed) && parsed.length > 0) {
+            currentOutbox = parsed;
+          }
+        }
+      } catch {}
+    }
+
     const newItem: OutboxItem = {
       id: `outbox-${bundle.session.id}`,
       payload: bundle,
@@ -67,11 +108,26 @@ export const useSyncStore = create<SyncState>((set, get) => ({
       attempts: 0,
     };
 
-    const updated = [...outbox, newItem];
-    set({ outbox: updated, pendingCount: updated.length });
-    await AsyncStorage.setItem('hawem_outbox_v2', JSON.stringify(updated)).catch(() => {});
+    // Persist to local SQLite outbox
+    await localDb.enqueueOutbox({
+      id: newItem.id,
+      sessionId: bundle.session.id,
+      payloadJson: JSON.stringify(bundle),
+      createdAt: newItem.created_at,
+      status: 'pending',
+      attempts: 0,
+    }).catch(() => {});
 
-    // Try immediate background sync
+    // Deduplicate against duplicate submission of identical session ID
+    const deduplicated = currentOutbox.filter(
+      (item) => item.payload.session.id !== bundle.session.id
+    );
+    const updated = [...deduplicated, newItem];
+
+    set({ outbox: updated, pendingCount: updated.length });
+    await storage.setItem('hawem_outbox_v2', JSON.stringify(updated)).catch(() => {});
+
+    // Trigger immediate background sync
     get().triggerSync().catch(() => {});
   },
 
@@ -83,11 +139,18 @@ export const useSyncStore = create<SyncState>((set, get) => ({
 
     set({ isSyncing: true });
 
-    const remainingItems: OutboxItem[] = [];
+    const syncedItemIds = new Set<string>();
+    const failedItemsMap = new Map<string, { attempts: number; lastError?: string }>();
     let syncedCount = 0;
 
-    for (const item of outbox) {
+    // Snapshot items to process
+    const itemsToProcess = [...outbox];
+
+    for (const item of itemsToProcess) {
       try {
+        let photoUploadFailed = false;
+        let photoErrorMsg: string | undefined;
+
         // Upload any local binary photos to Supabase Storage before RPC bundle submission
         if (item.payload.photos && item.payload.photos.length > 0) {
           for (const photo of item.payload.photos) {
@@ -102,47 +165,78 @@ export const useSyncStore = create<SyncState>((set, get) => ({
                 photo.observation_id,
                 photo.id
               );
-              if (uploadRes.success) {
+              if (uploadRes.success && uploadRes.storagePath) {
                 photo.storage_path = uploadRes.storagePath;
+              } else {
+                photoUploadFailed = true;
+                photoErrorMsg = uploadRes.error || 'Photo upload failed';
+                break; // Stop uploading subsequent photos for this observation
               }
             }
           }
         }
 
+        // CRITICAL DATA INTEGRITY: If photo upload failed, never push bundle with local file:// paths!
+        if (photoUploadFailed) {
+          failedItemsMap.set(item.id, {
+            attempts: item.attempts + 1,
+            lastError: photoErrorMsg || 'Photo upload failed - will retry',
+          });
+          continue;
+        }
+
         const result = await pushSurveyBundle(item.payload);
         if (result.success) {
           syncedCount++;
+          syncedItemIds.add(item.id);
+          localDb.removeOutboxItem(item.id).catch(() => {});
+          localDb.updateSessionStatus(item.payload.session.id, 'finished').catch(() => {});
         } else {
-          remainingItems.push({
-            ...item,
+          failedItemsMap.set(item.id, {
             attempts: item.attempts + 1,
-            status: 'failed',
             lastError: result.error,
           });
+          localDb.updateOutboxStatus(item.id, 'failed', item.attempts + 1, result.error).catch(() => {});
         }
       } catch (err: any) {
-        remainingItems.push({
-          ...item,
+        failedItemsMap.set(item.id, {
           attempts: item.attempts + 1,
-          status: 'failed',
           lastError: err?.message || 'Sync failed',
         });
+        localDb.updateOutboxStatus(item.id, 'failed', item.attempts + 1, err?.message || 'Sync failed').catch(() => {});
       }
     }
+
+    // Atomic update: Preserve items enqueued in get().outbox while sync was running!
+    const latestOutbox = get().outbox;
+    const finalOutbox = latestOutbox
+      .filter((item) => !syncedItemIds.has(item.id))
+      .map((item) => {
+        const failureInfo = failedItemsMap.get(item.id);
+        if (failureInfo) {
+          return {
+            ...item,
+            attempts: failureInfo.attempts,
+            status: 'failed' as const,
+            lastError: failureInfo.lastError,
+          };
+        }
+        return item;
+      });
 
     const nowStr = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
 
     set({
       isSyncing: false,
-      outbox: remainingItems,
-      pendingCount: remainingItems.length,
+      outbox: finalOutbox,
+      pendingCount: finalOutbox.length,
       lastSyncedAt: syncedCount > 0 ? nowStr : get().lastSyncedAt,
     });
 
-    await AsyncStorage.setItem('hawem_outbox_v2', JSON.stringify(remainingItems)).catch(() => {});
+    await storage.setItem('hawem_outbox_v2', JSON.stringify(finalOutbox)).catch(() => {});
 
     return {
-      success: remainingItems.length === 0,
+      success: finalOutbox.length === 0,
       syncedCount,
     };
   },
@@ -153,6 +247,7 @@ export const useSyncStore = create<SyncState>((set, get) => ({
 
   clearOutbox: () => {
     set({ outbox: [], pendingCount: 0 });
-    AsyncStorage.removeItem('hawem_outbox_v2').catch(() => {});
+    storage.removeItem('hawem_outbox_v2').catch(() => {});
+    localDb.clearAllForTesting();
   },
 }));

@@ -41,9 +41,8 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({
   stats,
   userAccount,
 }) => {
-  const { t, i18n } = useTranslation();
+  const { t } = useTranslation();
   const { themeMode, colors, toggleTheme } = useThemeStore();
-  const isArabic = i18n.language === 'ar';
 
   const dateFormatted = new Date().toLocaleDateString('en-GB', {
     weekday: 'short',

@@ -180,31 +180,7 @@ export const SettingsScreen: React.FC<SettingsScreenProps> = ({
               ) : null
             }
             onPress={() => handleSelectLanguage('en')}
-          />
-          <IOSListRow
-            title="Français"
-            subtitle="Terminologie francophone"
-            icon="globe"
-            iconColor={IOSColors.systemIndigo}
-            rightComponent={
-              currentLang === 'fr' ? (
-                <IOSIcon name="check" size={18} color={IOSColors.systemTeal} />
-              ) : null
-            }
-            onPress={() => handleSelectLanguage('fr')}
-          />
-          <IOSListRow
-            title="العربية (تونس)"
-            subtitle="اللغة العربية - استمارات الحقل"
-            icon="globe"
-            iconColor={IOSColors.systemGreen}
             isLast
-            rightComponent={
-              currentLang === 'ar' ? (
-                <IOSIcon name="check" size={18} color={IOSColors.systemTeal} />
-              ) : null
-            }
-            onPress={() => handleSelectLanguage('ar')}
           />
         </IOSGroupedList>
 

@@ -17,6 +17,7 @@ import { LinearGradient } from 'expo-linear-gradient';
 import { IOSIcon } from '../components/ios';
 import { InteractiveMapView, MapMarker, ColonyMarker, TransectMarker, FocusCoordinate } from '../components/map/InteractiveMapView';
 import { SightingItem } from './SightingsScreen';
+import { generateScientificObservationCode } from '../utils/scientificCodes';
 import { useColoniesStore, CatColony } from '../features/colonies/coloniesStore';
 import { useRoutesStore, FixedRoute } from '../features/routes/routesStore';
 import { ColonyInspectorModal } from '../components/colonies/ColonyInspectorModal';
@@ -147,16 +148,19 @@ export const MapOverviewScreen: React.FC<MapOverviewScreenProps> = ({
   // Convert filtered sightings to map markers
   const mapMarkers: MapMarker[] = useMemo(() => {
     if (activeFilter === 'colonies' || activeFilter === 'transects') return [];
-    return filteredSightings.map((s, idx) => ({
-      id: s.id,
-      latitude: s.latitude,
-      longitude: s.longitude,
-      species: s.species,
-      identifier: s.identifier,
-      label: s.identifier ? s.identifier : `${s.species === 'cat' ? 'CAT' : 'DOG'} #${idx + 1}`,
-      title: s.identifier ? s.identifier : `${s.species === 'cat' ? 'Cat' : 'Dog'} (${s.group_size || 1})`,
-      distance_from_path_m: s.distance_from_path_m,
-    }));
+    return filteredSightings.map((s, idx) => {
+      const code = s.identifier || generateScientificObservationCode(s.species, idx + 1);
+      return {
+        id: s.id,
+        latitude: s.latitude,
+        longitude: s.longitude,
+        species: s.species,
+        identifier: code,
+        label: code,
+        title: `${code} • ${s.species === 'cat' ? 'Cat' : 'Dog'} (${s.group_size || 1})`,
+        distance_from_path_m: s.distance_from_path_m,
+      };
+    });
   }, [filteredSightings, activeFilter]);
 
   // Filter colonies
@@ -869,11 +873,6 @@ export const MapOverviewScreen: React.FC<MapOverviewScreenProps> = ({
               <Text style={styles.sightingIdentifierHeadline}>
                 {selectedRoute.name}
               </Text>
-              {selectedRoute.nameAr ? (
-                <Text style={styles.transectArabicHeadline}>
-                  {selectedRoute.nameAr}
-                </Text>
-              ) : null}
 
               <Text style={styles.transectDescriptionText} numberOfLines={2}>
                 {selectedRoute.description}

@@ -42,12 +42,13 @@ function evaluateRoutesRLS(ctx: SecurityContext, routes: RouteRecord[]): RouteRe
 
 /**
  * Evaluates RLS policy on public.observations:
- * CREATE POLICY "Allow public read on generalized observations"
- * ON public.observations FOR SELECT TO anon, authenticated
- * USING (true);
+ * Generalized observations are accessible to authenticated users only.
+ * Anonymous users must query the aggregated get_public_density_map function.
  */
 function evaluateObservationsRLS(ctx: SecurityContext, observations: ObservationRecord[]): ObservationRecord[] {
-  // Both anon and authenticated can read generalized observations
+  if (ctx.role === 'anonymous') {
+    return [];
+  }
   return observations;
 }
 
@@ -171,7 +172,7 @@ test('Public Density Map suppresses cells below k-anonymity threshold to prevent
   assert.equal(isolatedCell, undefined, 'Isolated sighting cell must NOT appear on public map');
 });
 
-test('RLS Policy: Anonymous and unauthenticated visitors CAN read active routes and generalized observations', () => {
+test('RLS Policy: Anonymous and unauthenticated visitors CAN read active routes but NOT raw observations', () => {
   const routes: RouteRecord[] = [
     { id: 'route-1', name: 'Medina Bab Souika', is_active: true },
     { id: 'route-2-inactive', name: 'Archived Route', is_active: false },
@@ -187,15 +188,20 @@ test('RLS Policy: Anonymous and unauthenticated visitors CAN read active routes 
   ];
 
   const anonCtx: SecurityContext = { userId: null, role: 'anonymous' };
+  const authCtx: SecurityContext = { userId: 'u2', role: 'volunteer' };
 
   // 1. Can view active routes, cannot view inactive routes
   const accessibleRoutes = evaluateRoutesRLS(anonCtx, routes);
   assert.equal(accessibleRoutes.length, 1);
   assert.equal(accessibleRoutes[0].id, 'route-1');
 
-  // 2. Can view generalized public observations
-  const accessibleObs = evaluateObservationsRLS(anonCtx, observations);
-  assert.equal(accessibleObs.length, 1);
-  assert.equal(accessibleObs[0].id, 'obs-1');
+  // 2. Anonymous is blocked from raw observations (must use aggregated density map per CLAUDE.md §4.3)
+  const anonObs = evaluateObservationsRLS(anonCtx, observations);
+  assert.equal(anonObs.length, 0, 'Anonymous users cannot query raw observation records');
+
+  // 3. Authenticated surveyors can view generalized observations
+  const authObs = evaluateObservationsRLS(authCtx, observations);
+  assert.equal(authObs.length, 1);
+  assert.equal(authObs[0].id, 'obs-1');
 });
 

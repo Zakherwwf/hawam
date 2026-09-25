@@ -14,7 +14,8 @@ config.resolver.nodeModulesPaths = [
 
 config.resolver.extraNodeModules = {
   ...(config.resolver.extraNodeModules || {}),
-  '@tunisia-survey/shared': path.resolve(projectRoot, 'src/shared'),
+  '@tunisia-survey/shared': path.resolve(workspaceRoot, 'packages/shared'),
+  '@tunisia-survey/design-tokens': path.resolve(workspaceRoot, 'packages/design-tokens'),
 };
 
 module.exports = config;

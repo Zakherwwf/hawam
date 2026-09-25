@@ -92,6 +92,13 @@ export interface SurveyBundlePayload {
     group_size?: number;
     distance_from_path_m?: number | null;
     body_condition_score?: number | null;
+    observer_location?: {
+      type: 'Point';
+      coordinates: [number, number]; // [lon, lat]
+    };
+    bearing_deg?: number | null;
+    distance_estimate_m?: number | null;
+    gps_accuracy_m?: number | null;
     location: {
       type: 'Point';
       coordinates: [number, number]; // [lon, lat]

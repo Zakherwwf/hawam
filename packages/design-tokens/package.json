@@ -1,0 +1,22 @@
+{
+  "name": "@tunisia-survey/design-tokens",
+  "version": "1.0.0",
+  "type": "module",
+  "private": true,
+  "main": "./dist/src/index.js",
+  "types": "./dist/src/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/src/index.d.ts",
+      "import": "./dist/src/index.js",
+      "default": "./dist/src/index.js"
+    }
+  },
+  "scripts": {
+    "build": "tsc",
+    "test": "node --experimental-strip-types --test test/*.test.ts"
+  },
+  "devDependencies": {
+    "typescript": "^5.6.3"
+  }
+}

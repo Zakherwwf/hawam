@@ -215,17 +215,6 @@ export const CreateColonyModal: React.FC<CreateColonyModalProps> = ({
               </View>
 
               <View style={styles.fieldGroup}>
-                <Text style={styles.fieldLabel}>Arabic Name (Optional)</Text>
-                <TextInput
-                  style={[styles.input, { textAlign: 'right' }]}
-                  placeholder={isDog ? 'مثال: قطيع السوق المركزي' : 'مثال: مستعمرة باب سويقة'}
-                  placeholderTextColor={IOSColors.tertiaryLabel}
-                  value={nameAr}
-                  onChangeText={setNameAr}
-                />
-              </View>
-
-              <View style={styles.fieldGroup}>
                 <Text style={styles.fieldLabel}>Zone / Delegation</Text>
                 <TextInput
                   style={styles.input}

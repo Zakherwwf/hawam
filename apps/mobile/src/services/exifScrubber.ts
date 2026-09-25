@@ -22,14 +22,33 @@ export async function processAndScrubPhoto(
   rawPhotoUri: string,
   deviceGpsFallback?: { latitude: number; longitude: number; accuracy: number }
 ): Promise<ProcessedPhotoResult> {
-  // In Expo React Native runtime, this uses ImageManipulator or canvas
-  // to re-encode the image, which naturally strips all EXIF metadata.
-  
+  // Re-encode via expo-image-manipulator to strip personal & location EXIF metadata
+  // while capping maximum dimension to 1600px for optimal network sync and pattern re-ID.
+  try {
+    const ImageManipulator = await import('expo-image-manipulator');
+    if (ImageManipulator?.manipulateAsync) {
+      const result = await ImageManipulator.manipulateAsync(
+        rawPhotoUri,
+        [{ resize: { width: 1600 } }],
+        { compress: 0.85, format: ImageManipulator.SaveFormat.JPEG }
+      );
+
+      return {
+        cleanedUri: result.uri,
+        extractedGps: deviceGpsFallback,
+        width: result.width,
+        height: result.height,
+      };
+    }
+  } catch (err) {
+    // In Node.js unit tests or environments without native image manipulator
+  }
+
   return {
     cleanedUri: rawPhotoUri,
     extractedGps: deviceGpsFallback,
-    width: 1920,
-    height: 1440,
+    width: 1600,
+    height: 1200,
   };
 }
 

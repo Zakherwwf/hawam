@@ -184,7 +184,6 @@ export const RoutePickerModal: React.FC<RoutePickerModalProps> = ({
                 <View style={styles.titleRow}>
                   <View style={{ flex: 1 }}>
                     <Text style={styles.routeTitle}>{route.name}</Text>
-                    <Text style={styles.routeArabicTitle}>{route.nameAr}</Text>
                   </View>
                   {isSelected && (
                     <View style={styles.selectedBadge}>

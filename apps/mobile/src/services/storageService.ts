@@ -10,6 +10,7 @@
  */
 
 import { supabase } from './supabase.ts';
+import { processAndScrubPhoto } from './exifScrubber.ts';
 
 export const ANIMAL_PHOTOS_BUCKET = 'animal-photos';
 
@@ -103,14 +104,22 @@ export async function uploadAnimalPhoto(
     let uploadBody: ArrayBuffer | FormData | Uint8Array;
     let contentType = 'image/jpeg';
 
+    let activeUri = localUri;
     if (localUri.startsWith('data:image/')) {
       const mimeMatch = localUri.match(/^data:(image\/[a-zA-Z+]+);base64,/);
       if (mimeMatch) contentType = mimeMatch[1];
       uploadBody = base64ToUint8Array(localUri);
     } else {
-      // Local filesystem URI (Expo / React Native)
+      // Local filesystem URI: Strip EXIF metadata and resize before uploading
       try {
-        const response = await fetch(localUri);
+        const scrubbed = await processAndScrubPhoto(localUri);
+        activeUri = scrubbed.cleanedUri;
+      } catch (scrubErr) {
+        console.warn('[storageService] EXIF scrub exception, continuing with localUri:', scrubErr);
+      }
+
+      try {
+        const response = await fetch(activeUri);
         const arrayBuffer = await response.arrayBuffer();
         if (arrayBuffer && arrayBuffer.byteLength > 0) {
           uploadBody = arrayBuffer;
@@ -121,7 +130,7 @@ export async function uploadAnimalPhoto(
         // Fallback: React Native FormData
         const formData = new FormData();
         formData.append('file', {
-          uri: localUri,
+          uri: activeUri,
           name: `${photoId}.jpg`,
           type: contentType,
         } as any);

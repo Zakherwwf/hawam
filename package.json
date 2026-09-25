@@ -7,7 +7,9 @@
   "scripts": {
     "test:security": "pnpm --filter @tunisia-survey/supabase test",
     "test:shared": "pnpm --filter @tunisia-survey/shared test",
+    "test:mobile": "pnpm --filter @tunisia-survey/mobile test",
     "test": "pnpm -r test",
+    "typecheck": "pnpm --filter @tunisia-survey/shared build && pnpm --filter @tunisia-survey/design-tokens build && cd apps/mobile && npx tsc --noEmit",
     "build": "pnpm -r build",
     "mobile": "pnpm --filter @tunisia-survey/mobile start",
     "dashboard": "pnpm --filter @tunisia-survey/dashboard dev"

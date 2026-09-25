@@ -180,5 +180,16 @@
     "yes": "Yes",
     "no": "No",
     "close": "Close"
+  },
+  "ethics": {
+    "title": "Strict Geodata Protection",
+    "warning": "To protect free-roaming animals from poisoning or unauthorized culling, raw coordinates are NEVER publicly disclosed.",
+    "points": [
+      "Exact GPS coordinates are restricted exclusively to certified scientific researchers (Pasteur Institute / National Veterinary Services).",
+      "Public maps display only anonymized, aggregated 1 km² density cells.",
+      "You can export or delete your account and all contributed data at any time."
+    ],
+    "consent_checkbox": "I accept the ethical charter, privacy policy, and scientific data-sharing protocol",
+    "accept_btn": "Accept & Continue"
   }
 }

@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import {
   View,
   Text,
@@ -7,13 +7,12 @@ import {
   TouchableOpacity,
   ScrollView,
   SafeAreaView,
-  Alert,
 } from 'react-native';
-import { IOSColors, IOSTypography } from '../../theme/ios';
+import { colors, typography, spacing, radius, touchTargets } from '@tunisia-survey/design-tokens';
 import { LinearGradient } from 'expo-linear-gradient';
-import { IOSIcon } from '../ios';
+import { Icon } from '../design-system/Icon';
+import { Button } from '../design-system/Button';
 import { FixedRoute } from '../../features/routes/routesStore';
-import { AnimatedHeroBanner } from '../common/AnimatedHeroBanner';
 import {
   hapticModalClose,
   hapticButtonPress,
@@ -41,7 +40,7 @@ export interface SurveySummaryData {
 interface SurveySummaryModalProps {
   visible: boolean;
   data: SurveySummaryData;
-  onConfirmAndClose: () => void;
+  onConfirmAndClose: (checklistComplete: boolean) => void;
 }
 
 export const SurveySummaryModal: React.FC<SurveySummaryModalProps> = ({
@@ -49,6 +48,9 @@ export const SurveySummaryModal: React.FC<SurveySummaryModalProps> = ({
   data,
   onConfirmAndClose,
 }) => {
+  const [step, setStep] = useState<'checklist' | 'summary'>('checklist');
+  const [isChecklistComplete, setIsChecklistComplete] = useState<boolean>(data.completeChecklist);
+
   const formatTime = (secs: number) => {
     const mins = Math.floor(secs / 60);
     const s = secs % 60;
@@ -57,21 +59,19 @@ export const SurveySummaryModal: React.FC<SurveySummaryModalProps> = ({
 
   const avgPaceKmH =
     data.durationSeconds > 0
-      ? ((data.distanceKm / (data.durationSeconds / 3600))).toFixed(1)
+      ? (data.distanceKm / (data.durationSeconds / 3600)).toFixed(1)
       : '0.0';
 
-  const handleShare = () => {
-    Alert.alert(
-      'Scientific Debrief Ready',
-      `Hawem Observatory Survey Record:\n• Distance: ${data.distanceKm.toFixed(2)} km\n• Duration: ${formatTime(data.durationSeconds)}\n• Animals: ${data.detectionsCount} (${data.catsCount} cats, ${data.dogsCount} dogs)\n• eBird Complete: ${data.completeChecklist ? 'YES' : 'NO'}\n• XP Awarded: +${data.totalXp} XP`,
-      [{ text: 'OK' }]
-    );
+  const handleSelectChecklist = (complete: boolean) => {
+    hapticButtonPress();
+    setIsChecklistComplete(complete);
+    setStep('summary');
   };
 
-  // Ring calculations (percentages capped at 100%)
-  const timeProgress = Math.min(100, Math.round((data.durationSeconds / 1200) * 100)); // 20 min baseline
-  const distProgress = Math.min(100, Math.round((data.distanceKm / 1.5) * 100)); // 1.5 km baseline
-  const obsProgress = data.completeChecklist ? 100 : Math.min(100, data.detectionsCount * 20);
+  const handleSaveAndFinish = () => {
+    hapticSuccess();
+    onConfirmAndClose(isChecklistComplete);
+  };
 
   return (
     <Modal
@@ -80,587 +80,424 @@ export const SurveySummaryModal: React.FC<SurveySummaryModalProps> = ({
       presentationStyle="pageSheet"
       onRequestClose={() => {
         hapticModalClose();
-        onConfirmAndClose();
+        onConfirmAndClose(isChecklistComplete);
       }}
     >
       <View style={styles.outerContainer}>
         <LinearGradient
-          colors={['#FDF2EC', '#FAF5EE', '#F3F6F2']}
+          colors={['#F8FAFC', '#F1F5F9', '#E2E8F0']}
           start={{ x: 0, y: 0 }}
           end={{ x: 1, y: 1 }}
           style={StyleSheet.absoluteFill}
         />
         <SafeAreaView style={styles.safeArea}>
-          <ScrollView
-            contentContainerStyle={styles.scrollContent}
-            showsVerticalScrollIndicator={false}
-            bounces={false}
-          >
-            {/* TripGlide Full-Bleed Animated Video Hero with floating modal controls */}
-            <AnimatedHeroBanner
-              height={230}
-              variant="backgroundHero"
-              scene="dog"
-              headline="Outstanding Effort"
-              subheadline={
-                data.selectedRoute
-                  ? `${data.selectedRoute.name} • ${data.selectedRoute.zone}`
-                  : 'Free-form Transect Survey • Tunisia'
-              }
-            >
-              {/* Floating Top Controls Row on Hero: Title Pill & Frosted Done Button */}
-              <View style={styles.modalHeroTopRow}>
-                <View style={styles.frostedModalTitlePill}>
-                  <Text style={styles.frostedModalTitleText}>SURVEY DEBRIEF</Text>
+          {step === 'checklist' ? (
+            /* STEP 1: Scientific Complete Checklist Validation Question */
+            <View style={styles.stepContainer}>
+              <View style={styles.stepHeader}>
+                <View style={styles.badgePill}>
+                  <Text style={styles.badgePillText}>SCIENTIFIC PROTOCOL</Text>
                 </View>
+                <Text style={styles.questionTitle}>
+                  Did you record every cat and dog you saw?
+                </Text>
+                <Text style={styles.questionContext}>
+                  Complete checklists allow scientists to calculate true encounter rates,
+                  including areas where zero animals were present. A zero-sighting walk is
+                  scientifically just as valuable.
+                </Text>
+              </View>
+
+              <View style={styles.optionsContainer}>
                 <TouchableOpacity
-                  onPress={() => {
-                    hapticModalClose();
-                    onConfirmAndClose();
-                  }}
-                  style={styles.frostedDoneBtn}
-                  activeOpacity={0.75}
+                  style={[
+                    styles.optionCard,
+                    isChecklistComplete && styles.optionCardSelected,
+                  ]}
+                  onPress={() => handleSelectChecklist(true)}
+                  activeOpacity={0.8}
                 >
-                  <Text style={styles.frostedDoneBtnText}>Done</Text>
+                  <View style={styles.optionIconContainer}>
+                    <Icon name="check" size={24} color={colors.light.success} />
+                  </View>
+                  <View style={styles.optionTextContainer}>
+                    <Text style={styles.optionTitle}>Yes, all animals were recorded</Text>
+                    <Text style={styles.optionDescription}>
+                      Every cat and dog observed along the transect was logged. Eligible for full scientific XP.
+                    </Text>
+                  </View>
+                </TouchableOpacity>
+
+                <TouchableOpacity
+                  style={[
+                    styles.optionCard,
+                    !isChecklistComplete && styles.optionCardSelected,
+                  ]}
+                  onPress={() => handleSelectChecklist(false)}
+                  activeOpacity={0.8}
+                >
+                  <View style={styles.optionIconContainer}>
+                    <Icon name="close" size={24} color={colors.light.warning} />
+                  </View>
+                  <View style={styles.optionTextContainer}>
+                    <Text style={styles.optionTitle}>No, some animals were missed</Text>
+                    <Text style={styles.optionDescription}>
+                      The survey was opportunistic or interrupted. Sightings will be recorded as incidental encounters.
+                    </Text>
+                  </View>
                 </TouchableOpacity>
               </View>
-            </AnimatedHeroBanner>
-
-            {/* Overlapping Content Sheet (TripGlide Pattern) */}
-            <View style={styles.overlappingSheet}>
-              {/* Protocol and Certification Badges */}
-              <View style={styles.sheetBadgesRow}>
-                <View style={styles.heroProtocolBadge}>
-                  <IOSIcon name="location" size={12} color="#0284C7" />
-                  <Text style={styles.heroProtocolBadgeText}>{data.protocol.toUpperCase()} PROTOCOL</Text>
+            </View>
+          ) : (
+            /* STEP 2: Scientific Summary Card & Effort XP Breakdown */
+            <ScrollView
+              contentContainerStyle={styles.scrollContent}
+              showsVerticalScrollIndicator={false}
+            >
+              <View style={styles.summaryHeader}>
+                <View style={styles.debriefPill}>
+                  <Text style={styles.debriefPillText}>SURVEY DEBRIEF</Text>
                 </View>
-                {data.completeChecklist && (
-                  <View style={styles.heroCompleteBadge}>
-                    <IOSIcon name="check" size={12} color="#059669" />
-                    <Text style={styles.heroCompleteBadgeText}>EBIRD CERTIFIED</Text>
+                <Text style={styles.summaryHeadline}>Survey Complete</Text>
+                <Text style={styles.summarySubheadline}>
+                  {data.selectedRoute
+                    ? `${data.selectedRoute.name} · ${data.selectedRoute.zone}`
+                    : `${data.protocol.toUpperCase()} TRANSECT`}
+                </Text>
+              </View>
+
+              {/* Status Badges */}
+              <View style={styles.statusBadgesRow}>
+                <View style={styles.protocolBadge}>
+                  <Icon name="map" size={14} color={colors.light.accent} />
+                  <Text style={styles.protocolBadgeText}>{data.protocol.toUpperCase()}</Text>
+                </View>
+                {isChecklistComplete && (
+                  <View style={styles.completeBadge}>
+                    <Icon name="check" size={14} color={colors.light.success} />
+                    <Text style={styles.completeBadgeText}>COMPLETE CHECKLIST</Text>
                   </View>
                 )}
               </View>
 
-          {/* Activity Rings Metric Display (Apple Fitness Inspired) */}
-          <View style={styles.ringsCard}>
-            <View style={styles.ringsVisual}>
-              {/* Outer Ring Bar: Time */}
-              <View style={styles.ringBarRow}>
-                <View style={[styles.ringIndicatorDot, { backgroundColor: '#10B981' }]} />
-                <Text style={styles.ringBarLabel}>Effort Time</Text>
-                <View style={styles.ringTrack}>
-                  <View style={[styles.ringFill, { width: `${timeProgress}%`, backgroundColor: '#10B981' }]} />
+              {/* Core Telemetry Grid */}
+              <View style={styles.metricsGrid}>
+                <View style={styles.metricCard}>
+                  <Text style={styles.metricBig}>{data.distanceKm.toFixed(2)}</Text>
+                  <Text style={styles.metricLabel}>KM WALKED</Text>
                 </View>
-                <Text style={styles.ringPercent}>{timeProgress}%</Text>
-              </View>
 
-              {/* Middle Ring Bar: Distance */}
-              <View style={styles.ringBarRow}>
-                <View style={[styles.ringIndicatorDot, { backgroundColor: '#0284C7' }]} />
-                <Text style={styles.ringBarLabel}>Transect Dist</Text>
-                <View style={styles.ringTrack}>
-                  <View style={[styles.ringFill, { width: `${distProgress}%`, backgroundColor: '#0284C7' }]} />
+                <View style={styles.metricCard}>
+                  <Text style={styles.metricBig}>{formatTime(data.durationSeconds)}</Text>
+                  <Text style={styles.metricLabel}>DURATION</Text>
                 </View>
-                <Text style={styles.ringPercent}>{distProgress}%</Text>
-              </View>
 
-              {/* Inner Ring Bar: Protocol Completeness */}
-              <View style={styles.ringBarRow}>
-                <View style={[styles.ringIndicatorDot, { backgroundColor: '#F59E0B' }]} />
-                <Text style={styles.ringBarLabel}>Completeness</Text>
-                <View style={styles.ringTrack}>
-                  <View style={[styles.ringFill, { width: `${obsProgress}%`, backgroundColor: '#F59E0B' }]} />
+                <View style={styles.metricCard}>
+                  <Text style={styles.metricBig}>{avgPaceKmH}</Text>
+                  <Text style={styles.metricLabel}>KM/H PACE</Text>
                 </View>
-                <Text style={styles.ringPercent}>{obsProgress}%</Text>
+
+                <View style={styles.metricCard}>
+                  <Text style={styles.metricBig}>{data.detectionsCount}</Text>
+                  <Text style={styles.metricLabel}>
+                    SIGHTINGS ({data.catsCount}C · {data.dogsCount}D)
+                  </Text>
+                </View>
               </View>
-            </View>
-          </View>
 
-          {/* Telemetry Metric Cards */}
-          <View style={styles.telemetryGrid}>
-            <View style={styles.telemetryCard}>
-              <Text style={styles.telemetryLabel}>ACTIVE TIME</Text>
-              <Text style={styles.telemetryValue}>{formatTime(data.durationSeconds)}</Text>
-              <Text style={styles.telemetrySub}>Elapsed Survey</Text>
-            </View>
+              {/* Transparent XP Effort Breakdown */}
+              <View style={styles.xpCard}>
+                <Text style={styles.xpCardTitle}>EFFORT-FIRST REWARD</Text>
+                <View style={styles.xpRow}>
+                  <Text style={styles.xpLabel}>Distance & Pace Effort</Text>
+                  <Text style={styles.xpValue}>+{data.effortXp} XP</Text>
+                </View>
+                {isChecklistComplete && (
+                  <View style={styles.xpRow}>
+                    <Text style={styles.xpLabel}>Complete Scientific Checklist</Text>
+                    <Text style={styles.xpValue}>+{data.completeBonus || 25} XP</Text>
+                  </View>
+                )}
+                {data.detectionsCount > 0 && (
+                  <View style={styles.xpRow}>
+                    <Text style={styles.xpLabel}>Individual Encounters ({data.detectionsCount})</Text>
+                    <Text style={styles.xpValue}>+{data.animalsBonus} XP</Text>
+                  </View>
+                )}
+                {data.selectedRoute && (
+                  <View style={styles.xpRow}>
+                    <Text style={styles.xpLabel}>Fixed Observatory Route</Text>
+                    <Text style={styles.xpValue}>+{data.routeBonus || 15} XP</Text>
+                  </View>
+                )}
 
-            <View style={styles.telemetryCard}>
-              <Text style={styles.telemetryLabel}>DISTANCE</Text>
-              <Text style={styles.telemetryValue}>{data.distanceKm.toFixed(2)}</Text>
-              <Text style={styles.telemetrySub}>Kilometers</Text>
-            </View>
+                <View style={styles.xpDivider} />
 
-            <View style={styles.telemetryCard}>
-              <Text style={styles.telemetryLabel}>AVG PACE</Text>
-              <Text style={styles.telemetryValue}>{avgPaceKmH}</Text>
-              <Text style={styles.telemetrySub}>km / hour</Text>
-            </View>
-
-            <View style={styles.telemetryCard}>
-              <Text style={styles.telemetryLabel}>ANIMALS LOGGED</Text>
-              <Text style={styles.telemetryValue}>{data.detectionsCount}</Text>
-              <Text style={styles.telemetrySub}>
-                {data.catsCount} cats • {data.dogsCount} dogs
-              </Text>
-            </View>
-          </View>
-
-          {/* Zero Non-Detection Highlight */}
-          {data.detectionsCount === 0 && data.completeChecklist && (
-            <View style={styles.zeroHighlightCard}>
-              <View style={styles.zeroHighlightHeader}>
-                <IOSIcon name="shield" size={18} color="#059669" />
-                <Text style={styles.zeroHighlightTitle}>Scientific Non-Detection Recorded</Text>
+                <View style={styles.xpRowTotal}>
+                  <Text style={styles.xpTotalLabel}>TOTAL REWARD</Text>
+                  <Text style={styles.xpTotalValue}>
+                    +{data.totalXp + (isChecklistComplete ? 0 : -(data.completeBonus || 0))} XP
+                  </Text>
+                </View>
               </View>
-              <Text style={styles.zeroHighlightText}>
-                Zero animal sightings recorded during a complete transect is high-value negative evidence for municipal density estimation.
-              </Text>
-            </View>
+
+              {/* Action Buttons */}
+              <View style={styles.actionButtonsCol}>
+                <Button
+                  label="Save Survey & Sync"
+                  onPress={handleSaveAndFinish}
+                  variant="primary"
+                  size="hero"
+                />
+
+                <TouchableOpacity
+                  style={styles.backStepBtn}
+                  onPress={() => setStep('checklist')}
+                  activeOpacity={0.7}
+                >
+                  <Text style={styles.backStepText}>Change checklist answer</Text>
+                </TouchableOpacity>
+              </View>
+            </ScrollView>
           )}
-
-          {/* Itemized Calibrated XP Breakdown */}
-          <View style={styles.xpCard}>
-            <View style={styles.xpHeaderRow}>
-              <View>
-                <Text style={styles.xpCardTitle}>Observatory Credit</Text>
-                <Text style={styles.xpCardSub}>Scientifically weighted effort breakdown</Text>
-              </View>
-              <View style={styles.totalXpPill}>
-                <Text style={styles.totalXpText}>+{data.totalXp} XP</Text>
-              </View>
-            </View>
-
-            <View style={styles.xpDivider} />
-
-            <View style={styles.xpItemRow}>
-              <View style={styles.xpItemLeft}>
-                <IOSIcon name="clock" size={15} color={IOSColors.systemTeal} />
-                <Text style={styles.xpItemLabel}>Survey Effort Time</Text>
-              </View>
-              <Text style={styles.xpItemVal}>+{data.effortXp} XP</Text>
-            </View>
-
-            {data.completeBonus > 0 && (
-              <View style={styles.xpItemRow}>
-                <View style={styles.xpItemLeft}>
-                  <IOSIcon name="check" size={15} color="#10B981" />
-                  <Text style={styles.xpItemLabel}>eBird Complete Checklist</Text>
-                </View>
-                <Text style={styles.xpItemVal}>+{data.completeBonus} XP</Text>
-              </View>
-            )}
-
-            {data.animalsBonus > 0 && (
-              <View style={styles.xpItemRow}>
-                <View style={styles.xpItemLeft}>
-                  <IOSIcon name="paw" size={15} color="#F97316" />
-                  <Text style={styles.xpItemLabel}>Animal Observations ({data.detectionsCount})</Text>
-                </View>
-                <Text style={styles.xpItemVal}>+{data.animalsBonus} XP</Text>
-              </View>
-            )}
-
-            {data.routeBonus > 0 && (
-              <View style={styles.xpItemRow}>
-                <View style={styles.xpItemLeft}>
-                  <IOSIcon name="compass" size={15} color={IOSColors.systemIndigo} />
-                  <Text style={styles.xpItemLabel}>Adopted Route Guardian Bonus</Text>
-                </View>
-                <Text style={styles.xpItemVal}>+{data.routeBonus} XP</Text>
-              </View>
-            )}
-
-            {data.certifiedBonus > 0 && (
-              <View style={styles.xpItemRow}>
-                <View style={styles.xpItemLeft}>
-                  <IOSIcon name="shield" size={15} color="#8B5CF6" />
-                  <Text style={styles.xpItemLabel}>Academy Certified Multiplier (+10%)</Text>
-                </View>
-                <Text style={styles.xpItemVal}>+{data.certifiedBonus} XP</Text>
-              </View>
-            )}
-          </View>
-
-          {/* Action Buttons */}
-          <View style={styles.actionGroup}>
-            <TouchableOpacity
-              style={styles.primaryBtn}
-              onPress={() => {
-                hapticSuccess();
-                onConfirmAndClose();
-              }}
-              activeOpacity={0.8}
-            >
-              <IOSIcon name="check" size={18} color="#FFFFFF" />
-              <Text style={styles.primaryBtnText} numberOfLines={1}>Save & Sync</Text>
-            </TouchableOpacity>
-
-            <TouchableOpacity
-              style={styles.secondaryBtn}
-              onPress={() => {
-                hapticButtonPress();
-                handleShare();
-              }}
-              activeOpacity={0.7}
-            >
-              <IOSIcon name="share" size={16} color={IOSColors.label} />
-              <Text style={styles.secondaryBtnText} numberOfLines={1}>Share Summary</Text>
-            </TouchableOpacity>
-            </View>
-          </View>
-        </ScrollView>
-      </SafeAreaView>
-    </View>
-  </Modal>
+        </SafeAreaView>
+      </View>
+    </Modal>
   );
 };
 
 const styles = StyleSheet.create({
   outerContainer: {
     flex: 1,
-    position: 'relative',
-    backgroundColor: '#F7F6F2',
   },
   safeArea: {
     flex: 1,
-    backgroundColor: 'transparent',
   },
-  scrollContent: {
-    paddingBottom: 40,
+  stepContainer: {
+    flex: 1,
+    padding: spacing[6],
+    justifyContent: 'center',
   },
-  overlappingSheet: {
-    marginTop: 0,
-    backgroundColor: 'transparent',
-    paddingHorizontal: 16,
-    paddingTop: 14,
-    zIndex: 20,
-    gap: 12,
+  stepHeader: {
+    marginBottom: spacing[6],
   },
-  modalHeroTopRow: {
-    position: 'absolute',
-    top: 14,
-    left: 14,
-    right: 14,
+  badgePill: {
+    alignSelf: 'flex-start',
+    backgroundColor: 'rgba(2, 132, 199, 0.12)',
+    paddingHorizontal: 10,
+    paddingVertical: 4,
+    borderRadius: radius.full,
+    marginBottom: spacing[3],
+  },
+  badgePillText: {
+    ...typography.caption,
+    fontWeight: '700',
+    color: colors.light.accent,
+    letterSpacing: 0.5,
+  },
+  questionTitle: {
+    ...typography.title1,
+    color: colors.light.label,
+    marginBottom: spacing[3],
+  },
+  questionContext: {
+    ...typography.body,
+    color: colors.light.labelSecondary,
+    lineHeight: 22,
+  },
+  optionsContainer: {
+    gap: spacing[4],
+  },
+  optionCard: {
     flexDirection: 'row',
     alignItems: 'center',
-    justifyContent: 'space-between',
-    zIndex: 20,
-  },
-  frostedModalTitlePill: {
-    backgroundColor: 'rgba(15, 23, 42, 0.72)',
-    paddingHorizontal: 12,
-    paddingVertical: 6,
-    borderRadius: 14,
-    borderWidth: 1,
-    borderColor: 'rgba(255, 255, 255, 0.20)',
-  },
-  frostedModalTitleText: {
-    fontSize: 10,
-    fontWeight: '800',
-    color: '#FFFFFF',
-    letterSpacing: 0.8,
-  },
-  frostedDoneBtn: {
-    backgroundColor: 'rgba(255, 255, 255, 0.90)',
-    paddingHorizontal: 16,
-    paddingVertical: 7,
-    borderRadius: 18,
+    backgroundColor: '#FFFFFF',
+    borderRadius: radius.lg,
+    padding: spacing[4],
+    borderWidth: 1.5,
+    borderColor: colors.light.separator,
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.15,
-    shadowRadius: 4,
-    elevation: 3,
+    shadowOpacity: 0.06,
+    shadowRadius: 6,
+    elevation: 2,
+    gap: spacing[3],
   },
-  frostedDoneBtnText: {
-    fontSize: 13,
-    fontWeight: '800',
-    color: '#0F172A',
+  optionCardSelected: {
+    borderColor: colors.light.accent,
+    backgroundColor: '#F8FAFC',
   },
-  sheetBadgesRow: {
-    flexDirection: 'row',
+  optionIconContainer: {
+    width: 48,
+    height: 48,
+    borderRadius: 24,
+    backgroundColor: 'rgba(15, 23, 42, 0.04)',
     alignItems: 'center',
-    gap: 8,
-    marginBottom: 2,
+    justifyContent: 'center',
   },
-  heroProtocolBadge: {
-    flexDirection: 'row',
+  optionTextContainer: {
+    flex: 1,
+  },
+  optionTitle: {
+    ...typography.headline,
+    color: colors.light.label,
+    marginBottom: 4,
+  },
+  optionDescription: {
+    ...typography.caption,
+    color: colors.light.labelSecondary,
+    lineHeight: 16,
+  },
+  scrollContent: {
+    padding: spacing[6],
+  },
+  summaryHeader: {
     alignItems: 'center',
-    gap: 5,
-    backgroundColor: '#E0F2FE',
-    paddingHorizontal: 10,
-    paddingVertical: 5,
-    borderRadius: 8,
-    borderWidth: 1,
-    borderColor: '#BAE6FD',
+    marginBottom: spacing[4],
   },
-  heroProtocolBadgeText: {
-    fontSize: 11,
-    fontWeight: '800',
-    color: '#0284C7',
-    letterSpacing: 0.5,
+  debriefPill: {
+    backgroundColor: 'rgba(15, 23, 42, 0.08)',
+    paddingHorizontal: 12,
+    paddingVertical: 4,
+    borderRadius: radius.full,
+    marginBottom: spacing[2],
   },
-  heroCompleteBadge: {
+  debriefPillText: {
+    ...typography.caption,
+    fontWeight: '700',
+    color: colors.light.labelSecondary,
+    letterSpacing: 0.6,
+  },
+  summaryHeadline: {
+    ...typography.largeTitle,
+    color: colors.light.label,
+  },
+  summarySubheadline: {
+    ...typography.subhead,
+    color: colors.light.labelSecondary,
+    marginTop: 2,
+  },
+  statusBadgesRow: {
     flexDirection: 'row',
-    alignItems: 'center',
-    gap: 5,
-    backgroundColor: '#D1FAE5',
-    paddingHorizontal: 10,
-    paddingVertical: 5,
-    borderRadius: 8,
-    borderWidth: 1,
-    borderColor: '#A7F3D0',
-  },
-  heroCompleteBadgeText: {
-    fontSize: 11,
-    fontWeight: '800',
-    color: '#059669',
-    letterSpacing: 0.5,
-  },
-  badgeRow: {
-    flexDirection: 'row',
-    gap: 8,
-    marginBottom: 10,
+    justifyContent: 'center',
+    gap: spacing[2],
+    marginBottom: spacing[5],
   },
   protocolBadge: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 4,
-    backgroundColor: '#FFEDE8',
-    paddingHorizontal: 8,
-    paddingVertical: 4,
-    borderRadius: 6,
+    gap: 6,
+    backgroundColor: 'rgba(2, 132, 199, 0.10)',
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: radius.full,
   },
   protocolBadgeText: {
-    fontSize: 11,
-    fontWeight: '800',
-    color: '#DD4B34',
+    ...typography.caption,
+    fontWeight: '700',
+    color: colors.light.accent,
   },
   completeBadge: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 4,
-    backgroundColor: '#D1FAE5',
-    paddingHorizontal: 8,
-    paddingVertical: 4,
-    borderRadius: 6,
+    gap: 6,
+    backgroundColor: 'rgba(22, 163, 74, 0.10)',
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: radius.full,
   },
   completeBadgeText: {
-    fontSize: 11,
-    fontWeight: '800',
-    color: '#059669',
-  },
-  congratsTitle: {
-    fontSize: 26,
-    fontWeight: '800',
-    color: IOSColors.label,
-    letterSpacing: -0.6,
-    marginBottom: 4,
-  },
-  routeSubtitle: {
-    fontSize: 14,
-    color: IOSColors.secondaryLabel,
-  },
-  ringsCard: {
-    backgroundColor: '#0F172A',
-    borderRadius: 20,
-    padding: 18,
-    marginBottom: 16,
-    shadowColor: '#000000',
-    shadowOffset: { width: 0, height: 6 },
-    shadowOpacity: 0.15,
-    shadowRadius: 10,
-    elevation: 4,
-  },
-  ringsVisual: {
-    gap: 12,
-  },
-  ringBarRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 10,
-  },
-  ringIndicatorDot: {
-    width: 8,
-    height: 8,
-    borderRadius: 4,
-  },
-  ringBarLabel: {
-    width: 90,
-    fontSize: 12,
-    fontWeight: '600',
-    color: '#94A3B8',
-  },
-  ringTrack: {
-    flex: 1,
-    height: 8,
-    backgroundColor: 'rgba(255, 255, 255, 0.1)',
-    borderRadius: 4,
-    overflow: 'hidden',
-  },
-  ringFill: {
-    height: '100%',
-    borderRadius: 4,
-  },
-  ringPercent: {
-    width: 38,
-    fontSize: 12,
+    ...typography.caption,
     fontWeight: '700',
-    color: '#F8FAFC',
-    textAlign: 'right',
+    color: colors.light.success,
   },
-  telemetryGrid: {
+  metricsGrid: {
     flexDirection: 'row',
     flexWrap: 'wrap',
-    gap: 10,
-    marginBottom: 16,
+    gap: spacing[3],
+    marginBottom: spacing[5],
   },
-  telemetryCard: {
-    flex: 1,
-    minWidth: '46%',
+  metricCard: {
+    width: '47.5%',
     backgroundColor: '#FFFFFF',
-    borderRadius: 14,
-    padding: 14,
+    borderRadius: radius.md,
+    padding: spacing[4],
     borderWidth: 1,
-    borderColor: '#E2E8F0',
-  },
-  telemetryLabel: {
-    fontSize: 10,
-    fontWeight: '700',
-    color: IOSColors.tertiaryLabel,
-    letterSpacing: 0.6,
-    marginBottom: 4,
-  },
-  telemetryValue: {
-    fontSize: 22,
-    fontWeight: '800',
-    color: IOSColors.label,
-    letterSpacing: -0.4,
-  },
-  telemetrySub: {
-    fontSize: 11,
-    color: IOSColors.secondaryLabel,
-    marginTop: 2,
-  },
-  zeroHighlightCard: {
-    backgroundColor: '#ECFDF5',
-    borderRadius: 14,
-    padding: 14,
-    borderWidth: 1,
-    borderColor: '#A7F3D0',
-    marginBottom: 16,
-  },
-  zeroHighlightHeader: {
-    flexDirection: 'row',
+    borderColor: colors.light.separator,
     alignItems: 'center',
-    gap: 6,
-    marginBottom: 4,
   },
-  zeroHighlightTitle: {
-    fontSize: 13,
+  metricBig: {
+    ...typography.title2,
     fontWeight: '700',
-    color: '#065F46',
+    color: colors.light.label,
+    fontVariant: ['tabular-nums'],
   },
-  zeroHighlightText: {
-    fontSize: 12,
-    color: '#047857',
-    lineHeight: 17,
+  metricLabel: {
+    ...typography.caption,
+    fontWeight: '600',
+    color: colors.light.labelSecondary,
+    marginTop: 2,
+    fontSize: 10,
   },
   xpCard: {
     backgroundColor: '#FFFFFF',
-    borderRadius: 18,
-    padding: 16,
+    borderRadius: radius.lg,
+    padding: spacing[4],
     borderWidth: 1,
-    borderColor: '#E2E8F0',
-    marginBottom: 20,
-  },
-  xpHeaderRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
+    borderColor: colors.light.separator,
+    marginBottom: spacing[6],
   },
   xpCardTitle: {
-    fontSize: 16,
+    ...typography.caption,
     fontWeight: '700',
-    color: IOSColors.label,
+    color: colors.light.labelSecondary,
+    letterSpacing: 0.6,
+    marginBottom: spacing[3],
   },
-  xpCardSub: {
-    fontSize: 12,
-    color: IOSColors.secondaryLabel,
-    marginTop: 2,
+  xpRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    paddingVertical: 4,
   },
-  totalXpPill: {
-    backgroundColor: '#D9F944',
-    paddingHorizontal: 12,
-    paddingVertical: 6,
-    borderRadius: 12,
+  xpLabel: {
+    ...typography.callout,
+    color: colors.light.labelSecondary,
   },
-  totalXpText: {
-    fontSize: 16,
-    fontWeight: '900',
-    color: '#0F172A',
+  xpValue: {
+    ...typography.callout,
+    fontWeight: '600',
+    color: colors.light.label,
   },
   xpDivider: {
-    height: StyleSheet.hairlineWidth,
-    backgroundColor: '#E2E8F0',
-    marginVertical: 12,
+    height: 1,
+    backgroundColor: colors.light.separator,
+    marginVertical: spacing[3],
   },
-  xpItemRow: {
+  xpRowTotal: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    paddingVertical: 6,
   },
-  xpItemLeft: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 8,
+  xpTotalLabel: {
+    ...typography.headline,
+    color: colors.light.label,
   },
-  xpItemLabel: {
-    fontSize: 13,
-    color: IOSColors.secondaryLabel,
-  },
-  xpItemVal: {
-    fontSize: 13,
+  xpTotalValue: {
+    ...typography.title3,
+    color: colors.light.accent,
     fontWeight: '700',
-    color: IOSColors.label,
   },
-  actionGroup: {
-    gap: 10,
+  actionButtonsCol: {
+    gap: spacing[3],
+    marginBottom: spacing[8],
   },
-  primaryBtn: {
-    flexDirection: 'row',
+  backStepBtn: {
     alignItems: 'center',
-    justifyContent: 'center',
-    gap: 8,
-    backgroundColor: IOSColors.systemTeal,
-    paddingVertical: 15,
-    borderRadius: 14,
-    shadowColor: IOSColors.systemTeal,
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.25,
-    shadowRadius: 8,
-    elevation: 3,
+    paddingVertical: spacing[2],
   },
-  primaryBtnText: {
-    fontSize: 16,
-    fontWeight: '700',
-    color: '#FFFFFF',
-  },
-  secondaryBtn: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    gap: 8,
-    backgroundColor: '#FFFFFF',
-    borderWidth: 1,
-    borderColor: '#E2E8F0',
-    paddingVertical: 14,
-    borderRadius: 14,
-  },
-  secondaryBtnText: {
-    fontSize: 15,
-    fontWeight: '600',
-    color: IOSColors.label,
+  backStepText: {
+    ...typography.callout,
+    color: colors.light.labelSecondary,
+    textDecorationLine: 'underline',
   },
 });

@@ -130,7 +130,6 @@ export const ColonyInspectorModal: React.FC<ColonyInspectorModalProps> = ({
             </View>
 
             <Text style={styles.colonyName}>{colony.name}</Text>
-            {colony.nameAr ? <Text style={styles.colonyNameAr}>{colony.nameAr}</Text> : null}
             <Text style={styles.coordsText}>
               {colony.latitude.toFixed(5)}° N, {colony.longitude.toFixed(5)}° E
             </Text>
