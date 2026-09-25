@@ -4,7 +4,7 @@
  * 2. Capture-History Matrix (SECR / MARK / unmarked)
  * 3. Distance Sampling (R Distance package)
  */
-import { ObservationPublic, ObservationRestrictedLocation, SurveySession, Individual } from './types.js';
+import { ObservationPublic, ObservationRestrictedLocation, SurveySession, Individual } from './types';
 export interface DarwinCoreOccurrenceRecord {
     occurrenceID: string;
     eventID: string;

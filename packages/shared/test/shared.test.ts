@@ -3,19 +3,19 @@ import assert from 'node:assert/strict';
 import {
   generalizeTo1KmGrid,
   isLocationGeneralized,
-} from '../src/grid.js';
+} from '../src/grid';
 import {
   exportToDarwinCore,
   exportCaptureHistoryMatrix,
   exportDistanceSampling,
   objectsToCSV,
-} from '../src/exports.js';
+} from '../src/exports';
 import {
   ObservationPublic,
   SurveySession,
   Individual,
   ObservationRestrictedLocation,
-} from '../src/types.js';
+} from '../src/types';
 
 test('1 km grid generalization protects precise locations', () => {
   // Test coordinate in Tunis: Avenue Habib Bourguiba (10.1815, 36.8000)

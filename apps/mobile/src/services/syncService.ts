@@ -4,7 +4,7 @@
  * photo streaming, and conflict handling.
  */
 
-import { SyncQueueItem } from '../db/sqliteClient.js';
+import { SyncQueueItem } from '../db/sqliteClient';
 
 export interface SyncResult {
   totalProcessed: number;
