@@ -79,36 +79,6 @@ export const AuthGateScreen: React.FC<AuthGateScreenProps> = ({ onAuthenticated 
     }
   };
 
-  const handleQuickDemoSignIn = async () => {
-    setIsLoading(true);
-    try {
-      const { data, error } = await supabase.auth.signInWithPassword({
-        email: 'surveyor@hawem.tn',
-        password: 'Password2026!',
-      });
-
-      if (error) {
-        Alert.alert('Demo Sign In', error.message);
-      } else if (data.user) {
-        const account: UserAccount = {
-          name: 'Dr. Amira Ben Salem',
-          email: 'surveyor@hawem.tn',
-          organization: 'Institut Pasteur de Tunis',
-          role: 'surveyor',
-          governorate: 'Tunis',
-          surveyorId: `TUN-OBS-${data.user.id.slice(0, 6).toUpperCase()}`,
-          createdAt: data.user.created_at || new Date().toISOString(),
-        };
-        Alert.alert('Signed In', 'Welcome to Hawem Observatory, Dr. Amira Ben Salem!');
-        onAuthenticated(account);
-      }
-    } catch (err: any) {
-      Alert.alert('Demo Sign In Error', err?.message || 'Failed to sign in');
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
   const handleEmailAuth = async () => {
     if (!email.trim() || !password) {
       Alert.alert('Required Fields', 'Please enter both your email address and password.');
@@ -292,7 +262,7 @@ export const AuthGateScreen: React.FC<AuthGateScreenProps> = ({ onAuthenticated 
                       style={styles.input}
                       value={fullName}
                       onChangeText={setFullName}
-                      placeholder="Dr. Amira Ben Salem"
+                      placeholder="e.g. Sami Trabelsi"
                       placeholderTextColor={IOSColors.tertiaryLabel}
                       autoCapitalize="words"
                     />
@@ -364,27 +334,6 @@ export const AuthGateScreen: React.FC<AuthGateScreenProps> = ({ onAuthenticated 
                   </Text>
                 )}
               </TouchableOpacity>
-
-              {/* One-Tap Demo Access */}
-              {authMode === 'signin' && (
-                <TouchableOpacity
-                  onPress={handleQuickDemoSignIn}
-                  style={styles.demoPillBtn}
-                  disabled={isLoading}
-                  activeOpacity={0.8}
-                >
-                  <View style={styles.demoIconCircle}>
-                    <Image
-                      source={require('../../assets/icon_cat_primary.png')}
-                      style={{ width: 16, height: 16, resizeMode: 'contain' }}
-                    />
-                  </View>
-                  <Text style={styles.demoPillBtnText}>Quick Demo Sign-In (Dr. Amira)</Text>
-                  <View style={styles.demoPasteurPill}>
-                    <Text style={styles.demoPasteurPillText}>Pasteur</Text>
-                  </View>
-                </TouchableOpacity>
-              )}
 
               {/* Divider */}
               <View style={styles.dividerRow}>
@@ -634,48 +583,6 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
     paddingHorizontal: 4,
-  },
-  demoPillBtn: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    gap: 8,
-    backgroundColor: 'rgba(255, 255, 255, 0.85)',
-    borderWidth: 1.5,
-    borderColor: '#E2E8F0',
-    borderRadius: 24,
-    paddingVertical: 11,
-    paddingHorizontal: 16,
-    marginTop: 6,
-    shadowColor: '#000000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.04,
-    shadowRadius: 4,
-    elevation: 1,
-  },
-  demoIconCircle: {
-    width: 24,
-    height: 24,
-    borderRadius: 12,
-    backgroundColor: '#E0F2FE',
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  demoPillBtnText: {
-    fontSize: 13,
-    fontWeight: '700',
-    color: '#0F172A',
-  },
-  demoPasteurPill: {
-    backgroundColor: '#0F172A',
-    borderRadius: 10,
-    paddingHorizontal: 6,
-    paddingVertical: 2,
-  },
-  demoPasteurPillText: {
-    fontSize: 9,
-    fontWeight: '800',
-    color: '#D9F944',
   },
   complianceSection: {
     flexDirection: 'row',

@@ -33,74 +33,7 @@ export interface AnimalProfile {
   colony_name?: string;
 }
 
-export const SAMPLE_ANIMALS: AnimalProfile[] = [
-  {
-    id: 'ind-001',
-    species: 'cat',
-    nickname: 'Boussa Bab Souika',
-    coat_pattern: 'tabby',
-    primary_colour: 'Grey / Black striped',
-    identifiability: 'high',
-    first_seen_at: new Date(Date.now() - 86400000 * 30).toISOString(),
-    last_seen_at: new Date(Date.now() - 3600000 * 2).toISOString(),
-    sightings_count: 4,
-    latitude: 36.8028,
-    longitude: 10.1695,
-    photos: [
-      {
-        uri: 'file:///photos/cat_flank_01.jpg',
-        angle: 'left_flank',
-        taken_at: new Date(Date.now() - 3600000 * 2).toISOString(),
-      },
-    ],
-    ear_tipped: true,
-    colony_name: 'Bab Souika Bakery Colony',
-  },
-  {
-    id: 'ind-002',
-    species: 'dog',
-    nickname: 'Rex Sidi Bou Said',
-    coat_pattern: 'bicolour_piebald',
-    primary_colour: 'Tan & White',
-    identifiability: 'high',
-    first_seen_at: new Date(Date.now() - 86400000 * 45).toISOString(),
-    last_seen_at: new Date(Date.now() - 3600000 * 5).toISOString(),
-    sightings_count: 6,
-    latitude: 36.8588,
-    longitude: 10.1956,
-    photos: [
-      {
-        uri: 'file:///photos/dog_flank_02.jpg',
-        angle: 'left_flank',
-        taken_at: new Date(Date.now() - 3600000 * 5).toISOString(),
-      },
-    ],
-    ear_tipped: false,
-    colony_name: 'North Market Pack',
-  },
-  {
-    id: 'ind-003',
-    species: 'cat',
-    nickname: 'Jasmin Carthage',
-    coat_pattern: 'tortoiseshell_calico',
-    primary_colour: 'Tricolor Calico',
-    identifiability: 'high',
-    first_seen_at: new Date(Date.now() - 86400000 * 15).toISOString(),
-    last_seen_at: new Date(Date.now() - 86400000).toISOString(),
-    sightings_count: 2,
-    latitude: 36.8529,
-    longitude: 10.3245,
-    photos: [
-      {
-        uri: 'file:///photos/cat_calico_03.jpg',
-        angle: 'face',
-        taken_at: new Date(Date.now() - 86400000).toISOString(),
-      },
-    ],
-    ear_tipped: true,
-    colony_name: 'Byrsa Ruins Colony',
-  },
-];
+export const SAMPLE_ANIMALS: AnimalProfile[] = [];
 
 interface AnimalsState {
   animals: AnimalProfile[];
@@ -113,7 +46,7 @@ interface AnimalsState {
 }
 
 export const useAnimalsStore = create<AnimalsState>((set, get) => ({
-  animals: SAMPLE_ANIMALS,
+  animals: [],
 
   loadAnimals: async () => {
     try {

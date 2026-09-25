@@ -1168,11 +1168,11 @@ export const MapOverviewScreen: React.FC<MapOverviewScreenProps> = ({
                   <View style={[styles.bulletinDot, { backgroundColor: '#10B981' }]} />
                   <View style={styles.bulletinContent}>
                     <View style={styles.bulletinTopRow}>
-                      <Text style={styles.bulletinTitle}>Cloud Telemetry Synchronized</Text>
-                      <Text style={styles.bulletinTime}>Just now</Text>
+                      <Text style={styles.bulletinTitle}>Research Cloud Connected</Text>
+                      <Text style={styles.bulletinTime}>Live</Text>
                     </View>
                     <Text style={styles.bulletinBody}>
-                      100% of field records and GPS track waypoints are backed up to the Supabase research cluster.
+                      Real-time synchronization active with Supabase PostGIS spatial cluster. Observations and tracks persist securely.
                     </Text>
                   </View>
                 </View>
@@ -1181,24 +1181,24 @@ export const MapOverviewScreen: React.FC<MapOverviewScreenProps> = ({
                   <View style={[styles.bulletinDot, { backgroundColor: '#0284C7' }]} />
                   <View style={styles.bulletinContent}>
                     <View style={styles.bulletinTopRow}>
-                      <Text style={styles.bulletinTitle}>Institut Pasteur Campaign</Text>
-                      <Text style={styles.bulletinTime}>2h ago</Text>
+                      <Text style={styles.bulletinTitle}>Geospatial Telemetry Engine</Text>
+                      <Text style={styles.bulletinTime}>Active</Text>
                     </View>
                     <Text style={styles.bulletinBody}>
-                      Priority transect survey active in Ariana & Carthage. Standardized eBird-style protocol required.
+                      High-precision WGS84 GPS positioning and H3 resolution-9 spatial indexing enabled for standardized transects.
                     </Text>
                   </View>
                 </View>
 
                 <View style={styles.bulletinItem}>
-                  <View style={[styles.bulletinDot, { backgroundColor: '#F59E0B' }]} />
+                  <View style={[styles.bulletinDot, { backgroundColor: '#64748B' }]} />
                   <View style={styles.bulletinContent}>
                     <View style={styles.bulletinTopRow}>
-                      <Text style={styles.bulletinTitle}>Meteorological Advisory</Text>
-                      <Text style={styles.bulletinTime}>Today</Text>
+                      <Text style={styles.bulletinTitle}>Field Advisories</Text>
+                      <Text style={styles.bulletinTime}>Normal</Text>
                     </View>
                     <Text style={styles.bulletinBody}>
-                      Ambient temperature 26°C with Tier 1 visibility. Optimal conditions for distance sampling.
+                      No active emergency alerts or bio-safety bulletins recorded. System ready for field survey patrol.
                     </Text>
                   </View>
                 </View>

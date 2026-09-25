@@ -89,14 +89,31 @@ function AppContent() {
         const { data: { session } } = await supabase.auth.getSession();
         if (session?.user) {
           const userMeta = session.user.user_metadata || {};
+          let savedLocal: Partial<UserAccount> | null = null;
+          try {
+            const raw = (await AsyncStorage.getItem(`hawem_account_${session.user.id}`)) || (await AsyncStorage.getItem('hawem_account_v1'));
+            if (raw) savedLocal = JSON.parse(raw);
+          } catch {}
+
+          const effectiveId =
+            savedLocal?.surveyorId ||
+            userMeta.surveyor_id ||
+            `TUN-OBS-${session.user.id.slice(0, 6).toUpperCase()}`;
+
+          const effectiveAvatar =
+            savedLocal?.avatarUri ||
+            userMeta.avatar_url ||
+            undefined;
+
           const cloudAccount: UserAccount = {
-            name: userMeta.full_name || userMeta.name || session.user.email?.split('@')[0] || 'Surveyor',
+            name: savedLocal?.name || userMeta.full_name || userMeta.name || session.user.email?.split('@')[0] || 'Surveyor',
             email: session.user.email || '',
-            organization: userMeta.organization || 'Tunisia Fauna Observatory',
-            role: userMeta.role || 'surveyor',
-            governorate: userMeta.governorate || 'Tunis',
-            surveyorId: `TUN-OBS-${session.user.id.slice(0, 6).toUpperCase()}`,
-            createdAt: session.user.created_at || new Date().toISOString(),
+            organization: savedLocal?.organization || userMeta.organization || 'Tunisia Fauna Observatory',
+            role: (savedLocal?.role as any) || userMeta.role || 'surveyor',
+            governorate: savedLocal?.governorate || userMeta.governorate || 'Tunis',
+            surveyorId: effectiveId,
+            avatarUri: effectiveAvatar,
+            createdAt: savedLocal?.createdAt || session.user.created_at || new Date().toISOString(),
           };
           if (isMounted) {
             setUserAccount(cloudAccount);
@@ -109,23 +126,27 @@ function AppContent() {
             }
             // Load user-specific gamification (XP, level, quests)
             useGamificationStore.getState().loadGamification(session.user.id);
+
+            // Load user-specific sightings (scoped per account so new accounts start clean)
+            const storedSightings = await AsyncStorage.getItem(`hawem_sightings_${session.user.id}`);
+            if (storedSightings) {
+              const parsed = JSON.parse(storedSightings);
+              if (Array.isArray(parsed)) {
+                setSightings(parsed);
+              }
+            } else {
+              setSightings([]);
+            }
           }
         } else {
           // No active Supabase cloud session: User is NOT connected!
           if (isMounted) {
             setUserAccount(null);
+            setSightings([]);
             setStats({ sessionsCompleted: 0, kmWalked: 0, animalsRecorded: 0 });
             useGamificationStore.getState().resetGamification();
           }
           await AsyncStorage.removeItem('hawem_account_v1');
-        }
-
-        const storedSightings = await AsyncStorage.getItem('hawem_sightings_v1');
-        if (storedSightings && isMounted) {
-          const parsed = JSON.parse(storedSightings);
-          if (Array.isArray(parsed) && parsed.length > 0) {
-            setSightings(parsed);
-          }
         }
       } catch (err) {
         console.warn('Error reading from AsyncStorage or Supabase:', err);
@@ -139,14 +160,21 @@ function AppContent() {
     const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
       if (session?.user) {
         const userMeta = session.user.user_metadata || {};
+        let savedLocal: Partial<UserAccount> | null = null;
+        try {
+          const raw = (await AsyncStorage.getItem(`hawem_account_${session.user.id}`)) || (await AsyncStorage.getItem('hawem_account_v1'));
+          if (raw) savedLocal = JSON.parse(raw);
+        } catch {}
+
         const cloudAccount: UserAccount = {
-          name: userMeta.full_name || userMeta.name || session.user.email?.split('@')[0] || 'Surveyor',
+          name: savedLocal?.name || userMeta.full_name || userMeta.name || session.user.email?.split('@')[0] || 'Surveyor',
           email: session.user.email || '',
-          organization: userMeta.organization || 'Tunisia Fauna Observatory',
-          role: userMeta.role || 'surveyor',
-          governorate: userMeta.governorate || 'Tunis',
-          surveyorId: `TUN-OBS-${session.user.id.slice(0, 6).toUpperCase()}`,
-          createdAt: session.user.created_at || new Date().toISOString(),
+          organization: savedLocal?.organization || userMeta.organization || 'Tunisia Fauna Observatory',
+          role: (savedLocal?.role as any) || userMeta.role || 'surveyor',
+          governorate: savedLocal?.governorate || userMeta.governorate || 'Tunis',
+          surveyorId: savedLocal?.surveyorId || userMeta.surveyor_id || `TUN-OBS-${session.user.id.slice(0, 6).toUpperCase()}`,
+          avatarUri: savedLocal?.avatarUri || userMeta.avatar_url || undefined,
+          createdAt: savedLocal?.createdAt || session.user.created_at || new Date().toISOString(),
         };
         if (isMounted) {
           setUserAccount(cloudAccount);
@@ -159,14 +187,24 @@ function AppContent() {
               setStats({ sessionsCompleted: 0, kmWalked: 0, animalsRecorded: 0 });
             }
             useGamificationStore.getState().loadGamification(session.user.id);
+            const storedSightings = await AsyncStorage.getItem(`hawem_sightings_${session.user.id}`);
+            if (storedSightings) {
+              const parsed = JSON.parse(storedSightings);
+              if (Array.isArray(parsed)) setSightings(parsed);
+            } else {
+              setSightings([]);
+            }
           } catch (e) {
             setStats({ sessionsCompleted: 0, kmWalked: 0, animalsRecorded: 0 });
+            setSightings([]);
           }
         }
+        AsyncStorage.setItem(`hawem_account_${session.user.id}`, JSON.stringify(cloudAccount)).catch(() => {});
         AsyncStorage.setItem('hawem_account_v1', JSON.stringify(cloudAccount)).catch(() => {});
       } else if (event === 'SIGNED_OUT') {
         if (isMounted) {
           setUserAccount(null);
+          setSightings([]);
           setStats({ sessionsCompleted: 0, kmWalked: 0, animalsRecorded: 0 });
           useGamificationStore.getState().resetGamification();
         }
@@ -208,6 +246,20 @@ function AppContent() {
       await AsyncStorage.setItem('hawem_account_v1', JSON.stringify(account));
       const { data: { session } } = await supabase.auth.getSession();
       if (session?.user?.id) {
+        await AsyncStorage.setItem(`hawem_account_${session.user.id}`, JSON.stringify(account));
+        // Update user metadata in Supabase Cloud
+        supabase.auth.updateUser({
+          data: {
+            full_name: account.name,
+            name: account.name,
+            organization: account.organization,
+            role: account.role,
+            governorate: account.governorate,
+            surveyor_id: account.surveyorId,
+            avatar_url: account.avatarUri,
+          },
+        }).catch(() => {});
+
         const storedStats = await AsyncStorage.getItem(`hawem_stats_${session.user.id}`);
         if (storedStats) {
           setStats(JSON.parse(storedStats));
@@ -223,6 +275,7 @@ function AppContent() {
 
   const handleSignOut = async () => {
     setUserAccount(null);
+    setSightings([]);
     setStats({ sessionsCompleted: 0, kmWalked: 0, animalsRecorded: 0 });
     useGamificationStore.getState().resetGamification();
     try {
@@ -236,7 +289,9 @@ function AppContent() {
   const persistSightings = async (newList: SightingItem[]) => {
     setSightings(newList);
     try {
-      await AsyncStorage.setItem('hawem_sightings_v1', JSON.stringify(newList));
+      const { data: { session } } = await supabase.auth.getSession();
+      const storageKey = session?.user?.id ? `hawem_sightings_${session.user.id}` : 'hawem_sightings_guest';
+      await AsyncStorage.setItem(storageKey, JSON.stringify(newList));
     } catch (err) {
       console.warn('Error saving sightings:', err);
     }
@@ -548,7 +603,7 @@ function AppContent() {
             onDeleteSighting={handleDeleteSighting}
           />
         ) : activeTab === 'progress' ? (
-          <ProgressScreen userAccount={userAccount} />
+          <ProgressScreen userAccount={userAccount} stats={stats} />
         ) : activeTab === 'profile' ? (
           <AccountScreen
             userAccount={userAccount}

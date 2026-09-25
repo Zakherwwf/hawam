@@ -43,10 +43,10 @@ export const SettingsScreen: React.FC<SettingsScreenProps> = ({
 
   const currentLang = i18n.language || 'en';
 
-  // Simulated live georeference calculation
-  const demoLat = 36.8065;
-  const demoLon = 10.1815;
-  const gridInfo = generalizeTo1KmGrid(demoLon, demoLat);
+  // Reference georeference calculation for 1km privacy demonstration
+  const referenceLat = 36.8065;
+  const referenceLon = 10.1815;
+  const gridInfo = generalizeTo1KmGrid(referenceLon, referenceLat);
 
   const handleSelectLanguage = (lng: 'ar' | 'fr' | 'en') => {
     setAppLanguage(lng);
@@ -264,7 +264,7 @@ export const SettingsScreen: React.FC<SettingsScreenProps> = ({
             title={t('settings.observer_name')}
             icon="person"
             iconColor={IOSColors.systemBlue}
-            value={userAccount?.name || 'Dr. Amira Ben Salem'}
+            value={userAccount?.name || 'Field Surveyor'}
           />
           <IOSListRow
             title={t('settings.institution')}
@@ -276,7 +276,7 @@ export const SettingsScreen: React.FC<SettingsScreenProps> = ({
             title={t('settings.observer_id')}
             icon="info"
             iconColor={IOSColors.systemGray}
-            value={userAccount?.surveyorId || 'TUN-OBS-2026-042'}
+            value={userAccount?.surveyorId || 'TUN-OBS-01'}
             isLast={!userAccount?.governorate && !userAccount?.role}
           />
           {userAccount?.governorate ? (

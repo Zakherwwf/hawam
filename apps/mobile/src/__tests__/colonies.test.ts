@@ -3,18 +3,9 @@ import assert from 'node:assert/strict';
 import { useColoniesStore, INITIAL_COLONIES } from '../features/colonies/coloniesStore.ts';
 import { useGamificationStore } from '../features/gamification/gamificationStore.ts';
 
-test('coloniesStore: INITIAL_COLONIES contains both cat colonies and dog packs', () => {
-  const catColonies = INITIAL_COLONIES.filter((c) => c.species === 'cat');
-  const dogPacks = INITIAL_COLONIES.filter((c) => c.species === 'dog');
-
-  assert.ok(catColonies.length >= 3, 'Should have multiple initial cat colonies');
-  assert.ok(dogPacks.length >= 2, 'Should have initial dog packs');
-
-  // Verify dog pack properties
-  const centralPack = dogPacks.find((p) => p.id === 'pack-marche-central');
-  assert.ok(centralPack, 'Central dog pack must exist');
-  assert.equal(centralPack?.species, 'dog');
-  assert.equal(centralPack?.hasWaterStation, true);
+test('coloniesStore: starts with clean empty state for authentic field monitoring', () => {
+  assert.equal(INITIAL_COLONIES.length, 0, 'INITIAL_COLONIES should be empty by default');
+  assert.equal(useColoniesStore.getState().colonies.length, 0, 'Store should start with 0 colonies');
 });
 
 test('coloniesStore: addColony registers a new cat colony with ID and awards XP', () => {

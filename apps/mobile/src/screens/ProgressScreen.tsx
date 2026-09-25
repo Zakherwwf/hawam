@@ -22,6 +22,7 @@ import { DesignTokens } from '../design-system/tokens';
 import { IOSIcon, IOSNavigationBar, IOSSegmentedControl } from '../components/ios';
 import { useGamificationStore, Badge } from '../features/gamification/gamificationStore';
 import { UserAccount } from './AccountScreen';
+import { supabase } from '../services/supabase';
 
 interface SurveyorProfile {
   rank: number;
@@ -58,9 +59,14 @@ const GOVERNORATES = [
 
 interface ProgressScreenProps {
   userAccount?: UserAccount | null;
+  stats?: {
+    sessionsCompleted: number;
+    kmWalked: number;
+    animalsRecorded: number;
+  };
 }
 
-export const ProgressScreen: React.FC<ProgressScreenProps> = ({ userAccount }) => {
+export const ProgressScreen: React.FC<ProgressScreenProps> = ({ userAccount, stats }) => {
   const { t, i18n } = useTranslation();
   const isArabic = i18n.language === 'ar';
 
@@ -90,6 +96,45 @@ export const ProgressScreen: React.FC<ProgressScreenProps> = ({ userAccount }) =
   const [selectedGov, setSelectedGov] = useState<string>('all');
   const [selectedBadge, setSelectedBadge] = useState<Badge | null>(null);
   const [selectedSurveyor, setSelectedSurveyor] = useState<SurveyorProfile | null>(null);
+  const [cloudParticipants, setCloudParticipants] = useState<SurveyorProfile[]>([]);
+
+  React.useEffect(() => {
+    let isMounted = true;
+    const fetchCloudProfiles = async () => {
+      try {
+        const { data, error } = await supabase
+          .from('profiles')
+          .select('id, full_name, name, role, governorate')
+          .limit(20);
+        if (!error && data && isMounted) {
+          const currentName = userAccount?.name?.toLowerCase().trim();
+          const others = data
+            .filter((p: any) => {
+              const pName = (p.full_name || p.name || '').toLowerCase().trim();
+              return pName && pName !== currentName;
+            })
+            .map((p: any, idx: number) => ({
+              rank: idx + 2,
+              name: p.full_name || p.name || 'Field Surveyor',
+              metric: leaderboardTab === 'km' ? '0.0 km' : '0 surveys',
+              isUser: false,
+              governorate: p.governorate || 'Tunis',
+              sector: `${p.governorate || 'Tunis'} Sector`,
+              badgesEarned: 0,
+              surveysCount: 0,
+              kmCount: 0,
+              role: p.role ? String(p.role).toUpperCase() : 'SURVEYOR',
+              avatar: require('../../assets/icon_cat_primary.png'),
+            }));
+          setCloudParticipants(others);
+        }
+      } catch {}
+    };
+    fetchCloudProfiles();
+    return () => {
+      isMounted = false;
+    };
+  }, [userAccount?.name, leaderboardTab]);
 
   const handleCloseBadge = () => {
     hapticModalClose();
@@ -462,79 +507,30 @@ export const ProgressScreen: React.FC<ProgressScreenProps> = ({ userAccount }) =
             />
           </View>
 
-          {/* Sample Leaderboard Table */}
+          {/* Authentic Scientific Leaderboard Table */}
           <View style={styles.leaderboardList}>
             {(() => {
-              const allParticipants: SurveyorProfile[] = [
-                {
-                  rank: 1,
-                  name: 'Dr. Amira B.',
-                  metric: leaderboardTab === 'km' ? '42.8 km' : '18 surveys',
-                  isUser: false,
-                  governorate: 'Tunis',
-                  sector: 'Medina & Carthage Sector',
-                  badgesEarned: 8,
-                  surveysCount: 18,
-                  kmCount: 42.8,
-                  role: 'Lead Veterinary Epidemiologist',
-                  avatar: require('../../assets/cat_pose_3_primary.png'),
-                },
-                {
-                  rank: 2,
-                  name: userAccount?.name ? `${userAccount.name} (You)` : 'You (Surveyor)',
-                  metric:
-                    leaderboardTab === 'km'
-                      ? `${(xpTotal * 0.05).toFixed(1)} km`
-                      : `${Math.max(1, Math.floor(xpTotal / 40))} surveys`,
-                  isUser: true,
-                  governorate: userAccount?.governorate || 'Tunis',
-                  sector: userAccount?.governorate ? `${userAccount.governorate} Urban Transects` : 'Coastal Urban Transects',
-                  badgesEarned: badges.filter((b) => b.unlockedAt).length,
-                  surveysCount: Math.max(1, Math.floor(xpTotal / 40)),
-                  kmCount: Number((xpTotal * 0.05).toFixed(1)),
-                  role: userAccount?.role ? `${userAccount.role.toUpperCase()} • ${rankTitle}` : rankTitle,
-                  avatar: require('../../assets/icon_cat_primary.png'),
-                },
-                {
-                  rank: 3,
-                  name: 'Kareem M.',
-                  metric: leaderboardTab === 'km' ? '19.4 km' : '8 surveys',
-                  isUser: false,
-                  governorate: 'Sfax',
-                  sector: 'Thyna & Port Maritime Hub',
-                  badgesEarned: 5,
-                  surveysCount: 8,
-                  kmCount: 19.4,
-                  role: 'Field Ecology Researcher',
-                  avatar: require('../../assets/dog_pose_1_amber.png'),
-                },
-                {
-                  rank: 4,
-                  name: 'Nadia S.',
-                  metric: leaderboardTab === 'km' ? '14.2 km' : '6 surveys',
-                  isUser: false,
-                  governorate: 'Sousse',
-                  sector: 'Kantaoui & Old Port Strip',
-                  badgesEarned: 4,
-                  surveysCount: 6,
-                  kmCount: 14.2,
-                  role: 'Certified TNR Observer',
-                  avatar: require('../../assets/cat_pose_1_primary.png'),
-                },
-                {
-                  rank: 5,
-                  name: 'Youssef K.',
-                  metric: leaderboardTab === 'km' ? '11.0 km' : '5 surveys',
-                  isUser: false,
-                  governorate: 'Nabeul',
-                  sector: 'Hammamet Coastal Buffer',
-                  badgesEarned: 3,
-                  surveysCount: 5,
-                  kmCount: 11.0,
-                  role: 'Community Field Inspector',
-                  avatar: require('../../assets/dog_pose_2_amber.png'),
-                },
-              ];
+              const actualKm = Number(stats?.kmWalked ? stats.kmWalked.toFixed(1) : '0');
+              const actualSurveys = stats?.sessionsCompleted || 0;
+
+              const userParticipant: SurveyorProfile = {
+                rank: 1,
+                name: userAccount?.name ? `${userAccount.name} (You)` : 'You (Surveyor)',
+                metric:
+                  leaderboardTab === 'km'
+                    ? `${actualKm.toFixed(1)} km`
+                    : `${actualSurveys} ${actualSurveys === 1 ? 'survey' : 'surveys'}`,
+                isUser: true,
+                governorate: userAccount?.governorate || 'Tunis',
+                sector: userAccount?.governorate ? `${userAccount.governorate} Urban Transects` : 'Coastal Urban Transects',
+                badgesEarned: badges.filter((b) => b.unlockedAt).length,
+                surveysCount: actualSurveys,
+                kmCount: actualKm,
+                role: userAccount?.role ? `${userAccount.role.toUpperCase()} • ${rankTitle}` : rankTitle,
+                avatar: userAccount?.avatarUri ? { uri: userAccount.avatarUri } : require('../../assets/icon_cat_primary.png'),
+              };
+
+              const allParticipants: SurveyorProfile[] = [userParticipant, ...cloudParticipants];
 
               const filtered = allParticipants
                 .filter(
@@ -542,16 +538,23 @@ export const ProgressScreen: React.FC<ProgressScreenProps> = ({ userAccount }) =
                     selectedGov === 'all' ||
                     entry.governorate.toLowerCase() === selectedGov.toLowerCase()
                 )
+                .sort((a, b) => {
+                  if (leaderboardTab === 'km') {
+                    return b.kmCount - a.kmCount;
+                  }
+                  return b.surveysCount - a.surveysCount;
+                })
                 .map((entry, idx) => ({
                   ...entry,
-                  displayRank: selectedGov === 'all' ? entry.rank : idx + 1,
+                  displayRank: idx + 1,
                 }));
 
               if (filtered.length === 0) {
                 return (
                   <View style={styles.emptyGovLeaderboard}>
+                    <IOSIcon name="location" size={24} color="#94A3B8" />
                     <Text style={styles.emptyGovText}>
-                      No participants recorded in this governorate yet
+                      No registered surveyors in this governorate yet
                     </Text>
                   </View>
                 );

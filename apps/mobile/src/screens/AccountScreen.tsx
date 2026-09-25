@@ -10,6 +10,7 @@ import {
   Image,
   Platform,
   Switch,
+  ActionSheetIOS,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { LinearGradient } from 'expo-linear-gradient';
@@ -26,6 +27,7 @@ import {
 import { SightingItem } from './SightingsScreen';
 import { supabase } from '../services/supabase';
 import { useThemeStore } from '../features/theme/themeStore';
+import { capturePhotoFromCamera, pickPhotoFromLibrary } from '../services/cameraService';
 import type { Session } from '@supabase/supabase-js';
 
 export interface UserAccount {
@@ -35,6 +37,7 @@ export interface UserAccount {
   role: 'surveyor' | 'volunteer' | 'researcher';
   governorate: string;
   surveyorId: string;
+  avatarUri?: string;
   createdAt: string;
 }
 
@@ -77,6 +80,12 @@ export const AccountScreen: React.FC<AccountScreenProps> = ({
   const [governorate, setGovernorate] = useState<string>(
     userAccount?.governorate || 'Tunis'
   );
+  const [surveyorId, setSurveyorId] = useState<string>(
+    userAccount?.surveyorId || ''
+  );
+  const [avatarUri, setAvatarUri] = useState<string | undefined>(
+    userAccount?.avatarUri
+  );
   // Supabase Auth Session (for profile ID / email fallback)
   const [session, setSession] = useState<Session | null>(null);
 
@@ -103,19 +112,104 @@ export const AccountScreen: React.FC<AccountScreenProps> = ({
     return () => subscription.unsubscribe();
   }, []);
 
+  useEffect(() => {
+    if (userAccount) {
+      setName(userAccount.name || '');
+      setEmail(userAccount.email || '');
+      setOrganization(userAccount.organization || '');
+      setRole(userAccount.role || 'surveyor');
+      setGovernorate(userAccount.governorate || 'Tunis');
+      setSurveyorId(userAccount.surveyorId || '');
+      setAvatarUri(userAccount.avatarUri);
+    }
+  }, [userAccount]);
+
+  const handlePickAvatar = () => {
+    const options = ['Cancel', 'Take Photo with Camera', 'Choose from Photo Library'];
+    const currentAvatar = avatarUri || userAccount?.avatarUri;
+    if (currentAvatar) {
+      options.push('Remove Photo');
+    }
+
+    const onSelectPhoto = (uri?: string) => {
+      setAvatarUri(uri);
+      if (userAccount && !isEditing) {
+        onSaveAccount({
+          ...userAccount,
+          avatarUri: uri,
+        });
+      }
+    };
+
+    if (Platform.OS === 'ios') {
+      ActionSheetIOS.showActionSheetWithOptions(
+        {
+          title: 'Profile Picture',
+          message: 'Select an official surveyor photo or field call-sign emblem',
+          options,
+          cancelButtonIndex: 0,
+          destructiveButtonIndex: currentAvatar ? 3 : undefined,
+        },
+        async (idx) => {
+          if (idx === 1) {
+            const photo = await capturePhotoFromCamera();
+            if (photo?.uri) onSelectPhoto(photo.uri);
+          } else if (idx === 2) {
+            const photo = await pickPhotoFromLibrary();
+            if (photo?.uri) onSelectPhoto(photo.uri);
+          } else if (idx === 3) {
+            onSelectPhoto(undefined);
+          }
+        }
+      );
+    } else {
+      const buttons: any[] = [
+        { text: 'Cancel', style: 'cancel' },
+        {
+          text: 'Camera',
+          onPress: async () => {
+            const photo = await capturePhotoFromCamera();
+            if (photo?.uri) onSelectPhoto(photo.uri);
+          },
+        },
+        {
+          text: 'Gallery',
+          onPress: async () => {
+            const photo = await pickPhotoFromLibrary();
+            if (photo?.uri) onSelectPhoto(photo.uri);
+          },
+        },
+      ];
+      if (currentAvatar) {
+        buttons.push({
+          text: 'Remove Photo',
+          style: 'destructive',
+          onPress: () => onSelectPhoto(undefined),
+        });
+      }
+      Alert.alert('Profile Picture', 'Select an official surveyor photo or emblem', buttons);
+    }
+  };
+
   const handleCreateOrUpdate = () => {
     if (!name.trim()) {
       Alert.alert('Required Field', 'Please enter your full name to identify your field surveys.');
       return;
     }
 
+    const effectiveId =
+      surveyorId.trim() ||
+      userAccount?.surveyorId ||
+      (session?.user?.id ? `TUN-OBS-${session.user.id.slice(0, 6).toUpperCase()}` : `TUN-OBS-${Math.floor(1000 + Math.random() * 9000)}`);
+
     const account: UserAccount = {
       name: name.trim(),
-      email: email.trim() || 'surveyor@pasteur.tn',
-      organization,
+      email: email.trim() || session?.user?.email || 'surveyor@pasteur.tn',
+      organization: organization.trim() || 'Institut Pasteur de Tunis',
       role,
       governorate,
-      surveyorId: userAccount?.surveyorId || `TUN-OBS-${Math.floor(1000 + Math.random() * 9000)}`,
+      surveyorId: effectiveId,
+      avatarUri,
       createdAt: userAccount?.createdAt || new Date().toISOString(),
     };
 
@@ -123,8 +217,21 @@ export const AccountScreen: React.FC<AccountScreenProps> = ({
     setIsEditing(false);
   };
 
+  const TUNISIA_GOVERNORATES = [
+    'Tunis', 'Ariana', 'Ben Arous', 'Manouba', 'Nabeul',
+    'Sousse', 'Monastir', 'Mahdia', 'Sfax', 'Bizerte',
+    'Kairouan', 'Gabes', 'Medenine', 'Tozeur',
+  ];
+
   // If user is creating their first account
   if (isEditing || !userAccount) {
+    const editInitials = (name || userAccount?.name || 'Surveyor')
+      .split(' ')
+      .map((n) => n[0])
+      .join('')
+      .substring(0, 2)
+      .toUpperCase();
+
     return (
       <View style={[styles.outerContainer, { backgroundColor: colors.screenBg }]}>
         <LinearGradient
@@ -140,14 +247,29 @@ export const AccountScreen: React.FC<AccountScreenProps> = ({
           />
 
         <ScrollView contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
-          <View style={styles.brandHero}>
-            <View style={styles.heroLogoCircle}>
-              <IOSIcon name="paw" size={32} color={IOSColors.systemTeal} />
-            </View>
-            <Text style={styles.brandTitle}>Hawem</Text>
-            <Text style={styles.brandSubtitle}>
-              Create your surveyor profile to record and synchronize field data
-            </Text>
+          {/* Avatar Picker Header */}
+          <View style={styles.editAvatarSection}>
+            <TouchableOpacity
+              style={styles.editAvatarTouch}
+              onPress={handlePickAvatar}
+              activeOpacity={0.8}
+            >
+              {avatarUri ? (
+                <Image source={{ uri: avatarUri }} style={styles.editAvatarImage} />
+              ) : (
+                <View style={styles.editAvatarPlaceholder}>
+                  <Text style={styles.editAvatarInitials}>{editInitials}</Text>
+                </View>
+              )}
+              <View style={styles.editAvatarCameraBadge}>
+                <IOSIcon name="camera" size={14} color="#FFFFFF" />
+              </View>
+            </TouchableOpacity>
+            <TouchableOpacity onPress={handlePickAvatar} style={styles.changePhotoBtn}>
+              <Text style={styles.changePhotoText}>
+                {avatarUri ? 'Change Profile Picture' : 'Add Profile Picture'}
+              </Text>
+            </TouchableOpacity>
           </View>
 
           {/* Form Group */}
@@ -158,7 +280,7 @@ export const AccountScreen: React.FC<AccountScreenProps> = ({
                 style={styles.textInput}
                 value={name}
                 onChangeText={setName}
-                placeholder="Dr. Amira Ben Salem"
+                placeholder="e.g. Sami Trabelsi"
                 placeholderTextColor={IOSColors.tertiaryLabel}
                 autoCapitalize="words"
               />
@@ -178,14 +300,43 @@ export const AccountScreen: React.FC<AccountScreenProps> = ({
             </View>
 
             <View style={[styles.formRow, styles.topBorder]}>
+              <Text style={styles.inputLabel}>Surveyor ID / Call-sign</Text>
+              <TextInput
+                style={styles.textInput}
+                value={surveyorId}
+                onChangeText={setSurveyorId}
+                placeholder="e.g. TUN-OBS-21 or OBS-ZAKHER"
+                placeholderTextColor={IOSColors.tertiaryLabel}
+                autoCapitalize="characters"
+              />
+            </View>
+
+            <View style={[styles.formRow, styles.topBorder]}>
               <Text style={styles.inputLabel}>Organization / Entity</Text>
               <TextInput
                 style={styles.textInput}
                 value={organization}
                 onChangeText={setOrganization}
-                placeholder="Institut Pasteur de Tunis"
+                placeholder="e.g. Institut Pasteur de Tunis"
                 placeholderTextColor={IOSColors.tertiaryLabel}
               />
+            </View>
+          </IOSGroupedList>
+
+          {/* Operating Governorate */}
+          <IOSGroupedList header="Operating Governorate">
+            <View style={styles.formRow}>
+              <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.govChipScroll}>
+                {TUNISIA_GOVERNORATES.map((gov) => (
+                  <TouchableOpacity
+                    key={gov}
+                    style={[styles.govChip, governorate === gov && styles.govChipActive]}
+                    onPress={() => setGovernorate(gov)}
+                  >
+                    <Text style={[styles.govChipText, governorate === gov && styles.govChipTextActive]}>{gov}</Text>
+                  </TouchableOpacity>
+                ))}
+              </ScrollView>
             </View>
           </IOSGroupedList>
 
@@ -300,17 +451,22 @@ export const AccountScreen: React.FC<AccountScreenProps> = ({
 
         {/* Reference 2: Overlapping Profile Card */}
         <View style={styles.profileOverlappingCard}>
-          <View style={styles.avatarLargeWrapper}>
-            <View style={styles.avatarLarge}>
-              <Text style={styles.avatarLargeText}>{initials}</Text>
+          <TouchableOpacity
+            style={styles.avatarLargeWrapper}
+            activeOpacity={0.8}
+            onPress={handlePickAvatar}
+          >
+            {userAccount?.avatarUri ? (
+              <Image source={{ uri: userAccount.avatarUri }} style={styles.avatarLargeImage} />
+            ) : (
+              <View style={styles.avatarLarge}>
+                <Text style={styles.avatarLargeText}>{initials}</Text>
+              </View>
+            )}
+            <View style={styles.avatarCameraBadge}>
+              <IOSIcon name="camera" size={12} color="#FFFFFF" />
             </View>
-            <View style={styles.avatarEmblemBadge}>
-              <Image
-                source={require('../../assets/icon_cat_white.png')}
-                style={{ width: 14, height: 14, resizeMode: 'contain' }}
-              />
-            </View>
-          </View>
+          </TouchableOpacity>
           <View style={styles.profileDetails}>
             <Text style={styles.profileNameLarge}>{displayName}</Text>
             <Text style={styles.profileRoleText}>{displayRole}</Text>
@@ -648,6 +804,108 @@ const styles = StyleSheet.create({
     backgroundColor: '#0F172A',
     alignItems: 'center',
     justifyContent: 'center',
+  },
+  avatarLargeImage: {
+    width: 66,
+    height: 66,
+    borderRadius: 22,
+    borderWidth: 2,
+    borderColor: '#E2E8F0',
+    backgroundColor: '#F1F5F9',
+  },
+  avatarCameraBadge: {
+    position: 'absolute',
+    bottom: -3,
+    right: -3,
+    width: 24,
+    height: 24,
+    borderRadius: 12,
+    backgroundColor: '#0284C7',
+    borderWidth: 2,
+    borderColor: '#FFFFFF',
+    alignItems: 'center',
+    justifyContent: 'center',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.2,
+    shadowRadius: 2,
+    elevation: 3,
+  },
+  editAvatarSection: {
+    alignItems: 'center',
+    marginVertical: 16,
+  },
+  editAvatarTouch: {
+    position: 'relative',
+  },
+  editAvatarImage: {
+    width: 80,
+    height: 80,
+    borderRadius: 28,
+    borderWidth: 2,
+    borderColor: IOSColors.systemTeal,
+  },
+  editAvatarPlaceholder: {
+    width: 80,
+    height: 80,
+    borderRadius: 28,
+    backgroundColor: '#0F172A',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  editAvatarInitials: {
+    fontSize: 26,
+    fontWeight: '800',
+    color: '#FFFFFF',
+  },
+  editAvatarCameraBadge: {
+    position: 'absolute',
+    bottom: -2,
+    right: -2,
+    width: 28,
+    height: 28,
+    borderRadius: 14,
+    backgroundColor: '#0284C7',
+    borderWidth: 2,
+    borderColor: '#FFFFFF',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  changePhotoBtn: {
+    marginTop: 8,
+    paddingVertical: 4,
+    paddingHorizontal: 12,
+  },
+  changePhotoText: {
+    fontSize: 13,
+    fontWeight: '700',
+    color: IOSColors.systemTeal,
+  },
+  govChipScroll: {
+    flexDirection: 'row',
+    gap: 8,
+    paddingVertical: 4,
+  },
+  govChip: {
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: 8,
+    backgroundColor: '#F1F5F9',
+    borderWidth: 1,
+    borderColor: '#E2E8F0',
+  },
+  govChipActive: {
+    backgroundColor: '#0F172A',
+    borderColor: '#0F172A',
+  },
+  govChipText: {
+    fontSize: 12,
+    fontWeight: '600',
+    color: '#475569',
+  },
+  govChipTextActive: {
+    color: '#FFFFFF',
+    fontWeight: '700',
   },
   avatarEmblemBadge: {
     position: 'absolute',
