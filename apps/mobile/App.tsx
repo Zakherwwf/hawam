@@ -52,6 +52,7 @@ function AppContent() {
   const [activeTab, setActiveTab] = useState<TabType>('map');
   const [activeModal, setActiveModal] = useState<ModalType>('none');
   const [primaryViewMode, setPrimaryViewMode] = useState<'map' | 'dashboard'>('map');
+  const [selectedRouteForSurvey, setSelectedRouteForSurvey] = useState<string | null>(null);
 
   const handleTabPress = (tab: TabType) => {
     if (activeTab !== tab) {
@@ -522,6 +523,10 @@ function AppContent() {
               }}
               onOpenAccount={() => handleTabPress('profile')}
               onToggleDashboard={() => setPrimaryViewMode('dashboard')}
+              onStartSurvey={(routeId) => {
+                setSelectedRouteForSurvey(routeId);
+                handleTabPress('survey');
+              }}
             />
           )
         ) : activeTab === 'survey' ? (
@@ -530,6 +535,7 @@ function AppContent() {
             onFinishSurvey={handleFinishStructuredSurvey}
             onLogAnimal={handleLogAnimalInSurvey}
             loggedAnimalsCount={stats.animalsRecorded}
+            initialRouteId={selectedRouteForSurvey}
           />
         ) : activeTab === 'animals' ? (
           <AnimalsScreen

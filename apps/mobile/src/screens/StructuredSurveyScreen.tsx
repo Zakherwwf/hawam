@@ -71,6 +71,7 @@ interface StructuredSurveyScreenProps {
   loggedAnimalsCount: number;
   activeDetections?: SurveyDetection[];
   onOpenPhotoCaptureModal?: () => void;
+  initialRouteId?: string | null;
 }
 
 export const StructuredSurveyScreen: React.FC<StructuredSurveyScreenProps> = ({
@@ -78,6 +79,7 @@ export const StructuredSurveyScreen: React.FC<StructuredSurveyScreenProps> = ({
   onFinishSurvey,
   onLogAnimal,
   loggedAnimalsCount,
+  initialRouteId,
 }) => {
   const { t } = useTranslation();
 
@@ -91,6 +93,17 @@ export const StructuredSurveyScreen: React.FC<StructuredSurveyScreenProps> = ({
   const { routes, checkOffRoute, recordSurveyCompletion } = useRoutesStore();
   const { colonies } = useColoniesStore();
   const [selectedColony, setSelectedColony] = useState<CatColony | null>(null);
+
+  // Preload initial route if requested from MapOverviewScreen
+  useEffect(() => {
+    if (initialRouteId) {
+      const r = routes.find((item) => item.id === initialRouteId);
+      if (r) {
+        setSelectedRouteObj(r);
+        setProtocol('transect');
+      }
+    }
+  }, [initialRouteId, routes]);
 
   // Survey summary state
   const [showSummaryModal, setShowSummaryModal] = useState<boolean>(false);

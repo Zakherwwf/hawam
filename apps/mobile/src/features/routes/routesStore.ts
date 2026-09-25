@@ -11,8 +11,8 @@
 
 import { create } from 'zustand';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { calculateDistanceToRouteM } from '../../services/georef/geoUtils';
-import { useGamificationStore } from '../gamification/gamificationStore';
+import { calculateDistanceToRouteM } from '../../services/georef/geoUtils.ts';
+import { useGamificationStore } from '../gamification/gamificationStore.ts';
 
 export interface FixedRoute {
   id: string;
@@ -156,10 +156,12 @@ export const useRoutesStore = create<RoutesState>((set, get) => ({
 
   loadRoutes: async () => {
     try {
-      const stored = await AsyncStorage.getItem(STORAGE_KEY);
-      if (stored) {
-        const parsed = JSON.parse(stored);
-        set({ routes: parsed });
+      if (AsyncStorage && typeof AsyncStorage.getItem === 'function') {
+        const stored = await AsyncStorage.getItem(STORAGE_KEY);
+        if (stored) {
+          const parsed = JSON.parse(stored);
+          set({ routes: parsed });
+        }
       }
     } catch (e) {
       console.warn('Error loading fixed routes:', e);
@@ -168,11 +170,20 @@ export const useRoutesStore = create<RoutesState>((set, get) => ({
 
   toggleAdoptRoute: (routeId: string) => {
     const { routes } = get();
+    const route = routes.find((r) => r.id === routeId);
+    const becomingAdopted = route ? !route.isAdopted : false;
+
     const updated = routes.map((r) =>
       r.id === routeId ? { ...r, isAdopted: !r.isAdopted } : r
     );
     set({ routes: updated });
-    AsyncStorage.setItem(STORAGE_KEY, JSON.stringify(updated)).catch(() => {});
+    if (AsyncStorage && typeof AsyncStorage.setItem === 'function') {
+      AsyncStorage.setItem(STORAGE_KEY, JSON.stringify(updated)).catch(() => {});
+    }
+
+    if (becomingAdopted) {
+      useGamificationStore.getState().awardXp(30, 'Adopted a fixed transect');
+    }
   },
 
   recordSurveyCompletion: (routeId: string) => {
@@ -193,7 +204,9 @@ export const useRoutesStore = create<RoutesState>((set, get) => ({
     });
 
     set({ routes: updated });
-    AsyncStorage.setItem(STORAGE_KEY, JSON.stringify(updated)).catch(() => {});
+    if (AsyncStorage && typeof AsyncStorage.setItem === 'function') {
+      AsyncStorage.setItem(STORAGE_KEY, JSON.stringify(updated)).catch(() => {});
+    }
 
     // Check if Surveyor unlocked the Route Guardian badge (5 surveys on fixed transect)
     if (updatedTimes >= 5) {

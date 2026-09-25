@@ -36,6 +36,17 @@ export interface FocusCoordinate {
   zoom?: number;
 }
 
+export interface TransectMarker {
+  id: string;
+  name: string;
+  nameAr?: string;
+  latitude: number;
+  longitude: number;
+  distanceKm: number;
+  isAdopted: boolean;
+  isSelected?: boolean;
+}
+
 interface InteractiveMapViewProps {
   initialLat?: number;
   initialLon?: number;
@@ -43,11 +54,13 @@ interface InteractiveMapViewProps {
   focusCoordinate?: FocusCoordinate | null;
   markers?: MapMarker[];
   colonyMarkers?: ColonyMarker[];
+  transectMarkers?: TransectMarker[];
   trackCoordinates?: [number, number][]; // [lat, lon]
   routeCorridorCoordinates?: [number, number][]; // Planned transect corridor [lat, lon]
   showUserLocation?: boolean;
   onMarkerPress?: (markerId: string) => void;
   onColonyPress?: (colonyId: string) => void;
+  onTransectPress?: (transectId: string) => void;
   height?: DimensionValue;
 }
 
@@ -58,11 +71,13 @@ export const InteractiveMapView: React.FC<InteractiveMapViewProps> = ({
   focusCoordinate,
   markers = [],
   colonyMarkers = [],
+  transectMarkers = [],
   trackCoordinates = [],
   routeCorridorCoordinates = [],
   showUserLocation = true,
   onMarkerPress,
   onColonyPress,
+  onTransectPress,
   height = '100%',
 }) => {
   const webViewRef = useRef<WebView>(null);
@@ -111,13 +126,14 @@ export const InteractiveMapView: React.FC<InteractiveMapViewProps> = ({
     };
   }, []);
 
-  // Sync markers, colonies, corridor, track coordinates, and user location to Mapbox GL JS
+  // Sync markers, colonies, transects, corridor, track coordinates, and user location to Mapbox GL JS
   useEffect(() => {
     if (!mapLoaded || !webViewRef.current) return;
 
     const dataPayload = JSON.stringify({
       markers,
       colonyMarkers: showColoniesLayer ? colonyMarkers : [],
+      transectMarkers,
       trackCoordinates,
       routeCorridorCoordinates,
       userLocation: showUserLocation ? userLocation : null,
@@ -125,7 +141,7 @@ export const InteractiveMapView: React.FC<InteractiveMapViewProps> = ({
 
     const js = `if (window.updateMapboxData) { window.updateMapboxData(${dataPayload}); } true;`;
     webViewRef.current.injectJavaScript(js);
-  }, [markers, colonyMarkers, showColoniesLayer, trackCoordinates, routeCorridorCoordinates, userLocation, mapLoaded, showUserLocation]);
+  }, [markers, colonyMarkers, transectMarkers, showColoniesLayer, trackCoordinates, routeCorridorCoordinates, userLocation, mapLoaded, showUserLocation]);
 
   // Smooth camera auto-centering effect on target coordinate
   useEffect(() => {
@@ -304,6 +320,46 @@ export const InteractiveMapView: React.FC<InteractiveMapViewProps> = ({
       background: #FFEDD5;
       color: #C2410C;
     }
+    .transect-pin {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      min-width: 32px;
+      height: 32px;
+      padding: 0 6px;
+      border-radius: 16px;
+      color: #FFFFFF;
+      font-weight: 800;
+      font-size: 10px;
+      box-shadow: 0 4px 10px rgba(6, 182, 212, 0.45);
+      border: 2px solid #FFFFFF;
+      cursor: pointer;
+      letter-spacing: 0.2px;
+      background: linear-gradient(135deg, #0284C7, #0D9488);
+      transition: transform 0.15s ease;
+    }
+    .transect-pin.adopted {
+      border: 2px solid #FDE047;
+      box-shadow: 0 4px 12px rgba(234, 179, 8, 0.6);
+    }
+    .transect-pin.selected {
+      transform: scale(1.15);
+      box-shadow: 0 6px 16px rgba(2, 132, 199, 0.65);
+    }
+    .transect-pin:active {
+      transform: scale(0.92);
+    }
+    .popup-transect-badge {
+      display: inline-block;
+      font-size: 11px;
+      font-weight: 700;
+      text-transform: uppercase;
+      padding: 2px 7px;
+      border-radius: 6px;
+      margin-bottom: 4px;
+      background: #E0F2FE;
+      color: #0369A1;
+    }
     .popup-coords {
       font-size: 10px;
       color: #64748B;
@@ -333,6 +389,7 @@ export const InteractiveMapView: React.FC<InteractiveMapViewProps> = ({
 
     var activeMarkers = [];
     var activeColonyMarkers = [];
+    var activeTransectMarkers = [];
     var userMarker = null;
     var currentTrackCoords = [];
     var currentCorridorCoords = [];
@@ -471,6 +528,10 @@ export const InteractiveMapView: React.FC<InteractiveMapViewProps> = ({
       activeColonyMarkers.forEach(function(m) { m.remove(); });
       activeColonyMarkers = [];
 
+      // 1c. Clear existing transect markers
+      activeTransectMarkers.forEach(function(m) { m.remove(); });
+      activeTransectMarkers = [];
+
       // 2. Render animal markers
       if (data.markers && data.markers.length > 0) {
         data.markers.forEach(function(m, idx) {
@@ -539,6 +600,35 @@ export const InteractiveMapView: React.FC<InteractiveMapViewProps> = ({
         });
       }
 
+      // 2c. Render standardized transect markers
+      if (data.transectMarkers && data.transectMarkers.length > 0) {
+        data.transectMarkers.forEach(function(t) {
+          var pinEl = document.createElement('div');
+          pinEl.className = 'transect-pin' + (t.isAdopted ? ' adopted' : '') + (t.isSelected ? ' selected' : '');
+          pinEl.innerText = t.isAdopted ? '★ ROUTE' : 'ROUTE';
+
+          var popupHtml =
+            '<div class="popup-transect-badge">' + (t.isAdopted ? '★ ' : '') + 'Transect: ' + t.name + '</div>' +
+            '<div style="font-size:12px;font-weight:600;margin-top:2px;">Length: ' + t.distanceKm + ' km ' + (t.isAdopted ? '(Adopted)' : '') + '</div>' +
+            '<div class="popup-coords">' + t.latitude.toFixed(5) + '° N, ' + t.longitude.toFixed(5) + '° E</div>';
+
+          var popup = new mapboxgl.Popup({ offset: 18, closeButton: true }).setHTML(popupHtml);
+
+          var marker = new mapboxgl.Marker({ element: pinEl })
+            .setLngLat([t.longitude, t.latitude])
+            .setPopup(popup)
+            .addTo(map);
+
+          pinEl.addEventListener('click', function() {
+            if (window.ReactNativeWebView) {
+              window.ReactNativeWebView.postMessage(JSON.stringify({ type: 'transect_click', id: t.id }));
+            }
+          });
+
+          activeTransectMarkers.push(marker);
+        });
+      }
+
       // 3. Render planned corridor
       if (data.routeCorridorCoordinates) {
         currentCorridorCoords = data.routeCorridorCoordinates;
@@ -599,6 +689,8 @@ export const InteractiveMapView: React.FC<InteractiveMapViewProps> = ({
               onMarkerPress(data.id);
             } else if (data.type === 'colony_click' && onColonyPress) {
               onColonyPress(data.id);
+            } else if (data.type === 'transect_click' && onTransectPress) {
+              onTransectPress(data.id);
             }
           } catch (e) {}
         }}

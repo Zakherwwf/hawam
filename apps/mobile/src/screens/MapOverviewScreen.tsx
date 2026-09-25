@@ -15,9 +15,10 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { IOSColors, IOSTypography } from '../theme/ios';
 import { LinearGradient } from 'expo-linear-gradient';
 import { IOSIcon } from '../components/ios';
-import { InteractiveMapView, MapMarker, FocusCoordinate } from '../components/map/InteractiveMapView';
+import { InteractiveMapView, MapMarker, ColonyMarker, TransectMarker, FocusCoordinate } from '../components/map/InteractiveMapView';
 import { SightingItem } from './SightingsScreen';
 import { useColoniesStore, CatColony } from '../features/colonies/coloniesStore';
+import { useRoutesStore, FixedRoute } from '../features/routes/routesStore';
 import { ColonyInspectorModal } from '../components/colonies/ColonyInspectorModal';
 import { CreateColonyModal } from '../components/colonies/CreateColonyModal';
 import {
@@ -25,6 +26,7 @@ import {
   hapticButtonPress,
   hapticQuickLog,
   hapticTabSwitch,
+  hapticSuccess,
 } from '../utils/haptics';
 
 const GOVERNORATES = [
@@ -59,6 +61,7 @@ interface MapOverviewScreenProps {
   onSelectSighting?: (sighting: SightingItem) => void;
   onOpenAccount?: () => void;
   onToggleDashboard?: () => void;
+  onStartSurvey?: (routeId: string) => void;
 }
 
 export const MapOverviewScreen: React.FC<MapOverviewScreenProps> = ({
@@ -67,6 +70,7 @@ export const MapOverviewScreen: React.FC<MapOverviewScreenProps> = ({
   onSelectSighting,
   onOpenAccount,
   onToggleDashboard,
+  onStartSurvey,
 }) => {
   const [selectedGovernorate, setSelectedGovernorate] = useState<string>('Tunis');
   const [showGovPicker, setShowGovPicker] = useState<boolean>(false);
@@ -89,6 +93,33 @@ export const MapOverviewScreen: React.FC<MapOverviewScreenProps> = ({
   const [selectedColony, setSelectedColony] = useState<CatColony | null>(null);
   const [showCreateColonyModal, setShowCreateColonyModal] = useState<boolean>(false);
 
+  // Predefined Standardized Transects
+  const { routes, toggleAdoptRoute } = useRoutesStore();
+  const [selectedRouteId, setSelectedRouteId] = useState<string | null>(null);
+
+  const selectedRoute = routes.find((r) => r.id === selectedRouteId) || null;
+
+  // Standardized transect markers
+  const transectMarkers: TransectMarker[] = useMemo(() => {
+    return routes.map((r) => ({
+      id: r.id,
+      name: r.name,
+      nameAr: r.nameAr,
+      latitude: r.waypoints[0][0],
+      longitude: r.waypoints[0][1],
+      distanceKm: r.distanceKm,
+      isAdopted: r.isAdopted,
+      isSelected: r.id === selectedRouteId,
+    }));
+  }, [routes, selectedRouteId]);
+
+  const displayTransects = useMemo(() => {
+    if (activeFilter === 'cats' || activeFilter === 'dogs' || activeFilter === 'colonies') {
+      return selectedRouteId ? transectMarkers.filter((t) => t.id === selectedRouteId) : [];
+    }
+    return transectMarkers;
+  }, [transectMarkers, activeFilter, selectedRouteId]);
+
   const hasActiveAdvancedFilters =
     filterBcs !== 'all' || filterOnlyWithPhotos || filterProtocol !== 'all';
 
@@ -97,7 +128,7 @@ export const MapOverviewScreen: React.FC<MapOverviewScreenProps> = ({
     return sightings.filter((s) => {
       if (activeFilter === 'cats' && s.species !== 'cat') return false;
       if (activeFilter === 'dogs' && s.species !== 'dog') return false;
-      if (activeFilter === 'colonies') return false;
+      if (activeFilter === 'colonies' || activeFilter === 'transects') return false;
       if (filterBcs !== 'all' && s.body_condition_score !== filterBcs) return false;
       if (filterOnlyWithPhotos && (!s.photos || s.photos.length === 0)) return false;
       if (filterProtocol !== 'all' && s.protocol !== filterProtocol) return false;
@@ -115,7 +146,7 @@ export const MapOverviewScreen: React.FC<MapOverviewScreenProps> = ({
 
   // Convert filtered sightings to map markers
   const mapMarkers: MapMarker[] = useMemo(() => {
-    if (activeFilter === 'colonies') return [];
+    if (activeFilter === 'colonies' || activeFilter === 'transects') return [];
     return filteredSightings.map((s, idx) => ({
       id: s.id,
       latitude: s.latitude,
@@ -130,7 +161,7 @@ export const MapOverviewScreen: React.FC<MapOverviewScreenProps> = ({
 
   // Filter colonies
   const displayColonies = useMemo(() => {
-    if (activeFilter === 'cats' || activeFilter === 'dogs') return [];
+    if (activeFilter === 'cats' || activeFilter === 'dogs' || activeFilter === 'transects') return [];
     return colonies;
   }, [colonies, activeFilter]);
 
@@ -138,6 +169,34 @@ export const MapOverviewScreen: React.FC<MapOverviewScreenProps> = ({
 
   const catCount = sightings.filter((s) => s.species === 'cat').length;
   const dogCount = sightings.filter((s) => s.species === 'dog').length;
+
+  const handleSelectTransect = (routeId: string) => {
+    hapticTabSwitch();
+    setSelectedRouteId(routeId);
+    setSelectedSightingId(null);
+    setSelectedColony(null);
+
+    const r = routes.find((item) => item.id === routeId);
+    if (r && r.waypoints && r.waypoints.length > 0) {
+      const midIdx = Math.floor(r.waypoints.length / 2);
+      const midPt = r.waypoints[midIdx];
+      setFocusCoordinate({
+        latitude: midPt[0],
+        longitude: midPt[1],
+        zoom: 15,
+      });
+    }
+  };
+
+  const handleToggleStarRoute = (routeId: string) => {
+    hapticSuccess();
+    toggleAdoptRoute(routeId);
+  };
+
+  const handleCloseTransectCard = () => {
+    hapticModalClose();
+    setSelectedRouteId(null);
+  };
 
   const handleCloseGovPicker = () => {
     hapticModalClose();
@@ -510,6 +569,86 @@ export const MapOverviewScreen: React.FC<MapOverviewScreenProps> = ({
               pointerEvents="none"
             />
           </View>
+
+          {/* Standardized Transects Quick-Selection Strip */}
+          {activeFilter === 'transects' && (
+            <View style={styles.transectsStripWrapper}>
+              <ScrollView
+                horizontal
+                showsHorizontalScrollIndicator={false}
+                contentContainerStyle={styles.transectsScrollRow}
+              >
+                {routes.map((route) => {
+                  const isSelected = selectedRouteId === route.id;
+                  return (
+                    <TouchableOpacity
+                      key={route.id}
+                      style={[
+                        styles.transectCard,
+                        isSelected && styles.transectCardSelected,
+                      ]}
+                      onPress={() => handleSelectTransect(route.id)}
+                      activeOpacity={0.8}
+                    >
+                      <View style={styles.transectCardTopRow}>
+                        <View style={styles.transectZoneBadge}>
+                          <Text style={styles.transectZoneText}>{route.zone.toUpperCase()}</Text>
+                        </View>
+                        <TouchableOpacity
+                          style={styles.starTouchBtn}
+                          onPress={(e) => {
+                            e.stopPropagation();
+                            handleToggleStarRoute(route.id);
+                          }}
+                          hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+                        >
+                          <IOSIcon
+                            name="star"
+                            size={16}
+                            color={route.isAdopted ? '#EAB308' : '#94A3B8'}
+                          />
+                        </TouchableOpacity>
+                      </View>
+
+                      <Text style={styles.transectCardTitle} numberOfLines={1}>
+                        {route.name}
+                      </Text>
+
+                      <View style={styles.transectMetricsRow}>
+                        <View style={styles.transectMetricPill}>
+                          <IOSIcon name="ruler" size={11} color="#0284C7" />
+                          <Text style={styles.transectMetricText}>{route.distanceKm} km</Text>
+                        </View>
+                        <View style={styles.transectMetricPill}>
+                          <IOSIcon name="clock" size={11} color="#64748B" />
+                          <Text style={styles.transectMetricText}>{route.targetPaceKmH} km/h</Text>
+                        </View>
+                        {route.isAdopted && (
+                          <View style={styles.adoptedGuardianTag}>
+                            <Text style={styles.adoptedGuardianTagText}>★ Adopted</Text>
+                          </View>
+                        )}
+                      </View>
+                    </TouchableOpacity>
+                  );
+                })}
+              </ScrollView>
+              <LinearGradient
+                colors={['rgba(253, 242, 236, 0.95)', 'rgba(253, 242, 236, 0)']}
+                start={{ x: 0, y: 0 }}
+                end={{ x: 1, y: 0 }}
+                style={styles.fadeLeft}
+                pointerEvents="none"
+              />
+              <LinearGradient
+                colors={['rgba(251, 244, 237, 0)', 'rgba(251, 244, 237, 0.95)']}
+                start={{ x: 0, y: 0 }}
+                end={{ x: 1, y: 0 }}
+                style={styles.fadeRight}
+                pointerEvents="none"
+              />
+            </View>
+          )}
         </View>
 
         {/* Main Interactive Map Canvas */}
@@ -533,9 +672,12 @@ export const MapOverviewScreen: React.FC<MapOverviewScreenProps> = ({
               hasWaterStation: c.hasWaterStation,
               hasShelter: c.hasShelter,
             }))}
+            transectMarkers={displayTransects}
+            routeCorridorCoordinates={selectedRoute ? selectedRoute.waypoints : []}
             showUserLocation={true}
             onMarkerPress={(id) => {
               setSelectedSightingId(id);
+              setSelectedRouteId(null);
               const s = sightings.find((item) => item.id === id);
               if (s) {
                 setFocusCoordinate({ latitude: s.latitude, longitude: s.longitude, zoom: 16 });
@@ -545,9 +687,13 @@ export const MapOverviewScreen: React.FC<MapOverviewScreenProps> = ({
             onColonyPress={(id) => {
               const col = colonies.find((c) => c.id === id);
               setSelectedColony(col || null);
+              setSelectedRouteId(null);
               if (col) {
                 setFocusCoordinate({ latitude: col.latitude, longitude: col.longitude, zoom: 16 });
               }
+            }}
+            onTransectPress={(id) => {
+              handleSelectTransect(id);
             }}
             height="100%"
           />
@@ -571,7 +717,7 @@ export const MapOverviewScreen: React.FC<MapOverviewScreenProps> = ({
           )}
 
           {/* Floating Quick Action Button */}
-          {!selectedSighting && (
+          {!selectedSighting && !selectedRoute && (
             <TouchableOpacity
               style={[
                 styles.floatingActionBtn,
@@ -685,6 +831,115 @@ export const MapOverviewScreen: React.FC<MapOverviewScreenProps> = ({
                     : 'N/A'}{' '}
                   • Protocol: {selectedSighting.protocol}
                 </Text>
+              </View>
+            </View>
+          ) : null}
+
+          {/* Selected Transect Trajectory Detail Card */}
+          {selectedRoute && !selectedSighting ? (
+            <View style={styles.sightingCard}>
+              {/* Visual Pull-Down Drag Handle */}
+              <View style={styles.cardDragHandleContainer}>
+                <View style={styles.cardDragHandle} />
+              </View>
+
+              <View style={styles.sightingCardTop}>
+                <View style={styles.sightingSpeciesRow}>
+                  <View style={styles.transectBadgePill}>
+                    <IOSIcon name="compass" size={13} color="#0284C7" />
+                    <Text style={styles.transectBadgePillText}>STANDARDIZED TRANSECT</Text>
+                  </View>
+                  <View style={styles.densityPill}>
+                    <Text style={styles.densityPillText}>
+                      {selectedRoute.densityClassification.toUpperCase()} DENSITY
+                    </Text>
+                  </View>
+                </View>
+
+                <TouchableOpacity
+                  onPress={handleCloseTransectCard}
+                  style={styles.closeCardBtn}
+                >
+                  <IOSIcon name="xmark" size={14} color="#64748B" />
+                </TouchableOpacity>
+              </View>
+
+              {/* Transect Title Headline */}
+              <Text style={styles.sightingIdentifierHeadline}>
+                {selectedRoute.name}
+              </Text>
+              {selectedRoute.nameAr ? (
+                <Text style={styles.transectArabicHeadline}>
+                  {selectedRoute.nameAr}
+                </Text>
+              ) : null}
+
+              <Text style={styles.transectDescriptionText} numberOfLines={2}>
+                {selectedRoute.description}
+              </Text>
+
+              {/* Transect Telemetry Metrics Bento */}
+              <View style={styles.transectBentoRow}>
+                <View style={styles.transectBentoItem}>
+                  <Text style={styles.transectBentoValue}>{selectedRoute.distanceKm} km</Text>
+                  <Text style={styles.transectBentoLabel}>Length</Text>
+                </View>
+                <View style={styles.transectBentoItem}>
+                  <Text style={styles.transectBentoValue}>{selectedRoute.targetPaceKmH} km/h</Text>
+                  <Text style={styles.transectBentoLabel}>Target Pace</Text>
+                </View>
+                <View style={styles.transectBentoItem}>
+                  <Text style={styles.transectBentoValue}>{selectedRoute.timesSurveyed}</Text>
+                  <Text style={styles.transectBentoLabel}>Surveys Done</Text>
+                </View>
+                <View style={styles.transectBentoItem}>
+                  <Text style={[styles.transectBentoValue, { color: '#059669' }]}>
+                    +{selectedRoute.bonusXp || 15} XP
+                  </Text>
+                  <Text style={styles.transectBentoLabel}>Survey Bonus</Text>
+                </View>
+              </View>
+
+              {/* Action Buttons Row: Star/Adopt + Start Survey */}
+              <View style={styles.transectActionBtnRow}>
+                <TouchableOpacity
+                  style={[
+                    styles.starAdoptBtn,
+                    selectedRoute.isAdopted && styles.starAdoptBtnActive,
+                  ]}
+                  onPress={() => handleToggleStarRoute(selectedRoute.id)}
+                  activeOpacity={0.8}
+                >
+                  <IOSIcon
+                    name="star"
+                    size={16}
+                    color={selectedRoute.isAdopted ? '#EAB308' : '#475569'}
+                  />
+                  <Text
+                    style={[
+                      styles.starAdoptBtnText,
+                      selectedRoute.isAdopted && styles.starAdoptBtnTextActive,
+                    ]}
+                  >
+                    {selectedRoute.isAdopted ? '★ Adopted Guardian' : '☆ Star / Adopt Route'}
+                  </Text>
+                </TouchableOpacity>
+
+                {onStartSurvey && (
+                  <TouchableOpacity
+                    style={styles.startSurveyOnTransectBtn}
+                    onPress={() => {
+                      hapticButtonPress();
+                      onStartSurvey(selectedRoute.id);
+                    }}
+                    activeOpacity={0.85}
+                  >
+                    <IOSIcon name="play" size={15} color="#FFFFFF" />
+                    <Text style={styles.startSurveyOnTransectBtnText}>
+                      Start Survey
+                    </Text>
+                  </TouchableOpacity>
+                )}
               </View>
             </View>
           ) : null}
@@ -1618,6 +1873,197 @@ const styles = StyleSheet.create({
     marginTop: 16,
   },
   modalActionBtnText: {
+    fontSize: 14,
+    fontWeight: '700',
+    color: '#FFFFFF',
+  },
+  transectsStripWrapper: {
+    position: 'relative',
+    marginTop: 6,
+    marginBottom: 4,
+  },
+  transectsScrollRow: {
+    paddingHorizontal: 16,
+    gap: 10,
+    paddingVertical: 2,
+  },
+  transectCard: {
+    backgroundColor: '#FFFFFF',
+    borderRadius: 14,
+    padding: 12,
+    borderWidth: 1.5,
+    borderColor: '#E2E8F0',
+    width: 210,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.05,
+    shadowRadius: 6,
+    elevation: 2,
+  },
+  transectCardSelected: {
+    borderColor: '#0284C7',
+    backgroundColor: '#F0F9FF',
+  },
+  transectCardTopRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 6,
+  },
+  transectZoneBadge: {
+    backgroundColor: '#E0F2FE',
+    paddingHorizontal: 6,
+    paddingVertical: 2,
+    borderRadius: 6,
+  },
+  transectZoneText: {
+    fontSize: 10,
+    fontWeight: '800',
+    color: '#0369A1',
+  },
+  starTouchBtn: {
+    padding: 3,
+  },
+  transectCardTitle: {
+    fontSize: 13,
+    fontWeight: '700',
+    color: '#0F172A',
+    marginBottom: 6,
+  },
+  transectMetricsRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    flexWrap: 'wrap',
+  },
+  transectMetricPill: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 3,
+    backgroundColor: '#F8FAFC',
+    paddingHorizontal: 6,
+    paddingVertical: 2,
+    borderRadius: 6,
+  },
+  transectMetricText: {
+    fontSize: 11,
+    fontWeight: '600',
+    color: '#475569',
+  },
+  adoptedGuardianTag: {
+    backgroundColor: '#FEF9C3',
+    paddingHorizontal: 6,
+    paddingVertical: 2,
+    borderRadius: 6,
+  },
+  adoptedGuardianTagText: {
+    fontSize: 10,
+    fontWeight: '800',
+    color: '#854D0E',
+  },
+  transectBadgePill: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+    backgroundColor: '#E0F2FE',
+    paddingHorizontal: 8,
+    paddingVertical: 3,
+    borderRadius: 8,
+  },
+  transectBadgePillText: {
+    fontSize: 11,
+    fontWeight: '800',
+    color: '#0284C7',
+  },
+  densityPill: {
+    backgroundColor: '#FEF3C7',
+    paddingHorizontal: 8,
+    paddingVertical: 3,
+    borderRadius: 8,
+  },
+  densityPillText: {
+    fontSize: 10,
+    fontWeight: '800',
+    color: '#B45309',
+  },
+  transectArabicHeadline: {
+    fontSize: 13,
+    color: '#64748B',
+    marginTop: 2,
+    textAlign: 'right',
+  },
+  transectDescriptionText: {
+    fontSize: 12,
+    color: '#475569',
+    marginTop: 6,
+    lineHeight: 16,
+  },
+  transectBentoRow: {
+    flexDirection: 'row',
+    gap: 8,
+    marginTop: 12,
+    marginBottom: 12,
+  },
+  transectBentoItem: {
+    flex: 1,
+    backgroundColor: '#F8FAFC',
+    paddingVertical: 8,
+    paddingHorizontal: 4,
+    borderRadius: 10,
+    alignItems: 'center',
+    borderWidth: 1,
+    borderColor: '#E2E8F0',
+  },
+  transectBentoValue: {
+    fontSize: 13,
+    fontWeight: '800',
+    color: '#0F172A',
+  },
+  transectBentoLabel: {
+    fontSize: 10,
+    color: '#64748B',
+    marginTop: 2,
+  },
+  transectActionBtnRow: {
+    flexDirection: 'row',
+    gap: 10,
+    alignItems: 'center',
+  },
+  starAdoptBtn: {
+    flex: 1,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 6,
+    paddingVertical: 12,
+    borderRadius: 12,
+    backgroundColor: '#F8FAFC',
+    borderWidth: 1,
+    borderColor: '#CBD5E1',
+  },
+  starAdoptBtnActive: {
+    backgroundColor: '#FEFCE8',
+    borderColor: '#FDE047',
+  },
+  starAdoptBtnText: {
+    fontSize: 13,
+    fontWeight: '700',
+    color: '#475569',
+  },
+  starAdoptBtnTextActive: {
+    color: '#854D0E',
+  },
+  startSurveyOnTransectBtn: {
+    flex: 1,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 6,
+    paddingVertical: 12,
+    borderRadius: 12,
+    backgroundColor: '#0284C7',
+  },
+  startSurveyOnTransectBtnText: {
     fontSize: 14,
     fontWeight: '700',
     color: '#FFFFFF',
