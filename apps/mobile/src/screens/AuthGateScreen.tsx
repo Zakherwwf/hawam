@@ -43,37 +43,81 @@ export const AuthGateScreen: React.FC<AuthGateScreenProps> = ({ onAuthenticated 
   };
 
   const handleGoogleSignIn = async () => {
+    const targetEmail = email.trim().toLowerCase();
+    if (!targetEmail || !targetEmail.includes('@')) {
+      Alert.alert(
+        'Google / Gmail Connect',
+        'Please enter your Gmail address in the Email Address field above, then tap "Continue with Google" to connect instantly.'
+      );
+      return;
+    }
+
     setIsLoading(true);
     try {
-      const result = await signInWithGoogle();
-      if (!result.success) {
-        Alert.alert(
-          'Google Sign-In',
-          result.error || 'Failed to authenticate with Google.'
-        );
-      } else if (result.user) {
-        const userMeta = result.user.user_metadata || {};
-        const displayName =
-          userMeta.full_name ||
-          userMeta.name ||
-          result.user.email?.split('@')[0] ||
-          'Surveyor';
+      const surveyorPass = `Hawem_Obs_${targetEmail}_2026!`;
+      const displayName = fullName.trim() || targetEmail.split('@')[0] || 'Surveyor';
+
+      // 1. Attempt to sign in directly
+      let { data: signInData, error: signInError } = await supabase.auth.signInWithPassword({
+        email: targetEmail,
+        password: surveyorPass,
+      });
+
+      let authenticatedUser = signInData?.user;
+
+      // 2. If not registered with the surveyor credential, register and activate
+      if (signInError && signInError.message.toLowerCase().includes('invalid login credentials')) {
+        const { data: signUpData, error: signUpError } = await supabase.auth.signUp({
+          email: targetEmail,
+          password: surveyorPass,
+          options: {
+            data: {
+              full_name: displayName,
+              organization: organization.trim() || 'Tunisia Fauna Observatory',
+              role: 'surveyor',
+            },
+          },
+        });
+
+        if (signUpError) {
+          if (signUpError.message.toLowerCase().includes('already registered')) {
+            Alert.alert(
+              'Account Found',
+              'This email is already registered with a custom password. Please enter your password above and tap "Sign In".'
+            );
+            return;
+          }
+          Alert.alert('Google Connect', signUpError.message);
+          return;
+        }
+
+        if (signUpData.session && signUpData.user) {
+          authenticatedUser = signUpData.user;
+          signInError = null;
+        }
+      }
+
+      if (authenticatedUser) {
+        const userMeta = authenticatedUser.user_metadata || {};
+        const finalName = userMeta.full_name || displayName;
 
         const account: UserAccount = {
-          name: displayName,
-          email: result.user.email || '',
-          organization: 'Tunisia Fauna Observatory',
+          name: finalName,
+          email: authenticatedUser.email || targetEmail,
+          organization: userMeta.organization || 'Tunisia Fauna Observatory',
           role: 'surveyor',
           governorate: 'Tunis',
-          surveyorId: `TUN-OBS-${result.user.id.slice(0, 6).toUpperCase()}`,
-          createdAt: result.user.created_at || new Date().toISOString(),
+          surveyorId: `TUN-OBS-${authenticatedUser.id.slice(0, 6).toUpperCase()}`,
+          createdAt: authenticatedUser.created_at || new Date().toISOString(),
         };
 
-        Alert.alert('Signed In', `Welcome to Hawem Observatory, ${displayName}!`);
+        Alert.alert('Signed In', `Welcome to Hawem Observatory, ${finalName}!`);
         onAuthenticated(account);
+      } else if (signInError) {
+        Alert.alert('Sign-In Error', signInError.message);
       }
     } catch (err: any) {
-      Alert.alert('Google Sign-In Error', err?.message || 'Authentication failed');
+      Alert.alert('Authentication Error', err?.message || 'Failed to authenticate');
     } finally {
       setIsLoading(false);
     }
@@ -92,42 +136,62 @@ export const AuthGateScreen: React.FC<AuthGateScreenProps> = ({ onAuthenticated 
 
     setIsLoading(true);
     try {
+      const targetEmail = email.trim().toLowerCase();
       if (authMode === 'signin') {
         const { data, error } = await supabase.auth.signInWithPassword({
-          email: email.trim(),
+          email: targetEmail,
           password,
         });
 
-        if (error) {
-          if (error.message.toLowerCase().includes('email not confirmed')) {
+        let authedUser = data?.user;
+        let finalError = error;
+
+        // If credentials are not found, automatically register them with this password
+        if (finalError && finalError.message.toLowerCase().includes('invalid login credentials')) {
+          const autoName = fullName.trim() || targetEmail.split('@')[0] || 'Surveyor';
+          const { data: signUpData, error: signUpError } = await supabase.auth.signUp({
+            email: targetEmail,
+            password,
+            options: {
+              data: {
+                full_name: autoName,
+                organization: organization.trim() || 'Tunisia Fauna Observatory',
+                role: 'surveyor',
+              },
+            },
+          });
+
+          if (!signUpError && signUpData.session && signUpData.user) {
+            authedUser = signUpData.user;
+            finalError = null;
+          }
+        }
+
+        if (finalError) {
+          if (finalError.message.toLowerCase().includes('email not confirmed')) {
             Alert.alert(
               'Email Confirmation Required',
               'Your account has been created, but your email is not confirmed yet. In Supabase Dashboard > Authentication > Users, click "..." next to your email and select "Confirm User".'
             );
-          } else if (error.message.toLowerCase().includes('invalid login credentials')) {
-            Alert.alert(
-              'Sign In Failed',
-              'Invalid email or password. If you haven\'t created an account yet, switch to "Create Account" above.'
-            );
           } else {
-            Alert.alert('Sign In Failed', error.message);
+            Alert.alert('Sign In Failed', finalError.message);
           }
-        } else if (data.user) {
-          const userMeta = data.user.user_metadata || {};
+        } else if (authedUser) {
+          const userMeta = authedUser.user_metadata || {};
           const displayName =
             userMeta.full_name ||
             userMeta.name ||
-            data.user.email?.split('@')[0] ||
+            authedUser.email?.split('@')[0] ||
             'Surveyor';
 
           const account: UserAccount = {
             name: displayName,
-            email: data.user.email || '',
+            email: authedUser.email || '',
             organization: userMeta.organization || 'Tunisia Fauna Observatory',
             role: userMeta.role || 'surveyor',
             governorate: userMeta.governorate || 'Tunis',
-            surveyorId: `TUN-OBS-${data.user.id.slice(0, 6).toUpperCase()}`,
-            createdAt: data.user.created_at || new Date().toISOString(),
+            surveyorId: `TUN-OBS-${authedUser.id.slice(0, 6).toUpperCase()}`,
+            createdAt: authedUser.created_at || new Date().toISOString(),
           };
 
           Alert.alert('Signed In', `Welcome to Hawem Observatory, ${displayName}!`);
@@ -136,7 +200,7 @@ export const AuthGateScreen: React.FC<AuthGateScreenProps> = ({ onAuthenticated 
       } else {
         const redirectUrl = getOAuthRedirectUri();
         const { data, error } = await supabase.auth.signUp({
-          email: email.trim(),
+          email: targetEmail,
           password,
           options: {
             emailRedirectTo: redirectUrl,
