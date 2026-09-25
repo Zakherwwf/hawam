@@ -41,6 +41,8 @@ export interface SightingItem {
   health_issues?: string[];
   photos?: string[];
   notes?: string;
+  identifier?: string;
+  observer_name?: string;
 }
 
 interface SightingsScreenProps {
@@ -70,6 +72,7 @@ export const SightingsScreen: React.FC<SightingsScreenProps> = ({
   const [editGroupSize, setEditGroupSize] = useState<number>(1);
   const [editDistance, setEditDistance] = useState<string>('0');
   const [editNotes, setEditNotes] = useState<string>('');
+  const [editIdentifier, setEditIdentifier] = useState<string>('');
 
   const filtered = sightings.filter((s) => {
     if (filterSpecies !== 'all' && s.species !== filterSpecies) {
@@ -86,7 +89,8 @@ export const SightingsScreen: React.FC<SightingsScreenProps> = ({
       const matchNotes = s.notes ? s.notes.toLowerCase().includes(q) : false;
       const matchSpecies = s.species.toLowerCase().includes(q);
       const matchId = s.id.toLowerCase().includes(q);
-      return matchNotes || matchSpecies || matchId;
+      const matchIdentifier = s.identifier ? s.identifier.toLowerCase().includes(q) : false;
+      return matchNotes || matchSpecies || matchId || matchIdentifier;
     }
     return true;
   });
@@ -103,6 +107,7 @@ export const SightingsScreen: React.FC<SightingsScreenProps> = ({
     setEditGroupSize(item.group_size || 1);
     setEditDistance((item.distance_from_path_m ?? 5).toString());
     setEditNotes(item.notes || '');
+    setEditIdentifier(item.identifier || '');
   };
 
   const handleCloseEdit = () => {
@@ -119,6 +124,7 @@ export const SightingsScreen: React.FC<SightingsScreenProps> = ({
       group_size: editGroupSize,
       distance_from_path_m: parseFloat(editDistance) || 0,
       notes: editNotes,
+      identifier: editIdentifier.trim() || undefined,
     };
     onUpdateSighting(updated);
     setEditingItem(null);
@@ -369,10 +375,14 @@ export const SightingsScreen: React.FC<SightingsScreenProps> = ({
                     </View>
                     <View>
                       <Text style={styles.speciesTitle}>
-                        {isCat ? t('animal.cat') : t('animal.dog')}
+                        {item.identifier ? item.identifier : (isCat ? t('animal.cat') : t('animal.dog'))}
                         {item.group_size > 1 ? ` (${item.group_size})` : ''}
                       </Text>
-                      <Text style={styles.timestampText}>{formatTime(item.observed_at)}</Text>
+                      <Text style={styles.timestampText}>
+                        {item.identifier ? `${isCat ? 'Cat' : 'Dog'} • ` : ''}
+                        {item.observer_name ? `${item.observer_name} • ` : ''}
+                        {formatTime(item.observed_at)}
+                      </Text>
                     </View>
                   </View>
 
@@ -483,6 +493,15 @@ export const SightingsScreen: React.FC<SightingsScreenProps> = ({
           <View style={styles.sheetContainer}>
             <View style={IOSLayout.sheetHandle} />
             <Text style={styles.sheetTitle}>{t('survey.edit_detection')}</Text>
+            <View style={{ marginBottom: 14 }}>
+              <Text style={styles.sheetLabel}>Identifier / Field Tag</Text>
+              <TextInput
+                style={styles.sheetInput}
+                value={editIdentifier}
+                onChangeText={setEditIdentifier}
+                placeholder="e.g. Rex, White-Flanked Tabby, Ear-Tag #12"
+              />
+            </View>
 
             <View style={{ marginBottom: 16 }}>
               <Text style={styles.sheetLabel}>{t('animal.species')}</Text>

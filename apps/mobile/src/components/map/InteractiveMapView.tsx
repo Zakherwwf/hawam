@@ -13,6 +13,8 @@ export interface MapMarker {
   species: 'cat' | 'dog' | 'unknown';
   title?: string;
   subtitle?: string;
+  identifier?: string;
+  label?: string;
   distance_from_path_m?: number;
 }
 
@@ -173,12 +175,16 @@ export const InteractiveMapView: React.FC<InteractiveMapViewProps> = ({
       align-items: center;
       justify-content: center;
       min-width: 30px;
+      max-width: 120px;
       height: 30px;
-      padding: 0 6px;
+      padding: 0 8px;
       border-radius: 15px;
       color: #FFFFFF;
       font-weight: 800;
       font-size: 11px;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
       box-shadow: 0 4px 10px rgba(0, 0, 0, 0.4);
       border: 2px solid #FFFFFF;
       cursor: pointer;
@@ -462,11 +468,14 @@ export const InteractiveMapView: React.FC<InteractiveMapViewProps> = ({
           var isCat = m.species === 'cat';
           var pinEl = document.createElement('div');
           pinEl.className = 'custom-pin ' + (isCat ? 'cat-pin' : 'dog-pin');
-          pinEl.innerText = (isCat ? 'CAT' : 'DOG') + ' #' + (idx + 1);
 
+          var pinLabel = m.label || m.identifier || ((isCat ? 'CAT' : 'DOG') + ' #' + (idx + 1));
+          pinEl.innerText = pinLabel;
+
+          var displayTitle = m.identifier || m.title || ((isCat ? 'Cat' : 'Dog') + ' #' + (idx + 1));
           var popupHtml =
             '<div class="popup-species-badge ' + (isCat ? 'popup-cat-badge' : 'popup-dog-badge') + '">' +
-              (isCat ? 'Cat' : 'Dog') + ' #' + (idx + 1) +
+              displayTitle +
             '</div>' +
             (m.distance_from_path_m !== undefined ? '<div style="font-size:12px;font-weight:600;">Distance: ' + m.distance_from_path_m + 'm</div>' : '') +
             '<div class="popup-coords">' + m.latitude.toFixed(5) + '° N, ' + m.longitude.toFixed(5) + '° E</div>';

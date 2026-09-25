@@ -114,12 +114,14 @@ export const MapOverviewScreen: React.FC<MapOverviewScreenProps> = ({
   // Convert filtered sightings to map markers
   const mapMarkers: MapMarker[] = useMemo(() => {
     if (activeFilter === 'colonies') return [];
-    return filteredSightings.map((s) => ({
+    return filteredSightings.map((s, idx) => ({
       id: s.id,
       latitude: s.latitude,
       longitude: s.longitude,
       species: s.species,
-      title: `${s.species === 'cat' ? 'Cat' : 'Dog'} (${s.group_size || 1})`,
+      identifier: s.identifier,
+      label: s.identifier ? s.identifier : `${s.species === 'cat' ? 'CAT' : 'DOG'} #${idx + 1}`,
+      title: s.identifier ? s.identifier : `${s.species === 'cat' ? 'Cat' : 'Dog'} (${s.group_size || 1})`,
       distance_from_path_m: s.distance_from_path_m,
     }));
   }, [filteredSightings, activeFilter]);
@@ -542,6 +544,16 @@ export const MapOverviewScreen: React.FC<MapOverviewScreenProps> = ({
             <Text style={styles.conditionTierText}>Tier 1 Visibility</Text>
           </View>
 
+          {/* Empty state guide capsule when 0 sightings */}
+          {!selectedSighting && sightings.length === 0 && (
+            <View style={styles.cleanStartGuideBox}>
+              <IOSIcon name="location" size={14} color="#0284C7" />
+              <Text style={styles.cleanStartGuideText}>
+                No local sightings yet. Tap below to log your first field observation!
+              </Text>
+            </View>
+          )}
+
           {/* Floating Quick Action Button */}
           {!selectedSighting && (
             <TouchableOpacity
@@ -617,6 +629,16 @@ export const MapOverviewScreen: React.FC<MapOverviewScreenProps> = ({
                   <IOSIcon name="xmark" size={14} color="#64748B" />
                 </TouchableOpacity>
               </View>
+
+              {/* Sighting Identifier Headline */}
+              <Text style={styles.sightingIdentifierHeadline}>
+                {selectedSighting.identifier || `${selectedSighting.species === 'cat' ? 'Cat' : 'Dog'} (${selectedSighting.group_size || 1})`}
+              </Text>
+
+              {/* Observer Attribution */}
+              <Text style={styles.sightingObserverText}>
+                Logged by {selectedSighting.observer_name || 'You'} • {new Date(selectedSighting.observed_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+              </Text>
 
               <Text style={styles.sightingCoords}>
                 {selectedSighting.latitude.toFixed(5)}° N,{' '}
@@ -1276,6 +1298,45 @@ const styles = StyleSheet.create({
     backgroundColor: '#F1F5F9',
     alignItems: 'center',
     justifyContent: 'center',
+  },
+  sightingIdentifierHeadline: {
+    fontSize: 16,
+    fontWeight: '800',
+    color: '#0F172A',
+    marginTop: 4,
+    marginBottom: 2,
+  },
+  sightingObserverText: {
+    fontSize: 12,
+    fontWeight: '600',
+    color: '#0284C7',
+    marginBottom: 6,
+  },
+  cleanStartGuideBox: {
+    position: 'absolute',
+    bottom: 96,
+    alignSelf: 'center',
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+    backgroundColor: 'rgba(255, 255, 255, 0.94)',
+    paddingHorizontal: 16,
+    paddingVertical: 10,
+    borderRadius: 20,
+    shadowColor: '#000000',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.12,
+    shadowRadius: 10,
+    elevation: 4,
+    borderWidth: 1,
+    borderColor: '#E2E8F0',
+    maxWidth: '90%',
+  },
+  cleanStartGuideText: {
+    fontSize: 12,
+    fontWeight: '600',
+    color: '#334155',
+    flexShrink: 1,
   },
   sightingCoords: {
     fontSize: 13,

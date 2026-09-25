@@ -93,6 +93,8 @@ export interface ObservationPublic {
     habitat_type: HabitatType;
     food_sources_visible: FoodSource[];
     notes?: string | null;
+    identifier?: string | null;
+    observer_name?: string | null;
     linked_individual_id?: string | null;
     created_at?: string;
 }

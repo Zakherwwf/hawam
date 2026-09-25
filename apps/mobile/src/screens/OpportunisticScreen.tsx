@@ -168,6 +168,7 @@ export const OpportunisticScreen: React.FC<OpportunisticScreenProps> = ({
   const { t } = useTranslation();
 
   const [species, setSpecies] = useState<Species>('cat');
+  const [identifier, setIdentifier] = useState<string>('');
   const [groupSize, setGroupSize] = useState<number>(1);
   const [sex, setSex] = useState<Sex>('unknown');
   const [ageClass, setAgeClass] = useState<AgeClass>('adult');
@@ -227,6 +228,7 @@ export const OpportunisticScreen: React.FC<OpportunisticScreenProps> = ({
   const handleSave = () => {
     hapticButtonPress();
     onSaveObservation({
+      identifier: identifier.trim() || undefined,
       species,
       group_size: groupSize,
       sex,
@@ -478,6 +480,29 @@ export const OpportunisticScreen: React.FC<OpportunisticScreenProps> = ({
                     })}
                   </View>
                 </View>
+              </View>
+            </IOSGroupedList>
+
+            {/* Observation Identifier / Field Tag */}
+            <IOSGroupedList
+              header="Observation Identifier / Tag (Optional)"
+              footer="Give this animal or sighting a recognizable tag (e.g. Rex, White-Flanked Tabby, Ear-Tag #12) so you never confuse it with other animals on the map."
+            >
+              <View style={styles.identifierRow}>
+                <IOSIcon name="paw" size={18} color={species === 'cat' ? '#0284C7' : '#D97706'} />
+                <TextInput
+                  style={styles.identifierInput}
+                  value={identifier}
+                  onChangeText={setIdentifier}
+                  placeholder={`e.g. ${species === 'cat' ? 'Bab Souika Tabby' : 'Rex (Souk Gate)'} or Tag #...`}
+                  placeholderTextColor="#94A3B8"
+                  autoCapitalize="words"
+                />
+                {identifier.length > 0 && (
+                  <TouchableOpacity onPress={() => setIdentifier('')} hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}>
+                    <IOSIcon name="xmark" size={14} color="#94A3B8" />
+                  </TouchableOpacity>
+                )}
               </View>
             </IOSGroupedList>
 
@@ -951,6 +976,21 @@ const styles = StyleSheet.create({
     gap: 12,
     padding: 14,
     backgroundColor: IOSColors.secondarySystemGroupedBackground,
+  },
+  identifierRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: 16,
+    paddingVertical: 12,
+    backgroundColor: '#FFFFFF',
+    gap: 12,
+  },
+  identifierInput: {
+    flex: 1,
+    ...IOSTypography.body,
+    fontSize: 15,
+    color: IOSColors.label,
+    padding: 0,
   },
   speciesCard: {
     flex: 1,

@@ -42,61 +42,6 @@ import {
 type TabType = 'map' | 'survey' | 'animals' | 'progress' | 'profile';
 type ModalType = 'none' | 'opportunistic' | 'guided_photo' | 'training' | 'settings';
 
-// Realistic sample observations across Tunis for immediate visualization
-const INITIAL_SIGHTINGS: SightingItem[] = [
-  {
-    id: 'sighting-001',
-    species: 'cat',
-    group_size: 1,
-    distance_from_path_m: 4.2,
-    latitude: 36.8028,
-    longitude: 10.1695,
-    observed_at: new Date(Date.now() - 3600000 * 2).toISOString(),
-    body_condition_score: 3,
-    protocol: 'transect',
-    notes: 'Adult tabby near Bab Souika bakery, ear-tipped (TNR)',
-    photos: ['file:///photos/cat_flank_01.jpg'],
-  },
-  {
-    id: 'sighting-002',
-    species: 'dog',
-    group_size: 2,
-    distance_from_path_m: 8.5,
-    latitude: 36.8588,
-    longitude: 10.1956,
-    observed_at: new Date(Date.now() - 3600000 * 5).toISOString(),
-    body_condition_score: 2,
-    protocol: 'transect',
-    notes: 'Two light brown mixed-breed dogs foraging near market perimeter',
-    photos: ['file:///photos/dog_flank_02.jpg'],
-  },
-  {
-    id: 'sighting-003',
-    species: 'cat',
-    group_size: 1,
-    distance_from_path_m: 2.1,
-    latitude: 36.8529,
-    longitude: 10.3245,
-    observed_at: new Date(Date.now() - 86400000).toISOString(),
-    body_condition_score: 4,
-    protocol: 'incidental',
-    notes: 'Calico domestic cat, friendly, near Carthage Byrsa archaeological site',
-    photos: ['file:///photos/cat_calico_03.jpg'],
-  },
-  {
-    id: 'sighting-004',
-    species: 'cat',
-    group_size: 1,
-    distance_from_path_m: 6.8,
-    latitude: 36.8042,
-    longitude: 10.1712,
-    observed_at: new Date(Date.now() - 86400000 * 2).toISOString(),
-    body_condition_score: 3,
-    protocol: 'stationary_point',
-    notes: 'Solid black adult cat resting in shade',
-  },
-];
-
 function AppContent() {
   const insets = useSafeAreaInsets();
   const { t } = useTranslation();
@@ -123,8 +68,8 @@ function AppContent() {
     setActiveModal('none');
   };
 
-  // Master Sightings State (CRUD)
-  const [sightings, setSightings] = useState<SightingItem[]>(INITIAL_SIGHTINGS);
+  // Master Sightings State (CRUD) - Starts clean for new surveyors
+  const [sightings, setSightings] = useState<SightingItem[]>([]);
   const [capturedPhotos, setCapturedPhotos] = useState<any[]>([]);
 
   // Mobile App Research Stats - Default to 0 for new surveyors
@@ -301,6 +246,8 @@ function AppContent() {
     const newItem: SightingItem = {
       id: `sighting-${Date.now()}`,
       species: observation.species,
+      identifier: observation.identifier || undefined,
+      observer_name: userAccount?.name || 'You',
       group_size: observation.group_size || 1,
       latitude: observation.latitude || 36.8065,
       longitude: observation.longitude || 10.1815,
@@ -368,6 +315,8 @@ function AppContent() {
     const newItem: SightingItem = {
       id: animal.id || `sighting-${Date.now()}`,
       species: animal.species,
+      identifier: animal.identifier || undefined,
+      observer_name: userAccount?.name || 'You',
       group_size: animal.group_size || 1,
       distance_from_path_m: animal.distance_from_path_m,
       latitude: animal.latitude || 36.8065,

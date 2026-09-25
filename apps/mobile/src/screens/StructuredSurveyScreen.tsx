@@ -53,6 +53,7 @@ import { calculateDistanceKm, simplifyGpsTrack } from '../services/georef/geoUti
 export interface SurveyDetection {
   id: string;
   species: Species;
+  identifier?: string;
   group_size: number;
   distance_from_path_m: number;
   latitude: number;
@@ -113,6 +114,7 @@ export const StructuredSurveyScreen: React.FC<StructuredSurveyScreenProps> = ({
   // Detection modal state
   const [isModalOpen, setIsModalOpen] = useState<boolean>(false);
   const [sightingSpecies, setSightingSpecies] = useState<Species>('cat');
+  const [sightingIdentifier, setSightingIdentifier] = useState<string>('');
   const [groupSize, setGroupSize] = useState<number>(1);
   const [distanceFromPathM, setDistanceFromPathM] = useState<string>('5.0');
   const [sightingBearing, setSightingBearing] = useState<number>(45);
@@ -311,6 +313,7 @@ export const StructuredSurveyScreen: React.FC<StructuredSurveyScreenProps> = ({
   const openNewDetectionModalWithSpecies = (species: Species) => {
     setEditingDetection(null);
     setSightingSpecies(species);
+    setSightingIdentifier('');
     setGroupSize(1);
     setDistanceFromPathM('5.0');
     setSightingBearing(45);
@@ -332,6 +335,7 @@ export const StructuredSurveyScreen: React.FC<StructuredSurveyScreenProps> = ({
     hapticButtonPress();
     setEditingDetection(item);
     setSightingSpecies(item.species);
+    setSightingIdentifier(item.identifier || '');
     setGroupSize(item.group_size);
     setDistanceFromPathM(item.distance_from_path_m.toString());
     setDetectionNotes(item.notes || '');
@@ -364,6 +368,7 @@ export const StructuredSurveyScreen: React.FC<StructuredSurveyScreenProps> = ({
     hapticQuickLog();
     const dist = parseFloat(distanceFromPathM) || 0;
     const primaryPhoto = attachedPhotos[0] || null;
+    const cleanIdentifier = sightingIdentifier.trim() || undefined;
 
     if (editingDetection) {
       // Update existing detection
@@ -372,6 +377,7 @@ export const StructuredSurveyScreen: React.FC<StructuredSurveyScreenProps> = ({
           ? {
               ...d,
               species: sightingSpecies,
+              identifier: cleanIdentifier,
               group_size: groupSize,
               distance_from_path_m: dist,
               notes: detectionNotes,
@@ -381,12 +387,13 @@ export const StructuredSurveyScreen: React.FC<StructuredSurveyScreenProps> = ({
           : d
       );
       setSessionDetections(updatedList);
-      showToast(`Updated detection for ${sightingSpecies}`);
+      showToast(`Updated detection: ${cleanIdentifier || sightingSpecies}`);
     } else {
       // Add new detection
       const newDetection: SurveyDetection = {
         id: `det-${Date.now()}`,
         species: sightingSpecies,
+        identifier: cleanIdentifier,
         group_size: groupSize,
         distance_from_path_m: dist,
         latitude: currentLat,
@@ -403,7 +410,7 @@ export const StructuredSurveyScreen: React.FC<StructuredSurveyScreenProps> = ({
         protocol,
       });
 
-      showToast(`Recorded ${groupSize > 1 ? `group of ${groupSize} ${sightingSpecies}s` : sightingSpecies}`);
+      showToast(`Recorded ${cleanIdentifier || (groupSize > 1 ? `group of ${groupSize} ${sightingSpecies}s` : sightingSpecies)}`);
     }
 
     setIsModalOpen(false);
@@ -962,6 +969,7 @@ export const StructuredSurveyScreen: React.FC<StructuredSurveyScreenProps> = ({
                 latitude: d.latitude,
                 longitude: d.longitude,
                 species: d.species,
+                identifier: d.identifier,
                 distance_from_path_m: d.distance_from_path_m,
               }))}
               colonyMarkers={colonies.map((c) => ({
@@ -1032,7 +1040,7 @@ export const StructuredSurveyScreen: React.FC<StructuredSurveyScreenProps> = ({
                           <Text style={styles.detectionBadgeText}>#{index + 1}</Text>
                         </View>
                         <Text style={styles.detectionSpecies}>
-                          {isCat ? t('animal.cat') : t('animal.dog')}
+                          {det.identifier ? det.identifier : (isCat ? t('animal.cat') : t('animal.dog'))}
                           {det.group_size > 1 ? ` (Group: ${det.group_size})` : ''}
                         </Text>
                         <View style={styles.distanceTag}>
@@ -1112,6 +1120,27 @@ export const StructuredSurveyScreen: React.FC<StructuredSurveyScreenProps> = ({
                   { label: t('animal.dog'), value: 'dog' },
                 ]}
               />
+            </View>
+
+            {/* Observation Identifier / Field Tag */}
+            <View style={{ marginBottom: 14 }}>
+              <Text style={styles.fieldLabel}>Identifier / Field Tag (Optional)</Text>
+              <View style={styles.identifierInputBox}>
+                <IOSIcon name="paw" size={15} color={sightingSpecies === 'cat' ? '#0284C7' : '#D97706'} />
+                <TextInput
+                  style={styles.identifierTextInput}
+                  value={sightingIdentifier}
+                  onChangeText={setSightingIdentifier}
+                  placeholder={`e.g. ${sightingSpecies === 'cat' ? 'Bab Souika Tabby' : 'Rex (Corner)'} or Tag #...`}
+                  placeholderTextColor="#94A3B8"
+                  autoCapitalize="words"
+                />
+                {sightingIdentifier.length > 0 && (
+                  <TouchableOpacity onPress={() => setSightingIdentifier('')} hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}>
+                    <IOSIcon name="xmark" size={14} color="#94A3B8" />
+                  </TouchableOpacity>
+                )}
+              </View>
             </View>
 
             {/* Group Size & Quick Multi-Animal Presets */}
@@ -1852,6 +1881,21 @@ const styles = StyleSheet.create({
   quickPresetPillTextActive: {
     color: '#FFFFFF',
     fontWeight: '800',
+  },
+  identifierInputBox: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: IOSColors.systemGray6,
+    borderRadius: 9,
+    paddingHorizontal: 12,
+    height: 44,
+    gap: 10,
+  },
+  identifierTextInput: {
+    flex: 1,
+    fontSize: 15,
+    color: IOSColors.label,
+    padding: 0,
   },
   textInput: {
     backgroundColor: IOSColors.systemGray6,
