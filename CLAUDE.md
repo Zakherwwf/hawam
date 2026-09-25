@@ -45,9 +45,10 @@
 3. **Icons & Zero-Emoji Mandate**:
    - **Zero emojis** across all production UI.
    - SF Symbols on iOS, mapped vector SVGs on Android.
-4. **Trilingual & Full RTL Mirroring**:
-   - Supported languages: **Arabic** (`ar-TN`, default, RTL), **French** (`fr`), **English** (`en`).
-   - Full RTL layout mirroring in Arabic (navigation bars, list rows, back chevrons, icons).
+4. **Worldwide Audience & Localisation**:
+   - The app targets volunteers worldwide. **English** (`en`) is the source and default language; **French** (`fr`) is supported.
+   - Arabic/RTL is deprioritised and unscheduled. Use `start`/`end` (never `left`/`right`) in styles so RTL can be re-enabled cheaply later.
+   - No country-specific defaults (map centre, IDs, admin units) in UI code.
 
 ---
 
