@@ -4,6 +4,7 @@
   "type": "module",
   "private": true,
   "main": "./dist/src/index.js",
+  "react-native": "./src/index.ts",
   "types": "./dist/src/index.d.ts",
   "exports": {
     ".": {
