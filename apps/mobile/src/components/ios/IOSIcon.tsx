@@ -35,6 +35,7 @@ export type IconName =
   | 'bell'
   | 'search'
   | 'chevronDown'
+  | 'chevronUp'
   | 'calendar'
   | 'grid'
   | 'document'
@@ -291,6 +292,12 @@ export const IOSIcon: React.FC<IOSIconProps> = ({
       return (
         <Svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth={2.5} strokeLinecap="round" strokeLinejoin="round">
           <Polyline points="6 9 12 15 18 9" />
+        </Svg>
+      );
+    case 'chevronUp':
+      return (
+        <Svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth={2.5} strokeLinecap="round" strokeLinejoin="round">
+          <Polyline points="18 15 12 9 6 15" />
         </Svg>
       );
     case 'calendar':

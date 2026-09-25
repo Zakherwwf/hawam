@@ -162,3 +162,94 @@ export function calculateDistanceKm(
   }
 }
 
+/**
+ * Normalizes any degree angle to the range [0, 360).
+ */
+export function normalizeBearing(deg: number): number {
+  const norm = ((deg % 360) + 360) % 360;
+  return Math.round(norm * 10) / 10;
+}
+
+export interface BearingMetadata {
+  normalizedDeg: number;
+  cardinal: string;
+  cardinalAr: string;
+  relativeLabel: string;
+  relativeLabelAr: string;
+}
+
+/**
+ * Derives cardinal direction and human-readable relative orientation from bearing degrees.
+ */
+export function getBearingMetadata(bearingDeg: number): BearingMetadata {
+  const deg = normalizeBearing(bearingDeg);
+
+  // 8-point compass sectors (45° per sector, centered at each cardinal direction)
+  // Sector ranges: N (337.5 - 22.5), NE (22.5 - 67.5), E (67.5 - 112.5), ...
+  if (deg >= 337.5 || deg < 22.5) {
+    return {
+      normalizedDeg: deg,
+      cardinal: 'N',
+      cardinalAr: 'شمال',
+      relativeLabel: 'Ahead (0°)',
+      relativeLabelAr: 'إلى الأمام (0°)',
+    };
+  } else if (deg >= 22.5 && deg < 67.5) {
+    return {
+      normalizedDeg: deg,
+      cardinal: 'NE',
+      cardinalAr: 'شمال شرقي',
+      relativeLabel: 'Front-Right (+45°)',
+      relativeLabelAr: 'أمامي يمين (+45°)',
+    };
+  } else if (deg >= 67.5 && deg < 112.5) {
+    return {
+      normalizedDeg: deg,
+      cardinal: 'E',
+      cardinalAr: 'شرق',
+      relativeLabel: 'Perpendicular Right (+90°)',
+      relativeLabelAr: 'يمين عمودي (+90°)',
+    };
+  } else if (deg >= 112.5 && deg < 157.5) {
+    return {
+      normalizedDeg: deg,
+      cardinal: 'SE',
+      cardinalAr: 'جنوب شرقي',
+      relativeLabel: 'Back-Right (+135°)',
+      relativeLabelAr: 'خلفي يمين (+135°)',
+    };
+  } else if (deg >= 157.5 && deg < 202.5) {
+    return {
+      normalizedDeg: deg,
+      cardinal: 'S',
+      cardinalAr: 'جنوب',
+      relativeLabel: 'Behind (180°)',
+      relativeLabelAr: 'إلى الخلف (180°)',
+    };
+  } else if (deg >= 202.5 && deg < 247.5) {
+    return {
+      normalizedDeg: deg,
+      cardinal: 'SW',
+      cardinalAr: 'جنوب غربي',
+      relativeLabel: 'Back-Left (225°)',
+      relativeLabelAr: 'خلفي يسار (225°)',
+    };
+  } else if (deg >= 247.5 && deg < 292.5) {
+    return {
+      normalizedDeg: deg,
+      cardinal: 'W',
+      cardinalAr: 'غرب',
+      relativeLabel: 'Perpendicular Left (270°)',
+      relativeLabelAr: 'يسار عمودي (270°)',
+    };
+  } else {
+    return {
+      normalizedDeg: deg,
+      cardinal: 'NW',
+      cardinalAr: 'شمال غربي',
+      relativeLabel: 'Front-Left (315°)',
+      relativeLabelAr: 'أمامي يسار (315°)',
+    };
+  }
+}
+

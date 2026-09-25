@@ -48,7 +48,7 @@ import { useColoniesStore, CatColony } from '../features/colonies/coloniesStore'
 import { useSyncStore } from '../features/sync/syncStore';
 import { generateUUID } from '../utils/uuid';
 import { promptPhotoCaptureChoice } from '../services/cameraService';
-import { calculateDistanceKm, simplifyGpsTrack } from '../services/georef/geoUtils';
+import { calculateDistanceKm, simplifyGpsTrack, computeAnimalLocation } from '../services/georef/geoUtils';
 
 export interface SurveyDetection {
   id: string;
@@ -62,6 +62,9 @@ export interface SurveyDetection {
   notes?: string;
   photoUri?: string | null;
   photoUris?: string[];
+  bearing_deg?: number;
+  animalLat?: number;
+  animalLon?: number;
 }
 
 interface StructuredSurveyScreenProps {
@@ -148,6 +151,7 @@ export const StructuredSurveyScreen: React.FC<StructuredSurveyScreenProps> = ({
   // Hardware GPS & Track state
   const [currentLat, setCurrentLat] = useState<number>(36.8065);
   const [currentLon, setCurrentLon] = useState<number>(10.1815);
+  const [currentHeading, setCurrentHeading] = useState<number | null>(null);
   const [gpsAccuracy, setGpsAccuracy] = useState<number>(3.2);
   const [activeTrack, setActiveTrack] = useState<[number, number][]>([[36.8065, 10.1815]]);
   const [gpsMode, setGpsMode] = useState<'hardware' | 'simulated'>('simulated');
@@ -169,6 +173,9 @@ export const StructuredSurveyScreen: React.FC<StructuredSurveyScreenProps> = ({
           if (isMounted && loc?.coords) {
             setCurrentLat(loc.coords.latitude);
             setCurrentLon(loc.coords.longitude);
+            if (loc.coords.heading !== null && loc.coords.heading !== undefined && loc.coords.heading >= 0) {
+              setCurrentHeading(loc.coords.heading);
+            }
             setGpsAccuracy(loc.coords.accuracy || 3.0);
             if (!isSurveyActive) {
               setActiveTrack([[loc.coords.latitude, loc.coords.longitude]]);
@@ -218,6 +225,9 @@ export const StructuredSurveyScreen: React.FC<StructuredSurveyScreenProps> = ({
 
               setCurrentLat(latitude);
               setCurrentLon(longitude);
+              if (location.coords.heading !== null && location.coords.heading !== undefined && location.coords.heading >= 0) {
+                setCurrentHeading(location.coords.heading);
+              }
               if (accuracy) setGpsAccuracy(accuracy);
 
               if (protocol === 'transect') {
@@ -329,7 +339,11 @@ export const StructuredSurveyScreen: React.FC<StructuredSurveyScreenProps> = ({
     setSightingIdentifier('');
     setGroupSize(1);
     setDistanceFromPathM('5.0');
-    setSightingBearing(45);
+    // Default to current movement heading if available, or 0° (Straight Ahead along path)
+    const initialHeading = currentHeading !== null && currentHeading >= 0
+      ? Math.round(currentHeading)
+      : 0;
+    setSightingBearing(initialHeading);
     setDetectionNotes('');
     setAttachedPhotos([]);
 
@@ -351,6 +365,7 @@ export const StructuredSurveyScreen: React.FC<StructuredSurveyScreenProps> = ({
     setSightingIdentifier(item.identifier || '');
     setGroupSize(item.group_size);
     setDistanceFromPathM(item.distance_from_path_m.toString());
+    setSightingBearing(item.bearing_deg ?? 0);
     setDetectionNotes(item.notes || '');
     setAttachedPhotos(item.photoUris || (item.photoUri ? [item.photoUri] : []));
     setIsModalOpen(true);
@@ -383,6 +398,15 @@ export const StructuredSurveyScreen: React.FC<StructuredSurveyScreenProps> = ({
     const primaryPhoto = attachedPhotos[0] || null;
     const cleanIdentifier = sightingIdentifier.trim() || undefined;
 
+    // Scientifically compute true animal location and perpendicular distance
+    const geo = computeAnimalLocation(
+      currentLat,
+      currentLon,
+      dist,
+      sightingBearing,
+      selectedRouteObj?.waypoints
+    );
+
     if (editingDetection) {
       // Update existing detection
       const updatedList = sessionDetections.map((d) =>
@@ -392,7 +416,10 @@ export const StructuredSurveyScreen: React.FC<StructuredSurveyScreenProps> = ({
               species: sightingSpecies,
               identifier: cleanIdentifier,
               group_size: groupSize,
-              distance_from_path_m: dist,
+              distance_from_path_m: geo.perpendicularDistanceM ?? dist,
+              bearing_deg: sightingBearing,
+              animalLat: geo.animalLat,
+              animalLon: geo.animalLon,
               notes: detectionNotes,
               photoUri: primaryPhoto,
               photoUris: attachedPhotos,
@@ -408,7 +435,10 @@ export const StructuredSurveyScreen: React.FC<StructuredSurveyScreenProps> = ({
         species: sightingSpecies,
         identifier: cleanIdentifier,
         group_size: groupSize,
-        distance_from_path_m: dist,
+        distance_from_path_m: geo.perpendicularDistanceM ?? dist,
+        bearing_deg: sightingBearing,
+        animalLat: geo.animalLat,
+        animalLon: geo.animalLon,
         latitude: currentLat,
         longitude: currentLon,
         observed_at: new Date().toISOString(),
@@ -543,7 +573,7 @@ export const StructuredSurveyScreen: React.FC<StructuredSurveyScreenProps> = ({
         body_condition_score: 3,
         location: {
           type: 'Point' as const,
-          coordinates: [d.longitude || currentLon, d.latitude || currentLat] as [number, number],
+          coordinates: [d.animalLon ?? d.longitude ?? currentLon, d.animalLat ?? d.latitude ?? currentLat] as [number, number],
         },
         notes: d.notes,
       };
@@ -1059,6 +1089,12 @@ export const StructuredSurveyScreen: React.FC<StructuredSurveyScreenProps> = ({
                         <View style={styles.distanceTag}>
                           <Text style={styles.distanceTagText}>{det.distance_from_path_m.toFixed(1)} m</Text>
                         </View>
+                        {det.bearing_deg !== undefined ? (
+                          <View style={styles.bearingTag}>
+                            <IOSIcon name="compass" size={10} color="#0284C7" />
+                            <Text style={styles.bearingTagText}>{Math.round(det.bearing_deg)}°</Text>
+                          </View>
+                        ) : null}
                       </View>
 
                       <View style={styles.detectionCoordsLine}>
@@ -1223,6 +1259,7 @@ export const StructuredSurveyScreen: React.FC<StructuredSurveyScreenProps> = ({
               bearingDeg={sightingBearing}
               onBearingChange={setSightingBearing}
               perpendicularDistanceM={parseFloat(distanceFromPathM) || 5}
+              species={sightingSpecies}
             />
 
             {/* Known Animals Nearby Candidate Link */}
@@ -1776,6 +1813,20 @@ const styles = StyleSheet.create({
     ...IOSTypography.caption2,
     fontWeight: '700',
     color: IOSColors.systemTeal,
+  },
+  bearingTag: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 3,
+    backgroundColor: 'rgba(2, 132, 199, 0.1)',
+    paddingHorizontal: 6,
+    paddingVertical: 2,
+    borderRadius: 5,
+  },
+  bearingTagText: {
+    ...IOSTypography.caption2,
+    fontWeight: '700',
+    color: '#0284C7',
   },
   detectionCoordsLine: {
     flexDirection: 'row',
