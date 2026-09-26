@@ -158,5 +158,15 @@ test('surveyIntegrity: sanitizeBundleUuids converts legacy timestamp IDs to comp
   assert.match(sanitized.observations[0].id, UUID_REGEX);
   assert.match(sanitized.photos![0].id, UUID_REGEX);
   assert.equal(sanitized.photos![0].observation_id, sanitized.observations[0].id);
+
+  // Verify location sanitization for remote generalize_point function
+  assert.equal(sanitized.observations[0].location.latitude, 36.80);
+  assert.equal(sanitized.observations[0].location.longitude, 10.18);
+  assert.equal(sanitized.observations[0].location.type, 'Point');
+  assert.deepEqual(sanitized.observations[0].location.coordinates, [10.18, 36.80]);
+  assert.ok(sanitized.observations[0].observer_location, 'observer_location must be present');
+  assert.equal(sanitized.observations[0].observer_location?.latitude, 36.80);
+  assert.equal(sanitized.observations[0].observer_location?.longitude, 10.18);
 });
+
 

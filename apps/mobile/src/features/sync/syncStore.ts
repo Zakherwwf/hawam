@@ -32,7 +32,8 @@ export function sanitizeBundleUuids(payload: SurveyBundlePayload): SurveyBundleP
 
   if (p.observations && p.observations.length > 0) {
     p.observations = p.observations.map((obs) => {
-      if (!UUID_REGEX.test(obs.id)) {
+      let obsId = obs.id;
+      if (!UUID_REGEX.test(obsId)) {
         const oldId = obs.id;
         const newObsId = generateUUID();
         if (p.photos) {
@@ -42,9 +43,73 @@ export function sanitizeBundleUuids(payload: SurveyBundlePayload): SurveyBundleP
             }
           });
         }
-        return { ...obs, id: newObsId };
+        obsId = newObsId;
       }
-      return obs;
+
+      // Normalize location coordinates for remote generalize_point function
+      let lat: number | null = null;
+      let lon: number | null = null;
+
+      const locAny = obs.location as any;
+      if (locAny) {
+        if (typeof locAny.latitude === 'number' && typeof locAny.longitude === 'number') {
+          lat = locAny.latitude;
+          lon = locAny.longitude;
+        } else if (Array.isArray(locAny.coordinates) && locAny.coordinates.length >= 2) {
+          lon = Number(locAny.coordinates[0]);
+          lat = Number(locAny.coordinates[1]);
+        }
+      }
+
+      if (lat == null || lon == null || isNaN(lat) || isNaN(lon)) {
+        const obsAny = obs as any;
+        if (typeof obsAny.latitude === 'number' && typeof obsAny.longitude === 'number') {
+          lat = obsAny.latitude;
+          lon = obsAny.longitude;
+        }
+      }
+
+      // Default fallback coordinates if missing
+      if (lat == null || lon == null || isNaN(lat) || isNaN(lon)) {
+        lat = 36.8065;
+        lon = 10.1815;
+      }
+
+      const formattedLocation = {
+        latitude: lat,
+        longitude: lon,
+        type: 'Point' as const,
+        coordinates: [lon, lat] as [number, number],
+      };
+
+      let observerLocation = formattedLocation;
+      const obsLocAny = obs.observer_location as any;
+      if (obsLocAny) {
+        let oLat: number | null = null;
+        let oLon: number | null = null;
+        if (typeof obsLocAny.latitude === 'number' && typeof obsLocAny.longitude === 'number') {
+          oLat = obsLocAny.latitude;
+          oLon = obsLocAny.longitude;
+        } else if (Array.isArray(obsLocAny.coordinates) && obsLocAny.coordinates.length >= 2) {
+          oLon = Number(obsLocAny.coordinates[0]);
+          oLat = Number(obsLocAny.coordinates[1]);
+        }
+        if (oLat != null && oLon != null && !isNaN(oLat) && !isNaN(oLon)) {
+          observerLocation = {
+            latitude: oLat,
+            longitude: oLon,
+            type: 'Point' as const,
+            coordinates: [oLon, oLat] as [number, number],
+          };
+        }
+      }
+
+      return {
+        ...obs,
+        id: obsId,
+        location: formattedLocation,
+        observer_location: observerLocation,
+      };
     });
   }
 

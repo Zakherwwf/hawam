@@ -652,7 +652,11 @@ export const StructuredSurveyScreen: React.FC<StructuredSurveyScreenProps> = ({
     const detectionUuidMap = new Map<string, string>();
     const observationsPayload = sessionDetections.map((d) => {
       const obsUuid = generateUUID();
-      detectionUuidMap.set(d.id, obsUuid);
+      const animLon = d.animalLon ?? d.longitude ?? currentLon;
+      const animLat = d.animalLat ?? d.latitude ?? currentLat;
+      const obsLon = d.longitude ?? currentLon;
+      const obsLat = d.latitude ?? currentLat;
+
       return {
         id: obsUuid,
         observed_at: d.observed_at || new Date().toISOString(),
@@ -661,12 +665,16 @@ export const StructuredSurveyScreen: React.FC<StructuredSurveyScreenProps> = ({
         distance_from_path_m: d.distance_from_path_m,
         body_condition_score: d.body_condition_score || 3,
         location: {
+          latitude: animLat,
+          longitude: animLon,
           type: 'Point' as const,
-          coordinates: [d.animalLon ?? d.longitude ?? currentLon, d.animalLat ?? d.latitude ?? currentLat] as [number, number],
+          coordinates: [animLon, animLat] as [number, number],
         },
         observer_location: {
+          latitude: obsLat,
+          longitude: obsLon,
           type: 'Point' as const,
-          coordinates: [d.longitude ?? currentLon, d.latitude ?? currentLat] as [number, number],
+          coordinates: [obsLon, obsLat] as [number, number],
         },
         bearing_deg: d.bearing_deg ?? null,
         distance_estimate_m: d.distance_from_path_m ?? null,

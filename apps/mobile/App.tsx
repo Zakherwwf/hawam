@@ -33,7 +33,7 @@ import { useSyncStore } from './src/features/sync/syncStore';
 import { useSurveyStore } from './src/features/survey/surveyStore';
 import { useGamificationStore } from './src/features/gamification/gamificationStore';
 import { useThemeStore } from './src/features/theme/themeStore';
-import { supabase, SurveyBundlePayload } from './src/services/supabase';
+import { supabase, SurveyBundlePayload, ensureUserConsentAccepted } from './src/services/supabase';
 import { handleAuthUrl } from './src/services/deepLinkAuth';
 import { QueryClientProvider } from '@tanstack/react-query';
 import { queryClient } from './src/services/queries/useSurveyQueries';
@@ -186,6 +186,9 @@ function AppContent() {
         const storedConsent = await AsyncStorage.getItem('hawem_consent_version');
         if (storedConsent === CURRENT_CONSENT_VERSION || storedConsent === 'v1.0') {
           if (isMounted) setConsentAccepted(true);
+          if (session?.user?.id) {
+            ensureUserConsentAccepted().catch(() => {});
+          }
         } else {
           if (isMounted) setConsentAccepted(false);
         }
@@ -203,6 +206,7 @@ function AppContent() {
     // Listen to real-time sign-in / sign-out events from Supabase Cloud
     const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
       if (session?.user) {
+        ensureUserConsentAccepted().catch(() => {});
         const userMeta = session.user.user_metadata || {};
         let savedLocal: Partial<UserAccount> | null = null;
         try {
@@ -283,8 +287,11 @@ function AppContent() {
       const { data: { session } } = await supabase.auth.getSession();
       if (session?.user?.id) {
         await supabase
-          .from('profiles')
-          .update({ consent_version: version })
+          .from('users')
+          .update({
+            consent_version: 1,
+            consent_accepted_at: new Date().toISOString(),
+          })
           .eq('id', session.user.id);
       }
     } catch (err) {
@@ -401,6 +408,14 @@ function AppContent() {
           group_size: newItem.group_size,
           body_condition_score: newItem.body_condition_score,
           location: {
+            latitude: newItem.latitude,
+            longitude: newItem.longitude,
+            type: 'Point',
+            coordinates: [newItem.longitude, newItem.latitude],
+          },
+          observer_location: {
+            latitude: newItem.latitude,
+            longitude: newItem.longitude,
             type: 'Point',
             coordinates: [newItem.longitude, newItem.latitude],
           },

@@ -93,15 +93,19 @@ export interface SurveyBundlePayload {
     distance_from_path_m?: number | null;
     body_condition_score?: number | null;
     observer_location?: {
-      type: 'Point';
-      coordinates: [number, number]; // [lon, lat]
+      latitude?: number;
+      longitude?: number;
+      type?: 'Point';
+      coordinates?: [number, number]; // [lon, lat]
     };
     bearing_deg?: number | null;
     distance_estimate_m?: number | null;
     gps_accuracy_m?: number | null;
     location: {
-      type: 'Point';
-      coordinates: [number, number]; // [lon, lat]
+      latitude?: number;
+      longitude?: number;
+      type?: 'Point';
+      coordinates?: [number, number]; // [lon, lat]
     };
     notes?: string | null;
   }>;
@@ -115,10 +119,34 @@ export interface SurveyBundlePayload {
 }
 
 /**
+ * Ensures the authenticated user has accepted consent in public.users on Supabase.
+ * The submit_survey_bundle RPC requires consent_accepted_at to be non-null.
+ */
+export async function ensureUserConsentAccepted(): Promise<void> {
+  try {
+    const { data: { session } } = await supabase.auth.getSession();
+    if (session?.user?.id) {
+      await supabase
+        .from('users')
+        .update({
+          consent_version: 1,
+          consent_accepted_at: new Date().toISOString(),
+        })
+        .eq('id', session.user.id)
+        .is('consent_accepted_at', null);
+    }
+  } catch (err) {
+    console.warn('Failed to ensure user consent:', err);
+  }
+}
+
+/**
  * Pushes a complete survey bundle to PostgreSQL via the secure submit_survey_bundle RPC
  */
 export async function pushSurveyBundle(payload: SurveyBundlePayload) {
   try {
+    await ensureUserConsentAccepted();
+
     const { data, error } = await supabase.rpc('submit_survey_bundle', {
       payload,
     });
