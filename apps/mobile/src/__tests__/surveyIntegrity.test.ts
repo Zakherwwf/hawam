@@ -1,7 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { storage } from '../services/storageAdapter.ts';
-import { useSyncStore } from '../features/sync/syncStore.ts';
+import { useSyncStore, sanitizeBundleUuids } from '../features/sync/syncStore.ts';
 import { useSurveyStore } from '../features/survey/surveyStore.ts';
 import type { SurveyBundlePayload } from '../services/supabase.ts';
 
@@ -125,3 +125,38 @@ test('surveyIntegrity: syncStore preserves cold-start items and handles outbox q
   assert.equal(useSyncStore.getState().outbox.length, 1);
   assert.equal(useSyncStore.getState().outbox[0].payload.session.id, 'session-cold-1');
 });
+
+test('surveyIntegrity: sanitizeBundleUuids converts legacy timestamp IDs to compliant UUIDs', () => {
+  const legacyBundle: SurveyBundlePayload = {
+    session: {
+      id: 'incidental-sess-1790280000000',
+      start_time: '2026-09-26T00:00:00.000Z',
+    },
+    observations: [
+      {
+        id: 'sighting-1790280000000',
+        observed_at: '2026-09-26T00:00:00.000Z',
+        species: 'dog',
+        location: { type: 'Point', coordinates: [10.18, 36.80] },
+      },
+    ],
+    photos: [
+      {
+        id: 'photo-sighting-1790280000000-0',
+        observation_id: 'sighting-1790280000000',
+        storage_path: 'file:///path/to/img.jpg',
+        angle: 'left_flank',
+        taken_at: '2026-09-26T00:00:00.000Z',
+      },
+    ],
+  };
+
+  const sanitized = sanitizeBundleUuids(legacyBundle);
+  const UUID_REGEX = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+
+  assert.match(sanitized.session.id, UUID_REGEX);
+  assert.match(sanitized.observations[0].id, UUID_REGEX);
+  assert.match(sanitized.photos![0].id, UUID_REGEX);
+  assert.equal(sanitized.photos![0].observation_id, sanitized.observations[0].id);
+});
+

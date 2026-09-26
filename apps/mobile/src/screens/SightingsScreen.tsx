@@ -187,15 +187,19 @@ export const SightingsScreen: React.FC<SightingsScreenProps> = ({
 
         {/* Offline Pending Sync Banner */}
         {pendingCount > 0 && (
-          <View style={styles.offlineBanner}>
+          <TouchableOpacity
+            style={styles.offlineBanner}
+            onPress={() => useSyncStore.getState().triggerSync()}
+            activeOpacity={0.8}
+          >
             <View style={styles.offlineBannerLeft}>
               <Icon name="cloud-offline" size={16} color="#E65100" />
               <Text style={styles.offlineBannerText}>
-                {pendingCount} {pendingCount === 1 ? 'survey observation' : 'survey observations'} saved on device · {isSyncing ? 'Syncing...' : 'Pending sync'}
+                {pendingCount} {pendingCount === 1 ? 'survey observation' : 'survey observations'} saved on device · {isSyncing ? 'Syncing...' : 'Pending sync (tap to retry)'}
               </Text>
             </View>
             {isSyncing && <ActivityIndicator size="small" color="#E65100" />}
-          </View>
+          </TouchableOpacity>
         )}
 
         {/* Search Bar & Species Filter Tabs */}

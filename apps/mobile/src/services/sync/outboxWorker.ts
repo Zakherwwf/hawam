@@ -7,6 +7,7 @@
 import { localDb } from '../../db/localDb.ts';
 import { pushSurveyBundle, type SurveyBundlePayload } from '../supabase.ts';
 import { uploadAnimalPhoto } from '../storageService.ts';
+import { sanitizeBundleUuids } from '../../features/sync/syncStore.ts';
 
 export interface NetworkConnectionState {
   isConnected?: boolean | null;
@@ -74,7 +75,7 @@ export async function processOutboxNow(options?: {
       processed++;
       let payload: SurveyBundlePayload;
       try {
-        payload = JSON.parse(item.payloadJson);
+        payload = sanitizeBundleUuids(JSON.parse(item.payloadJson));
       } catch {
         await localDb.updateOutboxStatus(item.id, 'failed', item.attempts + 1, 'Malformed payload JSON');
         failed++;

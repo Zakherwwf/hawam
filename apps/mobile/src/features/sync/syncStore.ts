@@ -14,6 +14,51 @@ import { storage } from '../../services/storageAdapter.ts';
 import { localDb } from '../../db/localDb.ts';
 import { pushSurveyBundle, type SurveyBundlePayload } from '../../services/supabase.ts';
 import { uploadAnimalPhoto } from '../../services/storageService.ts';
+import { generateUUID } from '../../utils/uuid.ts';
+
+const UUID_REGEX = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+
+export function sanitizeBundleUuids(payload: SurveyBundlePayload): SurveyBundlePayload {
+  const p: SurveyBundlePayload = {
+    ...payload,
+    session: { ...payload.session },
+    observations: payload.observations ? payload.observations.map((o) => ({ ...o })) : [],
+    photos: payload.photos ? payload.photos.map((ph) => ({ ...ph })) : [],
+  };
+
+  if (p.session && !UUID_REGEX.test(p.session.id)) {
+    p.session.id = generateUUID();
+  }
+
+  if (p.observations && p.observations.length > 0) {
+    p.observations = p.observations.map((obs) => {
+      if (!UUID_REGEX.test(obs.id)) {
+        const oldId = obs.id;
+        const newObsId = generateUUID();
+        if (p.photos) {
+          p.photos.forEach((ph) => {
+            if (ph.observation_id === oldId) {
+              ph.observation_id = newObsId;
+            }
+          });
+        }
+        return { ...obs, id: newObsId };
+      }
+      return obs;
+    });
+  }
+
+  if (p.photos && p.photos.length > 0) {
+    p.photos = p.photos.map((ph) => {
+      if (!UUID_REGEX.test(ph.id)) {
+        return { ...ph, id: generateUUID() };
+      }
+      return ph;
+    });
+  }
+
+  return p;
+}
 
 export interface OutboxItem {
   id: string;
@@ -151,9 +196,12 @@ export const useSyncStore = create<SyncState>((set, get) => ({
         let photoUploadFailed = false;
         let photoErrorMsg: string | undefined;
 
+        // Auto-sanitize legacy non-UUID formats for PostgreSQL schema compliance
+        const payload = sanitizeBundleUuids(item.payload);
+
         // Upload any local binary photos to Supabase Storage before RPC bundle submission
-        if (item.payload.photos && item.payload.photos.length > 0) {
-          for (const photo of item.payload.photos) {
+        if (payload.photos && payload.photos.length > 0) {
+          for (const photo of payload.photos) {
             if (
               photo.storage_path &&
               !photo.storage_path.startsWith('http://') &&
@@ -185,12 +233,12 @@ export const useSyncStore = create<SyncState>((set, get) => ({
           continue;
         }
 
-        const result = await pushSurveyBundle(item.payload);
+        const result = await pushSurveyBundle(payload);
         if (result.success) {
           syncedCount++;
           syncedItemIds.add(item.id);
           localDb.removeOutboxItem(item.id).catch(() => {});
-          localDb.updateSessionStatus(item.payload.session.id, 'finished').catch(() => {});
+          localDb.updateSessionStatus(payload.session.id, 'finished').catch(() => {});
         } else {
           failedItemsMap.set(item.id, {
             attempts: item.attempts + 1,

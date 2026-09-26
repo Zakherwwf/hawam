@@ -39,6 +39,7 @@ import { QueryClientProvider } from '@tanstack/react-query';
 import { queryClient } from './src/services/queries/useSurveyQueries';
 import { startOutboxWorker } from './src/services/sync/outboxWorker';
 import { startBackgroundLocationTracking, stopBackgroundLocationTracking } from './src/services/location/backgroundLocation';
+import { generateUUID } from './src/utils/uuid';
 import {
   hapticTabSwitch,
   hapticModalClose,
@@ -355,8 +356,9 @@ function AppContent() {
 
   // Add sighting from Opportunistic form
   const handleSaveOpportunistic = (observation: any) => {
+    const obsId = generateUUID();
     const newItem: SightingItem = {
-      id: `sighting-${Date.now()}`,
+      id: obsId,
       species: observation.species,
       identifier: observation.identifier || undefined,
       observer_name: userAccount?.name || 'You',
@@ -378,7 +380,7 @@ function AppContent() {
     }));
 
     // Enqueue incidental survey bundle into transactional outbox for PostgreSQL sync
-    const sessionId = `incidental-sess-${Date.now()}`;
+    const sessionId = generateUUID();
     const bundle: SurveyBundlePayload = {
       session: {
         id: sessionId,
@@ -405,8 +407,8 @@ function AppContent() {
           notes: newItem.notes,
         },
       ],
-      photos: capturedPhotos.map((p, idx) => ({
-        id: `photo-${newItem.id}-${idx}`,
+      photos: capturedPhotos.map((p) => ({
+        id: generateUUID(),
         observation_id: newItem.id,
         storage_path: p.uri,
         angle: p.angle || 'other',
@@ -425,7 +427,7 @@ function AppContent() {
   // Log sighting from Structured Survey session
   const handleLogAnimalInSurvey = (animal: any) => {
     const newItem: SightingItem = {
-      id: animal.id || `sighting-${Date.now()}`,
+      id: animal.id || generateUUID(),
       species: animal.species,
       identifier: animal.identifier || undefined,
       observer_name: userAccount?.name || 'You',
