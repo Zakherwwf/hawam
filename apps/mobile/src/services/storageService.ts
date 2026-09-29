@@ -4,7 +4,8 @@
  *
  * Implements:
  * - Binary photo uploads to Supabase Storage ('animal-photos' bucket)
- * - Standardized storage path generation: observations/{observation_id}/{photo_id}.jpg
+ * - Storage path {user_id}/{observation_id}/{photo_id}.jpg: the bucket policy only
+ *   accepts uploads under the uploader's own user id folder
  * - Offline-first resilience: preserves local URI on network/bucket error
  * - Private bucket: cloud photos are read through short-lived signed URLs
  * - Fails closed on privacy: a photo that cannot be re-encoded, or whose bytes
@@ -32,8 +33,8 @@ export function base64ToUint8Array(base64: string): Uint8Array {
     typeof atob === 'function'
       ? atob(clean)
       : typeof (globalThis as any).Buffer !== 'undefined'
-      ? (globalThis as any).Buffer.from(clean, 'base64').toString('binary')
-      : clean;
+        ? (globalThis as any).Buffer.from(clean, 'base64').toString('binary')
+        : clean;
   const bytes = new Uint8Array(binaryStr.length);
   for (let i = 0; i < binaryStr.length; i++) {
     bytes[i] = binaryStr.charCodeAt(i);
@@ -42,12 +43,22 @@ export function base64ToUint8Array(base64: string): Uint8Array {
 }
 
 /**
- * Constructs a standardized, unique storage object path
+ * Storage object path. The first folder must be the uploader's auth user id,
+ * or the animal-photos bucket policy rejects the upload.
  */
-export function buildStoragePath(observationId: string, photoId: string): string {
-  const cleanObsId = observationId.replace(/[^a-zA-Z0-9_-]/g, '');
-  const cleanPhotoId = photoId.replace(/[^a-zA-Z0-9_-]/g, '');
-  return `observations/${cleanObsId}/${cleanPhotoId}.jpg`;
+export function buildStoragePath(userId: string, observationId: string, photoId: string): string {
+  const clean = (s: string) => s.replace(/[^a-zA-Z0-9_-]/g, '');
+  return `${clean(userId)}/${clean(observationId)}/${clean(photoId)}.jpg`;
+}
+
+/**
+ * True for a path that already lives in the bucket (as opposed to a device
+ * file, content URI or data URI still waiting to be uploaded).
+ */
+export function isBucketPath(path?: string | null): boolean {
+  if (!path) return false;
+  if (/^[a-z][a-z0-9+.-]*:/i.test(path)) return false; // file:, content:, ph:, data:, http(s):
+  return /^[0-9a-f-]{36}\//i.test(path) || path.startsWith('observations/');
 }
 
 /**
@@ -103,16 +114,19 @@ export async function uploadAnimalPhoto(
   observationId: string,
   photoId: string
 ): Promise<UploadPhotoResult> {
-  const targetPath = buildStoragePath(observationId, photoId);
-
   // Already uploaded to cloud
-  if (
-    localUri.startsWith('http://') ||
-    localUri.startsWith('https://') ||
-    localUri.startsWith('observations/')
-  ) {
+  if (localUri.startsWith('http://') || localUri.startsWith('https://') || isBucketPath(localUri)) {
     return { success: true, storagePath: localUri };
   }
+
+  const {
+    data: { session },
+  } = await supabase.auth.getSession();
+  if (!session?.user?.id) {
+    // Keep the local file; the outbox retries once the user is signed in
+    return { success: false, storagePath: localUri, error: 'Sign in required to upload photos' };
+  }
+  const targetPath = buildStoragePath(session.user.id, observationId, photoId);
 
   try {
     let uploadBody: ArrayBuffer | FormData | Uint8Array;

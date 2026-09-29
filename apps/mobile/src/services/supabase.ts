@@ -46,7 +46,8 @@ const storageAdapter = {
   },
 };
 
-const isTestEnv = typeof process !== 'undefined' && (process.env.NODE_ENV === 'test' || !process.env.EXPO_OS);
+const isTestEnv =
+  typeof process !== 'undefined' && (process.env.NODE_ENV === 'test' || !process.env.EXPO_OS);
 
 export const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
   auth: {
@@ -138,7 +139,9 @@ export async function hasAuthSession(): Promise<boolean> {
  */
 export async function ensureUserConsentAccepted(): Promise<void> {
   try {
-    const { data: { session } } = await supabase.auth.getSession();
+    const {
+      data: { session },
+    } = await supabase.auth.getSession();
     if (session?.user?.id) {
       await supabase
         .from('users')
@@ -180,7 +183,11 @@ export async function pushSurveyBundle(payload: SurveyBundlePayload) {
 /**
  * Right of access: every server row keyed to the signed-in user, as JSON.
  */
-export async function exportMyData(): Promise<{ success: boolean; data?: unknown; error?: string }> {
+export async function exportMyData(): Promise<{
+  success: boolean;
+  data?: unknown;
+  error?: string;
+}> {
   try {
     const { data, error } = await supabase.rpc('export_my_data');
     if (error) return { success: false, error: error.message };
@@ -191,18 +198,15 @@ export async function exportMyData(): Promise<{ success: boolean; data?: unknown
 }
 
 /**
- * Right to erasure. The delete-account Edge Function keeps de-identified
- * observations for science, removes precise locations, tracks, notes and
- * photos, then deletes the auth user.
+ * Right to erasure: delete_my_account() deletes the auth user, which cascades
+ * to every session, observation, precise location, track and photo record
+ * they submitted. Shared records (routes, confirmed individuals, audit rows)
+ * survive with the person reference cleared.
  */
 export async function deleteMyAccount(): Promise<{ success: boolean; error?: string }> {
   try {
-    const { data, error } = await supabase.functions.invoke('delete-account', {
-      body: { confirm: 'DELETE' },
-    });
-    if (error || !data?.success) {
-      return { success: false, error: error?.message || data?.error || 'Deletion failed' };
-    }
+    const { error } = await supabase.rpc('delete_my_account');
+    if (error) return { success: false, error: error.message };
     return { success: true };
   } catch (err: any) {
     return { success: false, error: err?.message || 'Network error' };
@@ -214,10 +218,7 @@ export async function deleteMyAccount(): Promise<{ success: boolean; error?: str
  */
 export async function pullActiveRoutes() {
   try {
-    const { data, error } = await supabase
-      .from('routes')
-      .select('*')
-      .eq('is_active', true);
+    const { data, error } = await supabase.from('routes').select('*').eq('is_active', true);
 
     if (error) {
       console.warn('Error fetching routes from Supabase:', error);

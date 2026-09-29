@@ -12,8 +12,12 @@
 import { create } from 'zustand';
 import { storage } from '../../services/storageAdapter.ts';
 import { localDb } from '../../db/localDb.ts';
-import { hasAuthSession, pushSurveyBundle, type SurveyBundlePayload } from '../../services/supabase.ts';
-import { uploadAnimalPhoto } from '../../services/storageService.ts';
+import {
+  hasAuthSession,
+  pushSurveyBundle,
+  type SurveyBundlePayload,
+} from '../../services/supabase.ts';
+import { isBucketPath, uploadAnimalPhoto } from '../../services/storageService.ts';
 import { generateUUID } from '../../utils/uuid.ts';
 
 const UUID_REGEX = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
@@ -219,14 +223,16 @@ export const useSyncStore = create<SyncState>((set, get) => ({
     };
 
     // Persist to local SQLite outbox
-    await localDb.enqueueOutbox({
-      id: newItem.id,
-      sessionId: bundle.session.id,
-      payloadJson: JSON.stringify(bundle),
-      createdAt: newItem.created_at,
-      status: 'pending',
-      attempts: 0,
-    }).catch(() => {});
+    await localDb
+      .enqueueOutbox({
+        id: newItem.id,
+        sessionId: bundle.session.id,
+        payloadJson: JSON.stringify(bundle),
+        createdAt: newItem.created_at,
+        status: 'pending',
+        attempts: 0,
+      })
+      .catch(() => {});
 
     // Deduplicate against duplicate submission of identical session ID
     const deduplicated = currentOutbox.filter(
@@ -238,7 +244,9 @@ export const useSyncStore = create<SyncState>((set, get) => ({
     await storage.setItem('hawem_outbox_v2', JSON.stringify(updated)).catch(() => {});
 
     // Trigger immediate background sync
-    get().triggerSync().catch(() => {});
+    get()
+      .triggerSync()
+      .catch(() => {});
   },
 
   triggerSync: async () => {
@@ -276,7 +284,7 @@ export const useSyncStore = create<SyncState>((set, get) => ({
               photo.storage_path &&
               !photo.storage_path.startsWith('http://') &&
               !photo.storage_path.startsWith('https://') &&
-              !photo.storage_path.startsWith('observations/')
+              !isBucketPath(photo.storage_path)
             ) {
               const uploadRes = await uploadAnimalPhoto(
                 photo.storage_path,
@@ -314,14 +322,18 @@ export const useSyncStore = create<SyncState>((set, get) => ({
             attempts: item.attempts + 1,
             lastError: result.error,
           });
-          localDb.updateOutboxStatus(item.id, 'failed', item.attempts + 1, result.error).catch(() => {});
+          localDb
+            .updateOutboxStatus(item.id, 'failed', item.attempts + 1, result.error)
+            .catch(() => {});
         }
       } catch (err: any) {
         failedItemsMap.set(item.id, {
           attempts: item.attempts + 1,
           lastError: err?.message || 'Sync failed',
         });
-        localDb.updateOutboxStatus(item.id, 'failed', item.attempts + 1, err?.message || 'Sync failed').catch(() => {});
+        localDb
+          .updateOutboxStatus(item.id, 'failed', item.attempts + 1, err?.message || 'Sync failed')
+          .catch(() => {});
       }
     }
 

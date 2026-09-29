@@ -115,20 +115,20 @@
   },
   "privacy": {
     "header": "Vos données",
-    "footer": "La suppression de votre compte conserve vos observations pour la science, sans lien avec votre identité : elles restent à une précision de 1 km, et les positions précises, traces GPS, notes et photos sont définitivement supprimées.",
+    "footer": "La suppression de votre compte efface définitivement votre profil et tout ce que vous avez soumis : sessions, observations, positions précises, traces GPS et photos. Les éléments partagés comme les itinéraires restent, sans votre nom.",
     "export_title": "Exporter mes données",
     "export_sub": "Toutes les données du serveur vous concernant, en JSON",
     "export_failed": "Échec de l'export",
     "delete_title": "Supprimer le compte",
     "deleting": "Suppression...",
-    "delete_sub": "Effacer votre identité, vos photos et positions précises",
+    "delete_sub": "Effacer votre profil et tout ce que vous avez soumis",
     "delete_confirm_title": "Supprimer votre compte ?",
-    "delete_confirm_body": "Votre profil, vos photos, positions précises et traces GPS seront définitivement effacés. Les observations anonymes à 1 km restent dans le jeu de données scientifique. Action irréversible.",
+    "delete_confirm_body": "Votre profil et toutes vos sessions, observations, positions, traces GPS et photos seront définitivement effacés. Action irréversible. Exportez vos données d'abord si vous souhaitez en garder une copie.",
     "delete_confirm_action": "Supprimer",
     "cancel": "Annuler",
     "delete_failed": "Échec de la suppression",
     "delete_done_title": "Compte supprimé",
-    "delete_done_body": "Vos données personnelles ont été effacées."
+    "delete_done_body": "Votre compte et tout ce que vous avez soumis ont été effacés."
   },
   "opportunistic": {
     "no_gps_title": "Position indisponible",

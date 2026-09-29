@@ -1,6 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import {
+  isBucketPath,
   base64ToUint8Array,
   buildStoragePath,
   getAnimalPhotoUrl,
@@ -31,27 +32,25 @@ test('storageService: base64ToUint8Array strips data URL prefix safely', () => {
 });
 
 test('storageService: buildStoragePath constructs clean, sanitized S3 keys', () => {
-  const obsId = 'obs-cat-101-uuid';
-  const photoId = 'photo-left-flank-01';
-  const path = buildStoragePath(obsId, photoId);
+  const userId = '0f8fad5b-d9cb-469f-a165-70867728950e';
+  const path = buildStoragePath(userId, 'obs-cat-101-uuid', 'photo-left-flank-01');
 
-  assert.equal(path, 'observations/obs-cat-101-uuid/photo-left-flank-01.jpg');
+  // First folder must be the uploader's user id (animal-photos bucket policy)
+  assert.equal(
+    path,
+    '0f8fad5b-d9cb-469f-a165-70867728950e/obs-cat-101-uuid/photo-left-flank-01.jpg'
+  );
 });
 
 test('storageService: buildStoragePath strips unsafe path traversal characters', () => {
-  const obsId = '../../../etc/passwd';
-  const photoId = 'test/photo#1';
-  const path = buildStoragePath(obsId, photoId);
+  const path = buildStoragePath('../user', '../../../etc/passwd', 'test/photo#1');
 
-  assert.equal(path, 'observations/etcpasswd/testphoto1.jpg');
+  assert.equal(path, 'user/etcpasswd/testphoto1.jpg');
 });
 
 test('storageService: getAnimalPhotoUrl preserves existing web and local URIs', () => {
   assert.equal(getAnimalPhotoUrl(''), '');
-  assert.equal(
-    getAnimalPhotoUrl('https://example.com/cat.jpg'),
-    'https://example.com/cat.jpg'
-  );
+  assert.equal(getAnimalPhotoUrl('https://example.com/cat.jpg'), 'https://example.com/cat.jpg');
   assert.equal(
     getAnimalPhotoUrl('file:///var/mobile/Containers/Data/temp.jpg'),
     'file:///var/mobile/Containers/Data/temp.jpg'
@@ -63,7 +62,7 @@ test('storageService: getAnimalPhotoUrl preserves existing web and local URIs', 
 });
 
 test('storageService: getAnimalPhotoUrl never builds a public URL for private bucket paths', () => {
-  assert.equal(getAnimalPhotoUrl('observations/obs-1/photo-1.jpg'), '');
+  assert.equal(getAnimalPhotoUrl('0f8fad5b-d9cb-469f-a165-70867728950e/obs-1/photo-1.jpg'), '');
 });
 
 test('storageService: resolveAnimalPhotoUrl passes local URIs through without a network call', async () => {
@@ -73,13 +72,13 @@ test('storageService: resolveAnimalPhotoUrl passes local URIs through without a 
 
 test('storageService: uploadAnimalPhoto returns immediately for already uploaded cloud paths', async () => {
   const result = await uploadAnimalPhoto(
-    'observations/obs-100/photo-200.jpg',
+    '0f8fad5b-d9cb-469f-a165-70867728950e/obs-100/photo-200.jpg',
     'obs-100',
     'photo-200'
   );
 
   assert.equal(result.success, true);
-  assert.equal(result.storagePath, 'observations/obs-100/photo-200.jpg');
+  assert.equal(result.storagePath, '0f8fad5b-d9cb-469f-a165-70867728950e/obs-100/photo-200.jpg');
 });
 
 test('storageService: uploadAnimalPhoto refuses a device photo it cannot re-encode', async () => {
@@ -88,4 +87,13 @@ test('storageService: uploadAnimalPhoto refuses a device photo it cannot re-enco
 
   assert.equal(result.success, false);
   assert.equal(result.storagePath, 'file:///tmp/raw-with-gps.jpg');
+});
+
+test('storageService: isBucketPath tells uploaded paths from device files', () => {
+  assert.equal(isBucketPath('0f8fad5b-d9cb-469f-a165-70867728950e/obs/p.jpg'), true);
+  assert.equal(isBucketPath('observations/obs/p.jpg'), true);
+  assert.equal(isBucketPath('file:///var/mobile/p.jpg'), false);
+  assert.equal(isBucketPath('content://media/external/images/1'), false);
+  assert.equal(isBucketPath('data:image/jpeg;base64,AAAA'), false);
+  assert.equal(isBucketPath(''), false);
 });

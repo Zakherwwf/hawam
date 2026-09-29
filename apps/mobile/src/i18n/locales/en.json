@@ -194,20 +194,20 @@
   },
   "privacy": {
     "header": "Your Data",
-    "footer": "Deleting your account keeps your observations for science, stripped of your identity: they stay at 1 km precision, and precise locations, GPS tracks, notes and photos are removed permanently.",
+    "footer": "Deleting your account permanently erases your profile and everything you submitted: sessions, observations, precise locations, GPS tracks and photos. Shared records such as routes stay, without your name.",
     "export_title": "Export My Data",
     "export_sub": "Everything the server holds about you, as JSON",
     "export_failed": "Export Failed",
     "delete_title": "Delete Account",
     "deleting": "Deleting...",
-    "delete_sub": "Erase your identity, photos and precise locations",
+    "delete_sub": "Erase your profile and everything you submitted",
     "delete_confirm_title": "Delete your account?",
-    "delete_confirm_body": "Your profile, photos, precise locations and GPS tracks will be permanently erased. Anonymous 1 km observations remain in the scientific dataset. This cannot be undone.",
+    "delete_confirm_body": "Your profile and every session, observation, location, GPS track and photo you submitted will be permanently erased. This cannot be undone. Export your data first if you want a copy.",
     "delete_confirm_action": "Delete",
     "cancel": "Cancel",
     "delete_failed": "Deletion Failed",
     "delete_done_title": "Account Deleted",
-    "delete_done_body": "Your personal data has been erased."
+    "delete_done_body": "Your account and everything you submitted have been erased."
   },
   "opportunistic": {
     "no_gps_title": "Location unavailable",

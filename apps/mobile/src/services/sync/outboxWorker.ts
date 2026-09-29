@@ -6,7 +6,7 @@
 
 import { localDb } from '../../db/localDb.ts';
 import { hasAuthSession, pushSurveyBundle, type SurveyBundlePayload } from '../supabase.ts';
-import { uploadAnimalPhoto } from '../storageService.ts';
+import { isBucketPath, uploadAnimalPhoto } from '../storageService.ts';
 import { sanitizeBundleUuids } from '../../features/sync/syncStore.ts';
 
 export interface NetworkConnectionState {
@@ -32,7 +32,11 @@ let isProcessing = false;
 let netInfoUnsubscribe: (() => void) | null = null;
 let appStateSubscription: any = null;
 
-export function computeBackoffMs(attempts: number, baseMs: number = 1000, maxMs: number = 300000): number {
+export function computeBackoffMs(
+  attempts: number,
+  baseMs: number = 1000,
+  maxMs: number = 300000
+): number {
   const exponential = baseMs * Math.pow(2, attempts);
   const jitter = Math.floor(Math.random() * 500);
   return Math.min(maxMs, exponential + jitter);
@@ -52,9 +56,12 @@ export async function processOutboxNow(options?: {
   let failed = 0;
 
   try {
-    const netState = options?.forcedNetState !== undefined
-      ? options.forcedNetState
-      : await (NetInfoClient?.fetch ? NetInfoClient.fetch() : Promise.resolve(null)).catch(() => null);
+    const netState =
+      options?.forcedNetState !== undefined
+        ? options.forcedNetState
+        : await (NetInfoClient?.fetch ? NetInfoClient.fetch() : Promise.resolve(null)).catch(
+            () => null
+          );
 
     // If device is offline, skip processing
     if (netState && (!netState.isConnected || netState.isInternetReachable === false)) {
@@ -82,7 +89,12 @@ export async function processOutboxNow(options?: {
       try {
         payload = sanitizeBundleUuids(JSON.parse(item.payloadJson));
       } catch {
-        await localDb.updateOutboxStatus(item.id, 'failed', item.attempts + 1, 'Malformed payload JSON');
+        await localDb.updateOutboxStatus(
+          item.id,
+          'failed',
+          item.attempts + 1,
+          'Malformed payload JSON'
+        );
         failed++;
         continue;
       }
@@ -99,7 +111,7 @@ export async function processOutboxNow(options?: {
             photo.storage_path &&
             !photo.storage_path.startsWith('http://') &&
             !photo.storage_path.startsWith('https://') &&
-            !photo.storage_path.startsWith('observations/')
+            !isBucketPath(photo.storage_path)
           ) {
             const uploadRes = await uploadAnimalPhoto(
               photo.storage_path,
