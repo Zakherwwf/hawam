@@ -1,3 +1,4 @@
+import { useTranslation } from 'react-i18next';
 import React, { useState, useEffect } from 'react';
 import {
   View,
@@ -37,6 +38,7 @@ export const CreateColonyModal: React.FC<CreateColonyModalProps> = ({
   initialLat = 36.8065,
   initialLon = 10.1815,
 }) => {
+  const { t } = useTranslation();
   const { addColony } = useColoniesStore();
 
   const [species, setSpecies] = useState<ColonySpecies>('cat');
@@ -80,10 +82,16 @@ export const CreateColonyModal: React.FC<CreateColonyModalProps> = ({
         setLongitude(loc.coords.longitude.toFixed(6));
         hapticSuccess();
       } else {
-        Alert.alert('Location Permission', 'GPS permission is needed to auto-fill coordinates.');
+        Alert.alert(
+          t('ui_createColonyModal.location_permission'),
+          t('ui_createColonyModal.gps_permission_is_needed_to_auto')
+        );
       }
     } catch (e) {
-      Alert.alert('GPS Error', 'Could not obtain current location.');
+      Alert.alert(
+        t('ui_createColonyModal.gps_error'),
+        t('ui_createColonyModal.could_not_obtain_current_location')
+      );
     } finally {
       setIsLocating(false);
     }
@@ -96,7 +104,10 @@ export const CreateColonyModal: React.FC<CreateColonyModalProps> = ({
 
   const handleSave = () => {
     if (!name.trim()) {
-      Alert.alert('Required Field', 'Please enter a name for this animal group.');
+      Alert.alert(
+        t('ui_createColonyModal.required_field'),
+        t('ui_createColonyModal.please_enter_a_name_for_this')
+      );
       return;
     }
 
@@ -104,7 +115,10 @@ export const CreateColonyModal: React.FC<CreateColonyModalProps> = ({
     const lon = parseFloat(longitude);
 
     if (isNaN(lat) || isNaN(lon)) {
-      Alert.alert('Invalid Coordinates', 'Please enter valid latitude and longitude numbers.');
+      Alert.alert(
+        t('ui_createColonyModal.invalid_coordinates'),
+        t('ui_createColonyModal.please_enter_valid_latitude_and_longitude')
+      );
       return;
     }
 
@@ -127,9 +141,11 @@ export const CreateColonyModal: React.FC<CreateColonyModalProps> = ({
     });
 
     Alert.alert(
-      isDog ? 'Dog Pack Registered' : 'Cat Colony Registered',
-      `"${name.trim()}" has been saved and pinned to the map!\n+20 XP awarded!`,
-      [{ text: 'OK', onPress: handleClose }]
+      isDog
+        ? t('ui_createColonyModal.dog_pack_registered')
+        : t('ui_createColonyModal.cat_colony_registered'),
+      t('ui_createColonyModal.has_been_saved_and_pinned_to', { v0: name.trim() }),
+      [{ text: t('ui_createColonyModal.ok'), onPress: handleClose }]
     );
   };
 
@@ -144,13 +160,17 @@ export const CreateColonyModal: React.FC<CreateColonyModalProps> = ({
         {/* Navigation Bar */}
         <View style={styles.navBar}>
           <TouchableOpacity onPress={handleClose} style={styles.navBtn}>
-            <Text style={styles.navCancelText}>Cancel</Text>
+            <Text style={styles.navCancelText}>{t('ui_createColonyModal.cancel')}</Text>
           </TouchableOpacity>
           <Text style={styles.navTitle}>
-            {isDog ? 'Register Dog Pack' : 'Register Cat Colony'}
+            {isDog
+              ? t('ui_createColonyModal.register_dog_pack')
+              : t('ui_createColonyModal.register_cat_colony')}
           </Text>
           <TouchableOpacity onPress={handleSave} style={[styles.navBtn, styles.saveNavBtn]}>
-            <Text style={[styles.navSaveText, { color: accentColor }]}>Save</Text>
+            <Text style={[styles.navSaveText, { color: accentColor }]}>
+              {t('ui_createColonyModal.save')}
+            </Text>
           </TouchableOpacity>
         </View>
 
@@ -158,7 +178,10 @@ export const CreateColonyModal: React.FC<CreateColonyModalProps> = ({
           behavior={Platform.OS === 'ios' ? 'padding' : undefined}
           style={{ flex: 1 }}
         >
-          <ScrollView contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
+          <ScrollView
+            contentContainerStyle={styles.scrollContent}
+            showsVerticalScrollIndicator={false}
+          >
             {/* Species Selector Segmented Control */}
             <View style={styles.speciesSegmentWrap}>
               <TouchableOpacity
@@ -171,8 +194,10 @@ export const CreateColonyModal: React.FC<CreateColonyModalProps> = ({
               >
                 <IOSIcon name="paw" size={18} color={!isDog ? '#8B5CF6' : '#94A3B8'} />
                 <View>
-                  <Text style={[styles.speciesSegmentTitle, !isDog && styles.speciesSegmentTitleActive]}>
-                    Cat Colony
+                  <Text
+                    style={[styles.speciesSegmentTitle, !isDog && styles.speciesSegmentTitleActive]}
+                  >
+                    {t('ui_createColonyModal.cat_colony')}
                   </Text>
                   <Text style={styles.speciesSegmentSub}>مستعمرة قطط</Text>
                 </View>
@@ -188,8 +213,13 @@ export const CreateColonyModal: React.FC<CreateColonyModalProps> = ({
               >
                 <IOSIcon name="paw" size={18} color={isDog ? '#EA580C' : '#94A3B8'} />
                 <View>
-                  <Text style={[styles.speciesSegmentTitle, isDog && styles.speciesSegmentTitleActiveDog]}>
-                    Dog Pack
+                  <Text
+                    style={[
+                      styles.speciesSegmentTitle,
+                      isDog && styles.speciesSegmentTitleActiveDog,
+                    ]}
+                  >
+                    {t('ui_createColonyModal.dog_pack')}
                   </Text>
                   <Text style={styles.speciesSegmentSub}>قطيع كلاب</Text>
                 </View>
@@ -200,14 +230,20 @@ export const CreateColonyModal: React.FC<CreateColonyModalProps> = ({
             <View style={styles.card}>
               <View style={styles.cardHeader}>
                 <IOSIcon name="paw" size={16} color={accentColor} />
-                <Text style={styles.cardTitle}>{groupLabel} Information</Text>
+                <Text style={styles.cardTitle}>
+                  {t('ui_createColonyModal.information', { groupLabel })}
+                </Text>
               </View>
 
               <View style={styles.fieldGroup}>
-                <Text style={styles.fieldLabel}>Name / Identifier *</Text>
+                <Text style={styles.fieldLabel}>{t('ui_createColonyModal.name_identifier')}</Text>
                 <TextInput
                   style={styles.input}
-                  placeholder={isDog ? 'e.g., Meute Marché Bab El Khadra' : 'e.g., Colonie Bab Souika'}
+                  placeholder={
+                    isDog
+                      ? t('ui_createColonyModal.e_g_meute_march_bab_el')
+                      : t('ui_createColonyModal.e_g_colonie_bab_souika')
+                  }
                   placeholderTextColor={IOSColors.tertiaryLabel}
                   value={name}
                   onChangeText={setName}
@@ -215,10 +251,10 @@ export const CreateColonyModal: React.FC<CreateColonyModalProps> = ({
               </View>
 
               <View style={styles.fieldGroup}>
-                <Text style={styles.fieldLabel}>Zone / Delegation</Text>
+                <Text style={styles.fieldLabel}>{t('ui_createColonyModal.zone_delegation')}</Text>
                 <TextInput
                   style={styles.input}
-                  placeholder="e.g., Tunis Médina, La Marsa, Radès"
+                  placeholder={t('ui_createColonyModal.e_g_tunis_m_dina_la')}
                   placeholderTextColor={IOSColors.tertiaryLabel}
                   value={zone}
                   onChangeText={setZone}
@@ -231,7 +267,9 @@ export const CreateColonyModal: React.FC<CreateColonyModalProps> = ({
               <View style={styles.cardHeaderBetween}>
                 <View style={styles.cardHeaderLeft}>
                   <IOSIcon name="location" size={16} color="#0284C7" />
-                  <Text style={styles.cardTitle}>Station Core Location</Text>
+                  <Text style={styles.cardTitle}>
+                    {t('ui_createColonyModal.station_core_location')}
+                  </Text>
                 </View>
                 <TouchableOpacity
                   style={styles.gpsPillBtn}
@@ -240,14 +278,16 @@ export const CreateColonyModal: React.FC<CreateColonyModalProps> = ({
                 >
                   <IOSIcon name="location" size={13} color="#0284C7" />
                   <Text style={styles.gpsPillText}>
-                    {isLocating ? 'Locating...' : 'Use My GPS'}
+                    {isLocating
+                      ? t('ui_createColonyModal.locating')
+                      : t('ui_createColonyModal.use_my_gps')}
                   </Text>
                 </TouchableOpacity>
               </View>
 
               <View style={styles.coordsRow}>
                 <View style={[styles.fieldGroup, { flex: 1 }]}>
-                  <Text style={styles.fieldLabel}>Latitude</Text>
+                  <Text style={styles.fieldLabel}>{t('ui_createColonyModal.latitude')}</Text>
                   <TextInput
                     style={styles.input}
                     keyboardType="numeric"
@@ -256,7 +296,7 @@ export const CreateColonyModal: React.FC<CreateColonyModalProps> = ({
                   />
                 </View>
                 <View style={[styles.fieldGroup, { flex: 1 }]}>
-                  <Text style={styles.fieldLabel}>Longitude</Text>
+                  <Text style={styles.fieldLabel}>{t('ui_createColonyModal.longitude')}</Text>
                   <TextInput
                     style={styles.input}
                     keyboardType="numeric"
@@ -272,12 +312,17 @@ export const CreateColonyModal: React.FC<CreateColonyModalProps> = ({
               <View style={styles.cardHeaderBetween}>
                 <View style={styles.cardHeaderLeft}>
                   <IOSIcon name="shield" size={16} color="#10B981" />
-                  <Text style={styles.cardTitle}>Population & Sterilization (TNR)</Text>
+                  <Text style={styles.cardTitle}>
+                    {t('ui_createColonyModal.population_sterilization_tnr')}
+                  </Text>
                 </View>
                 <View
                   style={[
                     styles.tnrBadge,
-                    { backgroundColor: tnrPct >= 75 ? '#DCFCE7' : tnrPct >= 50 ? '#FEF3C7' : '#FEE2E2' },
+                    {
+                      backgroundColor:
+                        tnrPct >= 75 ? '#DCFCE7' : tnrPct >= 50 ? '#FEF3C7' : '#FEE2E2',
+                    },
                   ]}
                 >
                   <Text
@@ -286,14 +331,16 @@ export const CreateColonyModal: React.FC<CreateColonyModalProps> = ({
                       { color: tnrPct >= 75 ? '#15803D' : tnrPct >= 50 ? '#B45309' : '#B91C1C' },
                     ]}
                   >
-                    {tnrPct}% Sterilized
+                    {t('ui_createColonyModal.sterilized', { tnrPct })}
                   </Text>
                 </View>
               </View>
 
               <View style={styles.coordsRow}>
                 <View style={[styles.fieldGroup, { flex: 1 }]}>
-                  <Text style={styles.fieldLabel}>Estimated Population</Text>
+                  <Text style={styles.fieldLabel}>
+                    {t('ui_createColonyModal.estimated_population')}
+                  </Text>
                   <View style={styles.stepperWrap}>
                     <TouchableOpacity
                       style={styles.stepperBtn}
@@ -323,7 +370,9 @@ export const CreateColonyModal: React.FC<CreateColonyModalProps> = ({
                 </View>
 
                 <View style={[styles.fieldGroup, { flex: 1 }]}>
-                  <Text style={styles.fieldLabel}>Sterilized Count</Text>
+                  <Text style={styles.fieldLabel}>
+                    {t('ui_createColonyModal.sterilized_count')}
+                  </Text>
                   <View style={styles.stepperWrap}>
                     <TouchableOpacity
                       style={styles.stepperBtn}
@@ -358,13 +407,17 @@ export const CreateColonyModal: React.FC<CreateColonyModalProps> = ({
             <View style={styles.card}>
               <View style={styles.cardHeader}>
                 <IOSIcon name="shield" size={16} color="#0284C7" />
-                <Text style={styles.cardTitle}>Station Facilities</Text>
+                <Text style={styles.cardTitle}>{t('ui_createColonyModal.station_facilities')}</Text>
               </View>
 
               <View style={styles.switchRow}>
                 <View style={styles.switchLabelWrap}>
-                  <Text style={styles.switchTitle}>Clean Water Station</Text>
-                  <Text style={styles.switchSubtitle}>Permanent bowl or fresh water dispenser</Text>
+                  <Text style={styles.switchTitle}>
+                    {t('ui_createColonyModal.clean_water_station')}
+                  </Text>
+                  <Text style={styles.switchSubtitle}>
+                    {t('ui_createColonyModal.permanent_bowl_or_fresh_water_dispenser')}
+                  </Text>
                 </View>
                 <Switch
                   value={hasWaterStation}
@@ -376,8 +429,12 @@ export const CreateColonyModal: React.FC<CreateColonyModalProps> = ({
 
               <View style={[styles.switchRow, { borderBottomWidth: 0 }]}>
                 <View style={styles.switchLabelWrap}>
-                  <Text style={styles.switchTitle}>Weather Shelter</Text>
-                  <Text style={styles.switchSubtitle}>Covered box, wooden niche, or dry alcove</Text>
+                  <Text style={styles.switchTitle}>
+                    {t('ui_createColonyModal.weather_shelter')}
+                  </Text>
+                  <Text style={styles.switchSubtitle}>
+                    {t('ui_createColonyModal.covered_box_wooden_niche_or_dry')}
+                  </Text>
                 </View>
                 <Switch
                   value={hasShelter}
@@ -392,14 +449,18 @@ export const CreateColonyModal: React.FC<CreateColonyModalProps> = ({
             <View style={styles.card}>
               <View style={styles.cardHeader}>
                 <IOSIcon name="person" size={16} color="#6366F1" />
-                <Text style={styles.cardTitle}>Caretaker & Feeding Routine</Text>
+                <Text style={styles.cardTitle}>
+                  {t('ui_createColonyModal.caretaker_feeding_routine')}
+                </Text>
               </View>
 
               <View style={styles.fieldGroup}>
-                <Text style={styles.fieldLabel}>Primary Caretaker / Volunteer</Text>
+                <Text style={styles.fieldLabel}>
+                  {t('ui_createColonyModal.primary_caretaker_volunteer')}
+                </Text>
                 <TextInput
                   style={styles.input}
-                  placeholder="e.g., Local café staff, Madame Sonia, SOS Animaux"
+                  placeholder={t('ui_createColonyModal.e_g_local_caf_staff_madame')}
                   placeholderTextColor={IOSColors.tertiaryLabel}
                   value={caretakerName}
                   onChangeText={setCaretakerName}
@@ -407,10 +468,10 @@ export const CreateColonyModal: React.FC<CreateColonyModalProps> = ({
               </View>
 
               <View style={styles.fieldGroup}>
-                <Text style={styles.fieldLabel}>Feeding Schedule</Text>
+                <Text style={styles.fieldLabel}>{t('ui_createColonyModal.feeding_schedule')}</Text>
                 <TextInput
                   style={styles.input}
-                  placeholder="e.g., Daily at 07:00 & 19:30"
+                  placeholder={t('ui_createColonyModal.e_g_daily_at_07_00')}
                   placeholderTextColor={IOSColors.tertiaryLabel}
                   value={feedingSchedule}
                   onChangeText={setFeedingSchedule}
@@ -418,10 +479,12 @@ export const CreateColonyModal: React.FC<CreateColonyModalProps> = ({
               </View>
 
               <View style={styles.fieldGroup}>
-                <Text style={styles.fieldLabel}>Notes & Observations</Text>
+                <Text style={styles.fieldLabel}>
+                  {t('ui_createColonyModal.notes_observations')}
+                </Text>
                 <TextInput
                   style={[styles.input, styles.textArea]}
-                  placeholder="e.g., 2 pregnant females, peaceful behavior, vaccinated during municipal vet campaign"
+                  placeholder={t('ui_createColonyModal.e_g_2_pregnant_females_peaceful')}
                   placeholderTextColor={IOSColors.tertiaryLabel}
                   value={notes}
                   onChangeText={setNotes}
@@ -434,12 +497,14 @@ export const CreateColonyModal: React.FC<CreateColonyModalProps> = ({
             {/* XP Gamification Incentive Banner */}
             <View style={styles.xpBanner}>
               <View style={styles.xpBadge}>
-                <Text style={styles.xpBadgeText}>+20 XP</Text>
+                <Text style={styles.xpBadgeText}>{t('ui_createColonyModal.20_xp')}</Text>
               </View>
               <View style={{ flex: 1 }}>
-                <Text style={styles.xpBannerTitle}>Citizen Science Reward</Text>
+                <Text style={styles.xpBannerTitle}>
+                  {t('ui_createColonyModal.citizen_science_reward')}
+                </Text>
                 <Text style={styles.xpBannerSub}>
-                  Registering community animal groups helps track TNR sterilization and prevents municipal culls.
+                  {t('ui_createColonyModal.registering_community_animal_groups_helps_track')}
                 </Text>
               </View>
             </View>
@@ -452,7 +517,7 @@ export const CreateColonyModal: React.FC<CreateColonyModalProps> = ({
             >
               <IOSIcon name="check" size={18} color="#FFFFFF" />
               <Text style={styles.saveBtnText}>
-                Register {groupLabel} (+20 XP)
+                {t('ui_createColonyModal.register_20_xp', { groupLabel })}
               </Text>
             </TouchableOpacity>
           </ScrollView>

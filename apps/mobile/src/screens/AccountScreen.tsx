@@ -77,15 +77,9 @@ export const AccountScreen: React.FC<AccountScreenProps> = ({
   const [role, setRole] = useState<'surveyor' | 'volunteer' | 'researcher'>(
     userAccount?.role || 'surveyor'
   );
-  const [governorate, setGovernorate] = useState<string>(
-    userAccount?.governorate || 'Tunis'
-  );
-  const [surveyorId, setSurveyorId] = useState<string>(
-    userAccount?.surveyorId || ''
-  );
-  const [avatarUri, setAvatarUri] = useState<string | undefined>(
-    userAccount?.avatarUri
-  );
+  const [governorate, setGovernorate] = useState<string>(userAccount?.governorate || 'Tunis');
+  const [surveyorId, setSurveyorId] = useState<string>(userAccount?.surveyorId || '');
+  const [avatarUri, setAvatarUri] = useState<string | undefined>(userAccount?.avatarUri);
   // Supabase Auth Session (for profile ID / email fallback)
   const [session, setSession] = useState<Session | null>(null);
 
@@ -144,8 +138,8 @@ export const AccountScreen: React.FC<AccountScreenProps> = ({
     if (Platform.OS === 'ios') {
       ActionSheetIOS.showActionSheetWithOptions(
         {
-          title: 'Profile Picture',
-          message: 'Select an official surveyor photo or field call-sign emblem',
+          title: t('ui_account.profile_picture'),
+          message: t('ui_account.select_an_official_surveyor_photo_or_2'),
           options,
           cancelButtonIndex: 0,
           destructiveButtonIndex: currentAvatar ? 3 : undefined,
@@ -164,16 +158,16 @@ export const AccountScreen: React.FC<AccountScreenProps> = ({
       );
     } else {
       const buttons: any[] = [
-        { text: 'Cancel', style: 'cancel' },
+        { text: t('ui_account.cancel'), style: 'cancel' },
         {
-          text: 'Camera',
+          text: t('ui_account.camera'),
           onPress: async () => {
             const photo = await capturePhotoFromCamera();
             if (photo?.uri) onSelectPhoto(photo.uri);
           },
         },
         {
-          text: 'Gallery',
+          text: t('ui_account.gallery'),
           onPress: async () => {
             const photo = await pickPhotoFromLibrary();
             if (photo?.uri) onSelectPhoto(photo.uri);
@@ -182,25 +176,31 @@ export const AccountScreen: React.FC<AccountScreenProps> = ({
       ];
       if (currentAvatar) {
         buttons.push({
-          text: 'Remove Photo',
+          text: t('ui_account.remove_photo'),
           style: 'destructive',
           onPress: () => onSelectPhoto(undefined),
         });
       }
-      Alert.alert('Profile Picture', 'Select an official surveyor photo or emblem', buttons);
+      Alert.alert(
+        t('ui_account.profile_picture'),
+        t('ui_account.select_an_official_surveyor_photo_or'),
+        buttons
+      );
     }
   };
 
   const handleCreateOrUpdate = () => {
     if (!name.trim()) {
-      Alert.alert('Required Field', 'Please enter your full name to identify your field surveys.');
+      Alert.alert(t('ui_account.required_field'), t('ui_account.please_enter_your_full_name_to'));
       return;
     }
 
     const effectiveId =
       surveyorId.trim() ||
       userAccount?.surveyorId ||
-      (session?.user?.id ? `TUN-OBS-${session.user.id.slice(0, 6).toUpperCase()}` : `TUN-OBS-${Math.floor(1000 + Math.random() * 9000)}`);
+      (session?.user?.id
+        ? `TUN-OBS-${session.user.id.slice(0, 6).toUpperCase()}`
+        : `TUN-OBS-${Math.floor(1000 + Math.random() * 9000)}`);
 
     const account: UserAccount = {
       name: name.trim(),
@@ -218,9 +218,20 @@ export const AccountScreen: React.FC<AccountScreenProps> = ({
   };
 
   const TUNISIA_GOVERNORATES = [
-    'Tunis', 'Ariana', 'Ben Arous', 'Manouba', 'Nabeul',
-    'Sousse', 'Monastir', 'Mahdia', 'Sfax', 'Bizerte',
-    'Kairouan', 'Gabes', 'Medenine', 'Tozeur',
+    'Tunis',
+    'Ariana',
+    'Ben Arous',
+    'Manouba',
+    'Nabeul',
+    'Sousse',
+    'Monastir',
+    'Mahdia',
+    'Sfax',
+    'Bizerte',
+    'Kairouan',
+    'Gabes',
+    'Medenine',
+    'Tozeur',
   ];
 
   // If user is creating their first account
@@ -242,126 +253,146 @@ export const AccountScreen: React.FC<AccountScreenProps> = ({
         />
         <SafeAreaView style={styles.safeArea} edges={['top', 'left', 'right']}>
           <IOSNavigationBar
-            title={userAccount ? 'Edit Profile' : 'Create Account'}
+            title={userAccount ? t('ui_account.edit_profile') : t('ui_account.create_account')}
             onBack={userAccount ? () => setIsEditing(false) : undefined}
           />
 
-        <ScrollView contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
-          {/* Avatar Picker Header */}
-          <View style={styles.editAvatarSection}>
-            <TouchableOpacity
-              style={styles.editAvatarTouch}
-              onPress={handlePickAvatar}
-              activeOpacity={0.8}
-            >
-              {avatarUri ? (
-                <Image source={{ uri: avatarUri }} style={styles.editAvatarImage} />
-              ) : (
-                <View style={styles.editAvatarPlaceholder}>
-                  <Text style={styles.editAvatarInitials}>{editInitials}</Text>
+          <ScrollView
+            contentContainerStyle={styles.scrollContent}
+            showsVerticalScrollIndicator={false}
+          >
+            {/* Avatar Picker Header */}
+            <View style={styles.editAvatarSection}>
+              <TouchableOpacity
+                style={styles.editAvatarTouch}
+                onPress={handlePickAvatar}
+                activeOpacity={0.8}
+              >
+                {avatarUri ? (
+                  <Image source={{ uri: avatarUri }} style={styles.editAvatarImage} />
+                ) : (
+                  <View style={styles.editAvatarPlaceholder}>
+                    <Text style={styles.editAvatarInitials}>{editInitials}</Text>
+                  </View>
+                )}
+                <View style={styles.editAvatarCameraBadge}>
+                  <IOSIcon name="camera" size={14} color="#FFFFFF" />
                 </View>
-              )}
-              <View style={styles.editAvatarCameraBadge}>
-                <IOSIcon name="camera" size={14} color="#FFFFFF" />
+              </TouchableOpacity>
+              <TouchableOpacity onPress={handlePickAvatar} style={styles.changePhotoBtn}>
+                <Text style={styles.changePhotoText}>
+                  {avatarUri
+                    ? t('ui_account.change_profile_picture')
+                    : t('ui_account.add_profile_picture')}
+                </Text>
+              </TouchableOpacity>
+            </View>
+
+            {/* Form Group */}
+            <IOSGroupedList header={t('ui_account.surveyor_details')}>
+              <View style={styles.formRow}>
+                <Text style={styles.inputLabel}>{t('ui_account.full_name')}</Text>
+                <TextInput
+                  style={styles.textInput}
+                  value={name}
+                  onChangeText={setName}
+                  placeholder={t('ui_account.e_g_sami_trabelsi')}
+                  placeholderTextColor={IOSColors.tertiaryLabel}
+                  autoCapitalize="words"
+                />
               </View>
-            </TouchableOpacity>
-            <TouchableOpacity onPress={handlePickAvatar} style={styles.changePhotoBtn}>
-              <Text style={styles.changePhotoText}>
-                {avatarUri ? 'Change Profile Picture' : 'Add Profile Picture'}
-              </Text>
-            </TouchableOpacity>
-          </View>
 
-          {/* Form Group */}
-          <IOSGroupedList header="Surveyor Details">
-            <View style={styles.formRow}>
-              <Text style={styles.inputLabel}>Full Name</Text>
-              <TextInput
-                style={styles.textInput}
-                value={name}
-                onChangeText={setName}
-                placeholder="e.g. Sami Trabelsi"
-                placeholderTextColor={IOSColors.tertiaryLabel}
-                autoCapitalize="words"
+              <View style={[styles.formRow, styles.topBorder]}>
+                <Text style={styles.inputLabel}>{t('ui_account.email_address')}</Text>
+                <TextInput
+                  style={styles.textInput}
+                  value={email}
+                  onChangeText={setEmail}
+                  placeholder={t('ui_common.email_placeholder')}
+                  placeholderTextColor={IOSColors.tertiaryLabel}
+                  keyboardType="email-address"
+                  autoCapitalize="none"
+                />
+              </View>
+
+              <View style={[styles.formRow, styles.topBorder]}>
+                <Text style={styles.inputLabel}>{t('ui_account.surveyor_id_call_sign')}</Text>
+                <TextInput
+                  style={styles.textInput}
+                  value={surveyorId}
+                  onChangeText={setSurveyorId}
+                  placeholder={t('ui_account.e_g_tun_obs_21_or')}
+                  placeholderTextColor={IOSColors.tertiaryLabel}
+                  autoCapitalize="characters"
+                />
+              </View>
+
+              <View style={[styles.formRow, styles.topBorder]}>
+                <Text style={styles.inputLabel}>{t('ui_account.organization_entity')}</Text>
+                <TextInput
+                  style={styles.textInput}
+                  value={organization}
+                  onChangeText={setOrganization}
+                  placeholder={t('ui_account.e_g_institut_pasteur_de_tunis')}
+                  placeholderTextColor={IOSColors.tertiaryLabel}
+                />
+              </View>
+            </IOSGroupedList>
+
+            {/* Operating Governorate */}
+            <IOSGroupedList header={t('ui_account.operating_governorate')}>
+              <View style={styles.formRow}>
+                <ScrollView
+                  horizontal
+                  showsHorizontalScrollIndicator={false}
+                  contentContainerStyle={styles.govChipScroll}
+                >
+                  {TUNISIA_GOVERNORATES.map((gov) => (
+                    <TouchableOpacity
+                      key={gov}
+                      style={[styles.govChip, governorate === gov && styles.govChipActive]}
+                      onPress={() => setGovernorate(gov)}
+                    >
+                      <Text
+                        style={[
+                          styles.govChipText,
+                          governorate === gov && styles.govChipTextActive,
+                        ]}
+                      >
+                        {gov}
+                      </Text>
+                    </TouchableOpacity>
+                  ))}
+                </ScrollView>
+              </View>
+            </IOSGroupedList>
+
+            {/* Role Selection */}
+            <IOSGroupedList header={t('ui_account.research_role')}>
+              <View style={styles.rolePickerRow}>
+                <IOSSegmentedControl<'surveyor' | 'volunteer' | 'researcher'>
+                  selectedValue={role}
+                  onValueChange={setRole}
+                  values={[
+                    { label: t('ui_account.surveyor'), value: 'surveyor' },
+                    { label: t('ui_account.volunteer'), value: 'volunteer' },
+                    { label: t('ui_account.researcher'), value: 'researcher' },
+                  ]}
+                />
+              </View>
+            </IOSGroupedList>
+
+            <View style={styles.actionPadding}>
+              <IOSButton
+                title={
+                  userAccount
+                    ? t('ui_account.save_changes')
+                    : t('ui_account.create_surveyor_account')
+                }
+                onPress={handleCreateOrUpdate}
               />
             </View>
-
-            <View style={[styles.formRow, styles.topBorder]}>
-              <Text style={styles.inputLabel}>Email Address</Text>
-              <TextInput
-                style={styles.textInput}
-                value={email}
-                onChangeText={setEmail}
-                placeholder="surveyor@pasteur.tn"
-                placeholderTextColor={IOSColors.tertiaryLabel}
-                keyboardType="email-address"
-                autoCapitalize="none"
-              />
-            </View>
-
-            <View style={[styles.formRow, styles.topBorder]}>
-              <Text style={styles.inputLabel}>Surveyor ID / Call-sign</Text>
-              <TextInput
-                style={styles.textInput}
-                value={surveyorId}
-                onChangeText={setSurveyorId}
-                placeholder="e.g. TUN-OBS-21 or OBS-ZAKHER"
-                placeholderTextColor={IOSColors.tertiaryLabel}
-                autoCapitalize="characters"
-              />
-            </View>
-
-            <View style={[styles.formRow, styles.topBorder]}>
-              <Text style={styles.inputLabel}>Organization / Entity</Text>
-              <TextInput
-                style={styles.textInput}
-                value={organization}
-                onChangeText={setOrganization}
-                placeholder="e.g. Institut Pasteur de Tunis"
-                placeholderTextColor={IOSColors.tertiaryLabel}
-              />
-            </View>
-          </IOSGroupedList>
-
-          {/* Operating Governorate */}
-          <IOSGroupedList header="Operating Governorate">
-            <View style={styles.formRow}>
-              <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.govChipScroll}>
-                {TUNISIA_GOVERNORATES.map((gov) => (
-                  <TouchableOpacity
-                    key={gov}
-                    style={[styles.govChip, governorate === gov && styles.govChipActive]}
-                    onPress={() => setGovernorate(gov)}
-                  >
-                    <Text style={[styles.govChipText, governorate === gov && styles.govChipTextActive]}>{gov}</Text>
-                  </TouchableOpacity>
-                ))}
-              </ScrollView>
-            </View>
-          </IOSGroupedList>
-
-          {/* Role Selection */}
-          <IOSGroupedList header="Research Role">
-            <View style={styles.rolePickerRow}>
-              <IOSSegmentedControl<'surveyor' | 'volunteer' | 'researcher'>
-                selectedValue={role}
-                onValueChange={setRole}
-                values={[
-                  { label: 'Surveyor', value: 'surveyor' },
-                  { label: 'Volunteer', value: 'volunteer' },
-                  { label: 'Researcher', value: 'researcher' },
-                ]}
-              />
-            </View>
-          </IOSGroupedList>
-
-          <View style={styles.actionPadding}>
-            <IOSButton
-              title={userAccount ? 'Save Changes' : 'Create Surveyor Account'}
-              onPress={handleCreateOrUpdate}
-            />
-          </View>
-        </ScrollView>
+          </ScrollView>
         </SafeAreaView>
       </View>
     );
@@ -391,296 +422,345 @@ export const AccountScreen: React.FC<AccountScreenProps> = ({
         style={StyleSheet.absoluteFill}
       />
       <SafeAreaView style={styles.safeArea} edges={['top', 'left', 'right']}>
-      <ScrollView
-        contentContainerStyle={styles.scrollContent}
-        showsVerticalScrollIndicator={false}
-      >
-        {/* Reference 3: Organic Sunset Mesh Header */}
-        <LinearGradient
-          colors={['#DD4B34', '#ED6C44', '#FBA567']}
-          start={{ x: 0, y: 0 }}
-          end={{ x: 1, y: 1 }}
-          style={styles.curvedHeader}
+        <ScrollView
+          contentContainerStyle={styles.scrollContent}
+          showsVerticalScrollIndicator={false}
         >
-          <View style={styles.headerTopRow}>
-            <View>
-              <Text style={styles.welcomeSubLabel}>OBSERVATORY PROFILE</Text>
-              <Text style={styles.headerTitle}>{displayName}</Text>
-            </View>
-            <View style={styles.headerActions}>
-              <TouchableOpacity
-                style={styles.headerIconBtn}
-                onPress={toggleTheme}
-                activeOpacity={0.7}
-                accessibilityLabel="Toggle Day/Night mode"
-              >
-                <IOSIcon name={themeMode === 'night' ? 'moon' : 'sun'} size={17} color="#0F172A" />
-              </TouchableOpacity>
-              <TouchableOpacity
-                style={styles.headerIconBtn}
-                onPress={() => setIsEditing(true)}
-                activeOpacity={0.7}
-              >
-                <IOSIcon name="pencil" size={17} color="#0F172A" />
-              </TouchableOpacity>
-              {onOpenSettings && (
+          {/* Reference 3: Organic Sunset Mesh Header */}
+          <LinearGradient
+            colors={['#DD4B34', '#ED6C44', '#FBA567']}
+            start={{ x: 0, y: 0 }}
+            end={{ x: 1, y: 1 }}
+            style={styles.curvedHeader}
+          >
+            <View style={styles.headerTopRow}>
+              <View>
+                <Text style={styles.welcomeSubLabel}>{t('ui_account.observatory_profile')}</Text>
+                <Text style={styles.headerTitle}>{displayName}</Text>
+              </View>
+              <View style={styles.headerActions}>
                 <TouchableOpacity
                   style={styles.headerIconBtn}
-                  onPress={onOpenSettings}
+                  onPress={toggleTheme}
+                  activeOpacity={0.7}
+                  accessibilityLabel={t('ui_account.toggle_day_night_mode')}
+                >
+                  <IOSIcon
+                    name={themeMode === 'night' ? 'moon' : 'sun'}
+                    size={17}
+                    color="#0F172A"
+                  />
+                </TouchableOpacity>
+                <TouchableOpacity
+                  style={styles.headerIconBtn}
+                  onPress={() => setIsEditing(true)}
                   activeOpacity={0.7}
                 >
-                  <IOSIcon name="gear" size={17} color="#0F172A" />
+                  <IOSIcon name="pencil" size={17} color="#0F172A" />
                 </TouchableOpacity>
-              )}
-            </View>
-          </View>
-
-          {/* Reference 3: Translucent Floating Capsule Badge */}
-          <View style={styles.claimsPill}>
-            <View style={styles.claimsBadgeSquare}>
-              <Text style={styles.claimsBadgeNumber}>{stats.sessionsCompleted}</Text>
-            </View>
-            <Text style={styles.claimsPillText}>
-              {stats.sessionsCompleted > 0
-                ? `${stats.sessionsCompleted} active survey patrols completed`
-                : 'Ready for first standardized transect'}
-            </Text>
-            <IOSIcon name="chevronRight" size={13} color="#FFFFFF" />
-          </View>
-        </LinearGradient>
-
-        {/* Reference 2: Overlapping Profile Card */}
-        <View style={styles.profileOverlappingCard}>
-          <TouchableOpacity
-            style={styles.avatarLargeWrapper}
-            activeOpacity={0.8}
-            onPress={handlePickAvatar}
-          >
-            {userAccount?.avatarUri ? (
-              <Image source={{ uri: userAccount.avatarUri }} style={styles.avatarLargeImage} />
-            ) : (
-              <View style={styles.avatarLarge}>
-                <Text style={styles.avatarLargeText}>{initials}</Text>
+                {onOpenSettings && (
+                  <TouchableOpacity
+                    style={styles.headerIconBtn}
+                    onPress={onOpenSettings}
+                    activeOpacity={0.7}
+                  >
+                    <IOSIcon name="gear" size={17} color="#0F172A" />
+                  </TouchableOpacity>
+                )}
               </View>
-            )}
-            <View style={styles.avatarCameraBadge}>
-              <IOSIcon name="camera" size={12} color="#FFFFFF" />
             </View>
-          </TouchableOpacity>
-          <View style={styles.profileDetails}>
-            <Text style={styles.profileNameLarge}>{displayName}</Text>
-            <Text style={styles.profileRoleText}>{displayRole}</Text>
-            <Text style={styles.profileOrgText}>{displayOrg}</Text>
-            <View style={styles.surveyorBadge}>
-              <IOSIcon name="shield" size={12} color="#0F172A" />
-              <Text style={styles.surveyorBadgeText}>{displayId}</Text>
+
+            {/* Reference 3: Translucent Floating Capsule Badge */}
+            <View style={styles.claimsPill}>
+              <View style={styles.claimsBadgeSquare}>
+                <Text style={styles.claimsBadgeNumber}>{stats.sessionsCompleted}</Text>
+              </View>
+              <Text style={styles.claimsPillText}>
+                {stats.sessionsCompleted > 0
+                  ? t('ui_account.active_survey_patrols_completed', { v0: stats.sessionsCompleted })
+                  : t('ui_account.ready_for_first_standardized_transect')}
+              </Text>
+              <IOSIcon name="chevronRight" size={13} color="#FFFFFF" />
+            </View>
+          </LinearGradient>
+
+          {/* Reference 2: Overlapping Profile Card */}
+          <View style={styles.profileOverlappingCard}>
+            <TouchableOpacity
+              style={styles.avatarLargeWrapper}
+              activeOpacity={0.8}
+              onPress={handlePickAvatar}
+            >
+              {userAccount?.avatarUri ? (
+                <Image source={{ uri: userAccount.avatarUri }} style={styles.avatarLargeImage} />
+              ) : (
+                <View style={styles.avatarLarge}>
+                  <Text style={styles.avatarLargeText}>{initials}</Text>
+                </View>
+              )}
+              <View style={styles.avatarCameraBadge}>
+                <IOSIcon name="camera" size={12} color="#FFFFFF" />
+              </View>
+            </TouchableOpacity>
+            <View style={styles.profileDetails}>
+              <Text style={styles.profileNameLarge}>{displayName}</Text>
+              <Text style={styles.profileRoleText}>{displayRole}</Text>
+              <Text style={styles.profileOrgText}>{displayOrg}</Text>
+              <View style={styles.surveyorBadge}>
+                <IOSIcon name="shield" size={12} color="#0F172A" />
+                <Text style={styles.surveyorBadgeText}>{displayId}</Text>
+              </View>
             </View>
           </View>
-        </View>
 
-            {/* OxeliaMetrix Bento Statistics Grid (Ref: Picture 1) */}
-            <View style={styles.bentoContainer}>
-              {/* Primary Bento Hero Tile: Reference 1 Electric Citron */}
-              <View style={styles.bentoHeroTileCitron}>
-                <View style={styles.bentoHeroTopRow}>
-                  <View style={styles.bentoLabelRow}>
-                    <Text style={styles.bentoLabelTextDark}>FIELD SAMPLING EFFORT</Text>
-                  </View>
-                  <View style={styles.bentoAccentPillDark}>
-                    <Text style={styles.bentoAccentTextDark}>TIER 1</Text>
-                  </View>
+          {/* OxeliaMetrix Bento Statistics Grid (Ref: Picture 1) */}
+          <View style={styles.bentoContainer}>
+            {/* Primary Bento Hero Tile: Reference 1 Electric Citron */}
+            <View style={styles.bentoHeroTileCitron}>
+              <View style={styles.bentoHeroTopRow}>
+                <View style={styles.bentoLabelRow}>
+                  <Text style={styles.bentoLabelTextDark}>
+                    {t('ui_account.field_sampling_effort')}
+                  </Text>
                 </View>
-
-                <View style={styles.bentoHeroMainRow}>
-                  <Text style={styles.bentoHeroNumberDark}>{stats.sessionsCompleted}</Text>
-                  <Text style={styles.bentoHeroUnitDark}>Surveys</Text>
+                <View style={styles.bentoAccentPillDark}>
+                  <Text style={styles.bentoAccentTextDark}>{t('ui_account.tier_1')}</Text>
                 </View>
+              </View>
 
-                <Text style={styles.bentoHeroSubtextDark}>
-                  Completed Standardized Transects • Verified Telemetry
-                </Text>
+              <View style={styles.bentoHeroMainRow}>
+                <Text style={styles.bentoHeroNumberDark}>{stats.sessionsCompleted}</Text>
+                <Text style={styles.bentoHeroUnitDark}>{t('ui_account.surveys')}</Text>
+              </View>
 
-                {/* Black progress bar just like Reference 1! */}
-                <View style={styles.bentoProgressTrackDark}>
+              <Text style={styles.bentoHeroSubtextDark}>
+                {t('ui_account.completed_standardized_transects_verified_teleme')}
+              </Text>
+
+              {/* Black progress bar just like Reference 1! */}
+              <View style={styles.bentoProgressTrackDark}>
+                <View
+                  style={[
+                    styles.bentoProgressFillDark,
+                    { width: `${Math.min(100, Math.max(12, stats.sessionsCompleted * 10))}%` },
+                  ]}
+                />
+              </View>
+            </View>
+
+            {/* Secondary Bento Grid Tiles */}
+            <View style={styles.bentoSplitRow}>
+              {/* Distance Bento Tile */}
+              <View style={styles.bentoSubTile}>
+                <View style={styles.bentoSubTopRow}>
+                  <View style={[styles.bentoSubIconBadge, { backgroundColor: '#FFEDE8' }]}>
+                    <IOSIcon name="location" size={13} color="#DD4B34" />
+                  </View>
+                  <Text style={styles.bentoSubLabel}>{t('ui_account.patrol_distance')}</Text>
+                </View>
+                <View style={styles.bentoSubValRow}>
+                  <Text style={styles.bentoSubNumber}>{stats.kmWalked.toFixed(1)}</Text>
+                  <Text style={styles.bentoSubUnit}>{t('ui_account.km')}</Text>
+                </View>
+                <Text style={styles.bentoSubFooter}>{t('ui_account.geo_tracked_corridor')}</Text>
+              </View>
+
+              {/* Efficiency Tile (Reference 1 Dark Tile with Citron Glow) */}
+              <View
+                style={[
+                  styles.bentoSubTile,
+                  { backgroundColor: '#111827', borderColor: '#1F2937' },
+                ]}
+              >
+                <View style={styles.bentoSubTopRow}>
                   <View
                     style={[
-                      styles.bentoProgressFillDark,
-                      { width: `${Math.min(100, Math.max(12, stats.sessionsCompleted * 10))}%` },
+                      styles.bentoSubIconBadge,
+                      { backgroundColor: 'rgba(217, 249, 68, 0.18)' },
                     ]}
-                  />
-                </View>
-              </View>
-
-              {/* Secondary Bento Grid Tiles */}
-              <View style={styles.bentoSplitRow}>
-                {/* Distance Bento Tile */}
-                <View style={styles.bentoSubTile}>
-                  <View style={styles.bentoSubTopRow}>
-                    <View style={[styles.bentoSubIconBadge, { backgroundColor: '#FFEDE8' }]}>
-                      <IOSIcon name="location" size={13} color="#DD4B34" />
-                    </View>
-                    <Text style={styles.bentoSubLabel}>PATROL DISTANCE</Text>
+                  >
+                    <IOSIcon name="paw" size={13} color="#D9F944" />
                   </View>
-                  <View style={styles.bentoSubValRow}>
-                    <Text style={styles.bentoSubNumber}>{stats.kmWalked.toFixed(1)}</Text>
-                    <Text style={styles.bentoSubUnit}>km</Text>
-                  </View>
-                  <Text style={styles.bentoSubFooter}>Geo-tracked corridor</Text>
-                </View>
-
-                {/* Efficiency Tile (Reference 1 Dark Tile with Citron Glow) */}
-                <View style={[styles.bentoSubTile, { backgroundColor: '#111827', borderColor: '#1F2937' }]}>
-                  <View style={styles.bentoSubTopRow}>
-                    <View style={[styles.bentoSubIconBadge, { backgroundColor: 'rgba(217, 249, 68, 0.18)' }]}>
-                      <IOSIcon name="paw" size={13} color="#D9F944" />
-                    </View>
-                    <View style={styles.citronSmallBadge}>
-                      <Text style={styles.citronSmallBadgeText}>+40%</Text>
-                    </View>
-                  </View>
-                  <View style={styles.bentoSubValRow}>
-                    <Text style={[styles.bentoSubNumber, { color: '#FFFFFF' }]}>{stats.animalsRecorded}</Text>
-                    <Text style={[styles.bentoSubUnit, { color: '#D9F944' }]}>Animals</Text>
-                  </View>
-                  <Text style={[styles.bentoSubFooter, { color: '#94A3B8' }]}>Observed census</Text>
-                </View>
-              </View>
-            </View>
-
-            {/* Reference 3: Official Field Credential Card (e-Card Pass) */}
-            <LinearGradient
-              colors={['#DD4B34', '#ED6C44', '#FBA567']}
-              start={{ x: 0, y: 0 }}
-              end={{ x: 1, y: 1 }}
-              style={styles.credentialCard}
-            >
-              <View style={styles.credentialHeader}>
-                <View style={styles.credentialHeaderLeft}>
-                  <View style={styles.credentialEmblem}>
-                    <IOSIcon name="shield" size={14} color="#FFFFFF" />
-                  </View>
-                  <View>
-                    <Text style={styles.credentialOrg}>REPUBLIQUE TUNISIENNE</Text>
-                    <Text style={styles.credentialSubOrg}>Institut Pasteur de Tunis • Observatoire</Text>
+                  <View style={styles.citronSmallBadge}>
+                    <Text style={styles.citronSmallBadgeText}>+40%</Text>
                   </View>
                 </View>
-                <View style={styles.credentialStatusBadge}>
-                  <View style={styles.credentialLiveDot} />
-                  <Text style={styles.credentialStatusText}>ACTIVE</Text>
+                <View style={styles.bentoSubValRow}>
+                  <Text style={[styles.bentoSubNumber, { color: '#FFFFFF' }]}>
+                    {stats.animalsRecorded}
+                  </Text>
+                  <Text style={[styles.bentoSubUnit, { color: '#D9F944' }]}>
+                    {t('ui_account.animals')}
+                  </Text>
                 </View>
-              </View>
-
-              <View style={styles.credentialBody}>
-                <View>
-                  <Text style={styles.credentialName}>{displayName}</Text>
-                  <Text style={styles.credentialRole}>{displayRole.toUpperCase()} • {userAccount?.governorate || 'TUNIS'}</Text>
-                </View>
-                <View style={styles.credentialBarcodeWrapper}>
-                  <Text style={styles.credentialIdCode}>{displayId}</Text>
-                </View>
-              </View>
-
-              <View style={styles.credentialFooter}>
-                <Text style={styles.credentialFooterText}>ICAM / WOH Standards • Authorized Observer</Text>
-                <Text style={styles.credentialIssueDate}>VALID 2026/2027</Text>
-              </View>
-            </LinearGradient>
-
-            {/* Reference 2: About Section */}
-            <View style={styles.sectionBlock}>
-              <Text style={styles.sectionHeading}>About</Text>
-              <View style={styles.aboutCard}>
-                <Text style={styles.aboutText}>
-                  Field observer specialized in street animal welfare, colony census, and distance sampling across Greater Tunis. Operating under Pasteur Institute protocols and Darwin Core biodiversity standards.
+                <Text style={[styles.bentoSubFooter, { color: '#94A3B8' }]}>
+                  {t('ui_account.observed_census')}
                 </Text>
               </View>
             </View>
+          </View>
 
-            {/* Reference 2: Upcoming activities Section */}
-            <View style={styles.sectionBlock}>
-              <Text style={styles.sectionHeading}>Upcoming activities</Text>
-
-              <View style={styles.activityCard}>
-                <View style={[styles.activityIconBox, { backgroundColor: '#ECFDF5' }]}>
-                  <IOSIcon name="compass" size={20} color="#059669" />
+          {/* Reference 3: Official Field Credential Card (e-Card Pass) */}
+          <LinearGradient
+            colors={['#DD4B34', '#ED6C44', '#FBA567']}
+            start={{ x: 0, y: 0 }}
+            end={{ x: 1, y: 1 }}
+            style={styles.credentialCard}
+          >
+            <View style={styles.credentialHeader}>
+              <View style={styles.credentialHeaderLeft}>
+                <View style={styles.credentialEmblem}>
+                  <IOSIcon name="shield" size={14} color="#FFFFFF" />
                 </View>
-                <View style={styles.activityInfo}>
-                  <Text style={styles.activityTitle}>Bab Souika Transect Survey</Text>
-                  <Text style={styles.activitySubtitle}>May 30, 2026 • ICAM Protocol Tier 1</Text>
-                </View>
-                <View style={styles.activityArrowBtn}>
-                  <IOSIcon name="chevronRight" size={13} color="#0F172A" />
+                <View>
+                  <Text style={styles.credentialOrg}>{t('ui_account.republique_tunisienne')}</Text>
+                  <Text style={styles.credentialSubOrg}>
+                    {t('ui_account.institut_pasteur_de_tunis_observatoire')}
+                  </Text>
                 </View>
               </View>
-
-              <View style={styles.activityCard}>
-                <View style={[styles.activityIconBox, { backgroundColor: '#EFF6FF' }]}>
-                  <IOSIcon name="paw" size={20} color="#2563EB" />
-                </View>
-                <View style={styles.activityInfo}>
-                  <Text style={styles.activityTitle}>Medina Cat Colony Census</Text>
-                  <Text style={styles.activitySubtitle}>June 04, 2026 • TNR Ear-tipping inspection</Text>
-                </View>
-                <View style={styles.activityArrowBtn}>
-                  <IOSIcon name="chevronRight" size={13} color="#0F172A" />
-                </View>
-              </View>
-
-              <View style={styles.activityCard}>
-                <View style={[styles.activityIconBox, { backgroundColor: '#FFFBEB' }]}>
-                  <IOSIcon name="chart" size={20} color="#D97706" />
-                </View>
-                <View style={styles.activityInfo}>
-                  <Text style={styles.activityTitle}>SECR Distance Sampling Run</Text>
-                  <Text style={styles.activitySubtitle}>Continuous • Detection matrix logging</Text>
-                </View>
-                <View style={styles.activityArrowBtn}>
-                  <IOSIcon name="chevronRight" size={13} color="#0F172A" />
-                </View>
+              <View style={styles.credentialStatusBadge}>
+                <View style={styles.credentialLiveDot} />
+                <Text style={styles.credentialStatusText}>{t('ui_account.active')}</Text>
               </View>
             </View>
 
-            {/* Protocols Shortcut */}
-            {onOpenTraining ? (
-              <IOSGroupedList header="Research & Standards">
-                <IOSListRow
-                  title="Methodology & Protocol Guide"
-                  subtitle="ICAM 1-5, Distance sampling & photography"
-                  icon="info"
-                  iconColor={IOSColors.systemTeal}
-                  showDisclosure
-                  isLast
-                  onPress={onOpenTraining}
-                />
-              </IOSGroupedList>
-            ) : null}
+            <View style={styles.credentialBody}>
+              <View>
+                <Text style={styles.credentialName}>{displayName}</Text>
+                <Text style={styles.credentialRole}>
+                  {displayRole.toUpperCase()} • {userAccount?.governorate || t('ui_common.not_set')}
+                </Text>
+              </View>
+              <View style={styles.credentialBarcodeWrapper}>
+                <Text style={styles.credentialIdCode}>{displayId}</Text>
+              </View>
+            </View>
 
-            {/* Visual Appearance & Theme */}
-            <IOSGroupedList header="Appearance & Visuals">
+            <View style={styles.credentialFooter}>
+              <Text style={styles.credentialFooterText}>
+                {t('ui_account.icam_woh_standards_authorized_observer')}
+              </Text>
+              <Text style={styles.credentialIssueDate}>{t('ui_account.valid_2026_2027')}</Text>
+            </View>
+          </LinearGradient>
+
+          {/* Reference 2: About Section */}
+          <View style={styles.sectionBlock}>
+            <Text style={styles.sectionHeading}>{t('ui_account.about')}</Text>
+            <View style={styles.aboutCard}>
+              <Text style={styles.aboutText}>
+                {t('ui_account.field_observer_specialized_in_street_animal')}
+              </Text>
+            </View>
+          </View>
+
+          {/* Reference 2: Upcoming activities Section */}
+          <View style={styles.sectionBlock}>
+            <Text style={styles.sectionHeading}>{t('ui_account.upcoming_activities')}</Text>
+
+            <View style={styles.activityCard}>
+              <View style={[styles.activityIconBox, { backgroundColor: '#ECFDF5' }]}>
+                <IOSIcon name="compass" size={20} color="#059669" />
+              </View>
+              <View style={styles.activityInfo}>
+                <Text style={styles.activityTitle}>
+                  {t('ui_account.bab_souika_transect_survey')}
+                </Text>
+                <Text style={styles.activitySubtitle}>
+                  {t('ui_account.may_30_2026_icam_protocol_tier')}
+                </Text>
+              </View>
+              <View style={styles.activityArrowBtn}>
+                <IOSIcon name="chevronRight" size={13} color="#0F172A" />
+              </View>
+            </View>
+
+            <View style={styles.activityCard}>
+              <View style={[styles.activityIconBox, { backgroundColor: '#EFF6FF' }]}>
+                <IOSIcon name="paw" size={20} color="#2563EB" />
+              </View>
+              <View style={styles.activityInfo}>
+                <Text style={styles.activityTitle}>{t('ui_account.medina_cat_colony_census')}</Text>
+                <Text style={styles.activitySubtitle}>
+                  {t('ui_account.june_04_2026_tnr_ear_tipping')}
+                </Text>
+              </View>
+              <View style={styles.activityArrowBtn}>
+                <IOSIcon name="chevronRight" size={13} color="#0F172A" />
+              </View>
+            </View>
+
+            <View style={styles.activityCard}>
+              <View style={[styles.activityIconBox, { backgroundColor: '#FFFBEB' }]}>
+                <IOSIcon name="chart" size={20} color="#D97706" />
+              </View>
+              <View style={styles.activityInfo}>
+                <Text style={styles.activityTitle}>
+                  {t('ui_account.secr_distance_sampling_run')}
+                </Text>
+                <Text style={styles.activitySubtitle}>
+                  {t('ui_account.continuous_detection_matrix_logging')}
+                </Text>
+              </View>
+              <View style={styles.activityArrowBtn}>
+                <IOSIcon name="chevronRight" size={13} color="#0F172A" />
+              </View>
+            </View>
+          </View>
+
+          {/* Protocols Shortcut */}
+          {onOpenTraining ? (
+            <IOSGroupedList header={t('ui_account.research_standards')}>
               <IOSListRow
-                title={themeMode === 'night' ? 'Night Mode (Nocturnal)' : 'Day Mode (Standard)'}
-                subtitle={themeMode === 'night' ? 'High-contrast nocturnal OLED theme' : 'Soft porcelain daylight theme'}
-                icon={themeMode === 'night' ? 'moon' : 'sun'}
-                iconColor={themeMode === 'night' ? '#818CF8' : '#F59E0B'}
-                rightComponent={
-                  <Switch
-                    value={themeMode === 'night'}
-                    onValueChange={toggleTheme}
-                    trackColor={{ false: '#CBD5E1', true: '#4F46E5' }}
-                    thumbColor="#FFFFFF"
-                  />
-                }
+                title={t('ui_account.methodology_protocol_guide')}
+                subtitle={t('ui_account.icam_1_5_distance_sampling_photography')}
+                icon="info"
+                iconColor={IOSColors.systemTeal}
+                showDisclosure
                 isLast
+                onPress={onOpenTraining}
               />
             </IOSGroupedList>
+          ) : null}
 
+          {/* Visual Appearance & Theme */}
+          <IOSGroupedList header={t('ui_account.appearance_visuals')}>
+            <IOSListRow
+              title={
+                themeMode === 'night'
+                  ? t('ui_account.night_mode_nocturnal')
+                  : t('ui_account.day_mode_standard')
+              }
+              subtitle={
+                themeMode === 'night'
+                  ? t('ui_account.high_contrast_nocturnal_oled_theme')
+                  : t('ui_account.soft_porcelain_daylight_theme')
+              }
+              icon={themeMode === 'night' ? 'moon' : 'sun'}
+              iconColor={themeMode === 'night' ? '#818CF8' : '#F59E0B'}
+              rightComponent={
+                <Switch
+                  value={themeMode === 'night'}
+                  onValueChange={toggleTheme}
+                  trackColor={{ false: '#CBD5E1', true: '#4F46E5' }}
+                  thumbColor="#FFFFFF"
+                />
+              }
+              isLast
+            />
+          </IOSGroupedList>
 
-        {onSignOut ? (
-          <View style={styles.actionPadding}>
-            <IOSButton title="Switch Account" variant="secondary" onPress={onSignOut} />
-          </View>
-        ) : null}
-      </ScrollView>
+          {onSignOut ? (
+            <View style={styles.actionPadding}>
+              <IOSButton
+                title={t('ui_account.switch_account')}
+                variant="secondary"
+                onPress={onSignOut}
+              />
+            </View>
+          ) : null}
+        </ScrollView>
       </SafeAreaView>
     </View>
   );

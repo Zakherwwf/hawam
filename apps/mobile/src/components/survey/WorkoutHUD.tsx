@@ -1,3 +1,4 @@
+import { useTranslation } from 'react-i18next';
 import React, { useState } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, Platform } from 'react-native';
 import { colors, typography, spacing, radius, touchTargets } from '@tunisia-survey/design-tokens';
@@ -47,6 +48,7 @@ export const WorkoutHUD: React.FC<WorkoutHUDProps> = ({
   onLogDog,
   onFinish,
 }) => {
+  const { t } = useTranslation();
   const [hintMessage, setHintMessage] = useState<string | null>(null);
 
   const pace = elapsedSeconds > 10 ? (distanceKm / (elapsedSeconds / 3600)).toFixed(1) : '3.6';
@@ -58,8 +60,8 @@ export const WorkoutHUD: React.FC<WorkoutHUDProps> = ({
     gpsQuality.level === 'good'
       ? colors.light.gpsGood
       : gpsQuality.level === 'poor'
-      ? colors.light.gpsPoor
-      : colors.light.gpsFair;
+        ? colors.light.gpsPoor
+        : colors.light.gpsFair;
 
   const handleLogCat = () => {
     hapticQuickLog();
@@ -95,7 +97,7 @@ export const WorkoutHUD: React.FC<WorkoutHUDProps> = ({
       <View style={styles.primaryMetricRow}>
         <View>
           <Text style={styles.timerText}>{formatTimer(elapsedSeconds)}</Text>
-          <Text style={styles.metricLabel}>ELAPSED TIME</Text>
+          <Text style={styles.metricLabel}>{t('ui_workoutHUD.elapsed_time')}</Text>
         </View>
 
         <View style={styles.statusPill}>
@@ -108,14 +110,14 @@ export const WorkoutHUD: React.FC<WorkoutHUDProps> = ({
       <View style={styles.metricsGrid}>
         <View style={styles.metricColumn}>
           <Text style={styles.metricValue}>{distanceKm.toFixed(2)}</Text>
-          <Text style={styles.metricSubLabel}>KILOMETERS</Text>
+          <Text style={styles.metricSubLabel}>{t('ui_workoutHUD.kilometers')}</Text>
         </View>
 
         <View style={styles.metricDivider} />
 
         <View style={styles.metricColumn}>
           <Text style={styles.metricValue}>{pace}</Text>
-          <Text style={styles.metricSubLabel}>KM/H PACE</Text>
+          <Text style={styles.metricSubLabel}>{t('ui_workoutHUD.km_h_pace')}</Text>
         </View>
 
         <View style={styles.metricDivider} />
@@ -123,7 +125,7 @@ export const WorkoutHUD: React.FC<WorkoutHUDProps> = ({
         <View style={styles.metricColumn}>
           <Text style={styles.metricValue}>{detectionsCount}</Text>
           <Text style={styles.metricSubLabel} numberOfLines={1} adjustsFontSizeToFit>
-            SIGHTINGS ({catsCount}C · {dogsCount}D)
+            {t('ui_workoutHUD.sightings_c_d', { catsCount, dogsCount })}
           </Text>
         </View>
       </View>
@@ -134,22 +136,22 @@ export const WorkoutHUD: React.FC<WorkoutHUDProps> = ({
           style={[styles.heroLogBtn, styles.catBtn]}
           onPress={handleLogCat}
           activeOpacity={0.75}
-          accessibilityLabel="Record Cat sighting immediately"
+          accessibilityLabel={t('ui_workoutHUD.record_cat_sighting_immediately')}
           accessibilityRole="button"
         >
           <Icon name="cat" size={24} color="#FFFFFF" />
-          <Text style={styles.heroLogBtnText}>+ Cat</Text>
+          <Text style={styles.heroLogBtnText}>{t('ui_workoutHUD.cat')}</Text>
         </TouchableOpacity>
 
         <TouchableOpacity
           style={[styles.heroLogBtn, styles.dogBtn]}
           onPress={handleLogDog}
           activeOpacity={0.75}
-          accessibilityLabel="Record Dog sighting immediately"
+          accessibilityLabel={t('ui_workoutHUD.record_dog_sighting_immediately')}
           accessibilityRole="button"
         >
           <Icon name="dog" size={24} color="#FFFFFF" />
-          <Text style={styles.heroLogBtnText}>+ Dog</Text>
+          <Text style={styles.heroLogBtnText}>{t('ui_workoutHUD.dog')}</Text>
         </TouchableOpacity>
       </View>
 
@@ -168,12 +170,16 @@ export const WorkoutHUD: React.FC<WorkoutHUDProps> = ({
           onLongPress={handleLongPressPause}
           delayLongPress={POCKET_SAFE_DELAY_MS}
           activeOpacity={0.8}
-          accessibilityLabel={isPaused ? 'Hold to resume survey' : 'Hold to pause survey'}
+          accessibilityLabel={
+            isPaused
+              ? t('ui_workoutHUD.hold_to_resume_survey')
+              : t('ui_workoutHUD.hold_to_pause_survey')
+          }
           accessibilityRole="button"
         >
           <Icon name={isPaused ? 'play' : 'pause'} size={16} color={colors.light.label} />
           <Text style={styles.pauseBtnText} numberOfLines={1}>
-            {isPaused ? 'Hold to Resume' : 'Hold to Pause'}
+            {isPaused ? t('ui_workoutHUD.hold_to_resume') : t('ui_workoutHUD.hold_to_pause')}
           </Text>
         </TouchableOpacity>
 
@@ -183,12 +189,12 @@ export const WorkoutHUD: React.FC<WorkoutHUDProps> = ({
           onLongPress={handleLongPressFinish}
           delayLongPress={POCKET_SAFE_DELAY_MS}
           activeOpacity={0.8}
-          accessibilityLabel="Hold to finish survey"
+          accessibilityLabel={t('ui_workoutHUD.hold_to_finish_survey')}
           accessibilityRole="button"
         >
           <Icon name="stop" size={16} color={colors.light.danger} />
           <Text style={styles.finishBtnText} numberOfLines={1}>
-            Hold to Finish
+            {t('ui_workoutHUD.hold_to_finish')}
           </Text>
         </TouchableOpacity>
       </View>

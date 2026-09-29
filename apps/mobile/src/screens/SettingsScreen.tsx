@@ -71,13 +71,16 @@ export const SettingsScreen: React.FC<SettingsScreenProps> = ({
     try {
       const res = await triggerSync();
       Alert.alert(
-        'Cloud Synchronization',
+        t('ui_settings.cloud_synchronization'),
         res.success
-          ? `Successfully synchronized ${res.syncedCount} queued record(s) to PostgreSQL PostGIS database.`
-          : 'Sync completed. Remaining records held safely in offline outbox.'
+          ? t('ui_settings.synced_records', { count: res.syncedCount })
+          : t('ui_settings.sync_completed_remaining_records_held_safely')
       );
     } catch (err: any) {
-      Alert.alert('Sync Offline', err?.message || 'Database gateway temporarily unavailable.');
+      Alert.alert(
+        t('ui_settings.sync_offline'),
+        err?.message || t('ui_settings.database_gateway_temporarily_unavailable')
+      );
     }
   };
 
@@ -113,7 +116,7 @@ export const SettingsScreen: React.FC<SettingsScreenProps> = ({
       const csv = `${header}\n${records.join('\n')}`;
 
       await Share.share({
-        title: 'Hawem Darwin Core Archive (DwC-A)',
+        title: t('ui_settings.hawem_darwin_core_archive_dwc_a'),
         message: csv,
       });
     } catch (e) {
@@ -183,7 +186,7 @@ export const SettingsScreen: React.FC<SettingsScreenProps> = ({
       const csv = `${header}\n${rows.join('\n')}`;
 
       await Share.share({
-        title: 'Hawem SECR & Distance Sampling Matrix',
+        title: t('ui_settings.hawem_secr_distance_sampling_matrix'),
         message: csv,
       });
     } catch (e) {
@@ -203,15 +206,19 @@ export const SettingsScreen: React.FC<SettingsScreenProps> = ({
       <ScrollView contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
         {/* Visual Appearance & Theme Group */}
         <IOSGroupedList
-          header="Appearance & Visuals"
-          footer="Switch between soft porcelain daylight palette and nocturnal OLED contrast mode."
+          header={t('ui_settings.appearance_visuals')}
+          footer={t('ui_settings.switch_between_soft_porcelain_daylight_palette')}
         >
           <IOSListRow
-            title={themeMode === 'night' ? 'Night Mode (Nocturnal)' : 'Day Mode (Standard)'}
+            title={
+              themeMode === 'night'
+                ? t('ui_settings.night_mode_nocturnal')
+                : t('ui_settings.day_mode_standard')
+            }
             subtitle={
               themeMode === 'night'
-                ? 'Dark high-contrast palette for evening surveys'
-                : 'Porcelain daylight palette'
+                ? t('ui_settings.dark_high_contrast_palette_for_evening')
+                : t('ui_settings.porcelain_daylight_palette')
             }
             icon={themeMode === 'night' ? 'moon' : 'sun'}
             iconColor={themeMode === 'night' ? '#818CF8' : '#F59E0B'}
@@ -233,8 +240,8 @@ export const SettingsScreen: React.FC<SettingsScreenProps> = ({
           footer={t('settings.language_footer')}
         >
           <IOSListRow
-            title="English"
-            subtitle="Default language"
+            title={t('ui_settings.english')}
+            subtitle={t('ui_settings.default_language')}
             icon="globe"
             iconColor={IOSColors.systemBlue}
             rightComponent={
@@ -267,7 +274,7 @@ export const SettingsScreen: React.FC<SettingsScreenProps> = ({
           />
           <IOSListRow
             title={t('settings.gps_threshold_title')}
-            subtitle="Minimum GPS lock quality for waypoints"
+            subtitle={t('ui_settings.minimum_gps_lock_quality_for_waypoints')}
             icon="ruler"
             iconColor={IOSColors.systemOrange}
             value={`±${accuracyThreshold}`}
@@ -280,14 +287,17 @@ export const SettingsScreen: React.FC<SettingsScreenProps> = ({
           />
           <IOSListRow
             title={t('settings.datum_title')}
-            subtitle="Geodetic datum & projection grid"
+            subtitle={t('ui_settings.geodetic_datum_projection_grid')}
             icon="map"
             iconColor={IOSColors.systemPurple}
             value={t('settings.datum_val')}
           />
           <IOSListRow
-            title="Generalization Grid Cell"
-            subtitle={`Centroid: ${gridInfo.centroid[1].toFixed(4)}°N, ${gridInfo.centroid[0].toFixed(4)}°E`}
+            title={t('ui_settings.generalization_grid_cell')}
+            subtitle={t('ui_settings.centroid_n_e', {
+              v0: gridInfo.centroid[1].toFixed(4),
+              v1: gridInfo.centroid[0].toFixed(4),
+            })}
             icon="squareStack"
             iconColor={IOSColors.systemGreen}
             value={gridInfo.gridCellId}
@@ -301,24 +311,24 @@ export const SettingsScreen: React.FC<SettingsScreenProps> = ({
             title={t('settings.observer_name')}
             icon="person"
             iconColor={IOSColors.systemBlue}
-            value={userAccount?.name || 'Field Surveyor'}
+            value={userAccount?.name || t('ui_settings.field_surveyor')}
           />
           <IOSListRow
             title={t('settings.institution')}
             icon="shield"
             iconColor={IOSColors.systemGreen}
-            value={userAccount?.organization || 'Institut Pasteur'}
+            value={userAccount?.organization || t('ui_settings.institut_pasteur')}
           />
           <IOSListRow
             title={t('settings.observer_id')}
             icon="info"
             iconColor={IOSColors.systemGray}
-            value={userAccount?.surveyorId || 'TUN-OBS-01'}
+            value={userAccount?.surveyorId || t('ui_common.not_set')}
             isLast={!userAccount?.governorate && !userAccount?.role}
           />
           {userAccount?.governorate ? (
             <IOSListRow
-              title="Governorate / Sector"
+              title={t('ui_settings.governorate_sector')}
               icon="location"
               iconColor={IOSColors.systemTeal}
               value={userAccount.governorate}
@@ -327,7 +337,7 @@ export const SettingsScreen: React.FC<SettingsScreenProps> = ({
           ) : null}
           {userAccount?.role ? (
             <IOSListRow
-              title="Official Role"
+              title={t('ui_settings.official_role')}
               icon="star"
               iconColor={IOSColors.systemYellow}
               value={userAccount.role.toUpperCase()}
@@ -339,19 +349,22 @@ export const SettingsScreen: React.FC<SettingsScreenProps> = ({
         {/* Database Sync & Offline Storage Group */}
         <IOSGroupedList
           header={t('settings.database_header')}
-          footer="All survey sessions and photos are saved to local SQLite tables before cloud upload."
+          footer={t('ui_settings.all_survey_sessions_and_photos_are')}
         >
           <IOSListRow
             title={t('settings.sync_status')}
-            subtitle={`Last sync: ${lastSyncedAt || 'Never'} • ${pendingCount} in outbox`}
+            subtitle={t('ui_settings.last_sync_in_outbox', {
+              v0: lastSyncedAt || 'Never',
+              pendingCount,
+            })}
             icon="compass"
             iconColor={IOSColors.systemTeal}
             value={
               isSyncing
-                ? 'Syncing...'
+                ? t('ui_settings.syncing')
                 : pendingCount === 0
-                  ? 'Up to Date'
-                  : `${pendingCount} Queued`
+                  ? t('ui_settings.up_to_date')
+                  : t('ui_settings.queued', { pendingCount })
             }
             rightComponent={
               <TouchableOpacity
@@ -359,20 +372,22 @@ export const SettingsScreen: React.FC<SettingsScreenProps> = ({
                 style={[styles.syncButton, isSyncing && styles.syncButtonActive]}
                 disabled={isSyncing}
               >
-                <Text style={styles.syncButtonText}>{isSyncing ? 'Syncing...' : 'Sync Now'}</Text>
+                <Text style={styles.syncButtonText}>
+                  {isSyncing ? t('ui_settings.syncing') : t('ui_settings.sync_now')}
+                </Text>
               </TouchableOpacity>
             }
           />
           <IOSListRow
-            title="Local SQLite Cache"
-            subtitle="4 Observations • 1 Track • 3 Photos"
+            title={t('ui_settings.local_sqlite_cache')}
+            subtitle={t('ui_settings.4_observations_1_track_3_photos')}
             icon="list"
             iconColor={IOSColors.systemIndigo}
-            value="2.4 MB"
+            value={t('ui_settings.2_4_mb')}
           />
           <IOSListRow
             title={t('settings.export_dwca')}
-            subtitle="Darwin Core occurrence.csv & meta.xml"
+            subtitle={t('ui_settings.darwin_core_occurrence_csv_meta_xml')}
             icon="squareStack"
             iconColor={IOSColors.systemBlue}
             showDisclosure
@@ -380,7 +395,7 @@ export const SettingsScreen: React.FC<SettingsScreenProps> = ({
           />
           <IOSListRow
             title={t('settings.export_secr')}
-            subtitle="R secr::read.traps & Distance::ds"
+            subtitle={t('ui_settings.r_secr_read_traps_distance_ds')}
             icon="chart"
             iconColor={IOSColors.systemOrange}
             showDisclosure
@@ -415,21 +430,21 @@ export const SettingsScreen: React.FC<SettingsScreenProps> = ({
         <IOSGroupedList header={t('settings.about_header')}>
           <IOSListRow
             title={t('settings.about_icam')}
-            subtitle="Standardized protocols for roaming animals"
+            subtitle={t('ui_settings.standardized_protocols_for_roaming_animals')}
             icon="paw"
             iconColor={IOSColors.systemTeal}
             showDisclosure
           />
           <IOSListRow
             title={t('settings.about_distance')}
-            subtitle="Perpendicular distance detection functions"
+            subtitle={t('ui_settings.perpendicular_distance_detection_functions')}
             icon="ruler"
             iconColor={IOSColors.systemGreen}
             showDisclosure
           />
           <IOSListRow
             title={t('settings.about_who')}
-            subtitle="Rabies epidemiology & vaccination coverage"
+            subtitle={t('ui_settings.rabies_epidemiology_vaccination_coverage')}
             icon="shield"
             iconColor={IOSColors.systemRed}
             showDisclosure

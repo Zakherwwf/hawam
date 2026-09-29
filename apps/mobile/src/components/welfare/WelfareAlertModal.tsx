@@ -1,5 +1,14 @@
+import { useTranslation } from 'react-i18next';
 import React, { useState } from 'react';
-import { View, Text, StyleSheet, Modal, TouchableOpacity, TextInput, ScrollView } from 'react-native';
+import {
+  View,
+  Text,
+  StyleSheet,
+  Modal,
+  TouchableOpacity,
+  TextInput,
+  ScrollView,
+} from 'react-native';
 import { DesignTokens } from '../../design-system/tokens';
 import { IOSIcon } from '../ios';
 import { Species } from '@tunisia-survey/shared';
@@ -33,6 +42,7 @@ export const WelfareAlertModal: React.FC<WelfareAlertModalProps> = ({
   onSubmitAlert,
   onClose,
 }) => {
+  const { t } = useTranslation();
   const [selectedIssues, setSelectedIssues] = useState<string[]>([]);
   const [urgency, setUrgency] = useState<'critical' | 'urgent' | 'moderate'>('urgent');
   const [notes, setNotes] = useState('');
@@ -65,9 +75,11 @@ export const WelfareAlertModal: React.FC<WelfareAlertModalProps> = ({
                 <IOSIcon name="shield" size={18} color={DesignTokens.colors.welfareAlert} />
               </View>
               <View>
-                <Text style={styles.modalTitle}>Welfare Emergency Alert</Text>
+                <Text style={styles.modalTitle}>
+                  {t('ui_welfareAlertModal.welfare_emergency_alert')}
+                </Text>
                 <Text style={styles.modalSubtitle}>
-                  Flag injured or distressed {species} for partner NGOs
+                  {t('ui_welfareAlertModal.flag_injured_or_distressed_for_partner', { species })}
                 </Text>
               </View>
             </View>
@@ -76,9 +88,14 @@ export const WelfareAlertModal: React.FC<WelfareAlertModalProps> = ({
             </TouchableOpacity>
           </View>
 
-          <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.scrollBody}>
+          <ScrollView
+            showsVerticalScrollIndicator={false}
+            contentContainerStyle={styles.scrollBody}
+          >
             {/* Urgency Selector */}
-            <Text style={styles.sectionHeader}>TRIAGE URGENCY LEVEL</Text>
+            <Text style={styles.sectionHeader}>
+              {t('ui_welfareAlertModal.triage_urgency_level')}
+            </Text>
             <View style={styles.urgencyRow}>
               {(['moderate', 'urgent', 'critical'] as const).map((u) => {
                 const isSelected = urgency === u;
@@ -90,10 +107,7 @@ export const WelfareAlertModal: React.FC<WelfareAlertModalProps> = ({
                     activeOpacity={0.7}
                   >
                     <Text
-                      style={[
-                        styles.urgencyChipText,
-                        isSelected && styles.urgencyChipTextActive,
-                      ]}
+                      style={[styles.urgencyChipText, isSelected && styles.urgencyChipTextActive]}
                     >
                       {u.toUpperCase()}
                     </Text>
@@ -103,7 +117,9 @@ export const WelfareAlertModal: React.FC<WelfareAlertModalProps> = ({
             </View>
 
             {/* Observed Conditions Checklist */}
-            <Text style={styles.sectionHeader}>OBSERVED HEALTH ISSUES</Text>
+            <Text style={styles.sectionHeader}>
+              {t('ui_welfareAlertModal.observed_health_issues')}
+            </Text>
             <View style={styles.issuesList}>
               {WELFARE_ISSUES.map((issue) => {
                 const isChecked = selectedIssues.includes(issue.id);
@@ -124,12 +140,14 @@ export const WelfareAlertModal: React.FC<WelfareAlertModalProps> = ({
             </View>
 
             {/* Field Notes */}
-            <Text style={styles.sectionHeader}>SPECIFIC LOCATION & OBSERVATIONS</Text>
+            <Text style={styles.sectionHeader}>
+              {t('ui_welfareAlertModal.specific_location_observations')}
+            </Text>
             <TextInput
               style={styles.notesInput}
               value={notes}
               onChangeText={setNotes}
-              placeholder="e.g. Hidden under green truck, bleeding from front paw..."
+              placeholder={t('ui_welfareAlertModal.e_g_hidden_under_green_truck')}
               placeholderTextColor={DesignTokens.colors.tertiaryLabel}
               multiline
               numberOfLines={3}
@@ -138,21 +156,23 @@ export const WelfareAlertModal: React.FC<WelfareAlertModalProps> = ({
             <View style={styles.coordsTag}>
               <IOSIcon name="location" size={12} color={DesignTokens.colors.secondaryLabel} />
               <Text style={styles.coordsText}>
-                Coordinates: {latitude.toFixed(5)}° N, {longitude.toFixed(5)}° E
+                {t('ui_welfareAlertModal.coordinates_n_e', {
+                  v1: latitude.toFixed(5),
+                  v3: longitude.toFixed(5),
+                })}
               </Text>
             </View>
 
             {/* Submit Button */}
             <TouchableOpacity
-              style={[
-                styles.submitAlertBtn,
-                selectedIssues.length === 0 && { opacity: 0.6 },
-              ]}
+              style={[styles.submitAlertBtn, selectedIssues.length === 0 && { opacity: 0.6 }]}
               onPress={handleSubmit}
               disabled={selectedIssues.length === 0}
               activeOpacity={0.7}
             >
-              <Text style={styles.submitAlertBtnText} numberOfLines={1}>Submit Welfare Alert</Text>
+              <Text style={styles.submitAlertBtnText} numberOfLines={1}>
+                {t('ui_welfareAlertModal.submit_welfare_alert')}
+              </Text>
             </TouchableOpacity>
           </ScrollView>
         </View>

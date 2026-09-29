@@ -24,6 +24,8 @@ jobs:
         run: pnpm typecheck
       - name: Lint
         run: pnpm lint
+      - name: Translation keys
+        run: pnpm --filter @tunisia-survey/mobile i18n:check
       - name: Unit tests
         run: pnpm -r test
       - name: Dashboard build

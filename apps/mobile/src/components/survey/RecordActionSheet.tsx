@@ -1,3 +1,4 @@
+import { useTranslation } from 'react-i18next';
 import React from 'react';
 import {
   View,
@@ -29,6 +30,7 @@ export const RecordActionSheet: React.FC<RecordActionSheetProps> = ({
   onSelectStationary,
   onSelectQuickSighting,
 }) => {
+  const { t } = useTranslation();
   const insets = useSafeAreaInsets();
   const { themeMode } = useThemeStore();
   const isDark = themeMode === 'night';
@@ -69,28 +71,15 @@ export const RecordActionSheet: React.FC<RecordActionSheetProps> = ({
               {/* Grabber indicator */}
               <View style={styles.grabberContainer}>
                 <View
-                  style={[
-                    styles.grabber,
-                    { backgroundColor: isDark ? '#374151' : '#E5E7EB' },
-                  ]}
+                  style={[styles.grabber, { backgroundColor: isDark ? '#374151' : '#E5E7EB' }]}
                 />
               </View>
 
-              <Text
-                style={[
-                  styles.title,
-                  { color: isDark ? '#F9FAFB' : '#111827' },
-                ]}
-              >
-                Record Observations
+              <Text style={[styles.title, { color: isDark ? '#F9FAFB' : '#111827' }]}>
+                {t('ui_recordActionSheet.record_observations')}
               </Text>
-              <Text
-                style={[
-                  styles.subtitle,
-                  { color: isDark ? '#9CA3AF' : '#6B7280' },
-                ]}
-              >
-                Choose scientific protocol or log an immediate sighting
+              <Text style={[styles.subtitle, { color: isDark ? '#9CA3AF' : '#6B7280' }]}>
+                {t('ui_recordActionSheet.choose_scientific_protocol_or_log_an')}
               </Text>
 
               {/* Action 1: Transect Survey */}
@@ -109,21 +98,13 @@ export const RecordActionSheet: React.FC<RecordActionSheetProps> = ({
                   <Icon name="survey" size={24} color="#FFFFFF" />
                 </View>
                 <View style={styles.actionDetails}>
-                  <Text
-                    style={[
-                      styles.actionTitle,
-                      { color: isDark ? '#F9FAFB' : '#0F172A' },
-                    ]}
-                  >
-                    Transect Survey
+                  <Text style={[styles.actionTitle, { color: isDark ? '#F9FAFB' : '#0F172A' }]}>
+                    {t('ui_recordActionSheet.transect_survey')}
                   </Text>
                   <Text
-                    style={[
-                      styles.actionDescription,
-                      { color: isDark ? '#9CA3AF' : '#64748B' },
-                    ]}
+                    style={[styles.actionDescription, { color: isDark ? '#9CA3AF' : '#64748B' }]}
                   >
-                    Walk a fixed or free route with GPS effort & distance tracking
+                    {t('ui_recordActionSheet.walk_a_fixed_or_free_route')}
                   </Text>
                 </View>
                 <Icon name="chevron-right" size={20} color={isDark ? '#6B7280' : '#94A3B8'} />
@@ -145,21 +126,13 @@ export const RecordActionSheet: React.FC<RecordActionSheetProps> = ({
                   <Icon name="compass" size={24} color="#FFFFFF" />
                 </View>
                 <View style={styles.actionDetails}>
-                  <Text
-                    style={[
-                      styles.actionTitle,
-                      { color: isDark ? '#F9FAFB' : '#0F172A' },
-                    ]}
-                  >
-                    Stationary Point Count
+                  <Text style={[styles.actionTitle, { color: isDark ? '#F9FAFB' : '#0F172A' }]}>
+                    {t('ui_recordActionSheet.stationary_point_count')}
                   </Text>
                   <Text
-                    style={[
-                      styles.actionDescription,
-                      { color: isDark ? '#9CA3AF' : '#64748B' },
-                    ]}
+                    style={[styles.actionDescription, { color: isDark ? '#9CA3AF' : '#64748B' }]}
                   >
-                    Record animal density at a single observation point for 5–15 min
+                    {t('ui_recordActionSheet.record_animal_density_at_a_single')}
                   </Text>
                 </View>
                 <Icon name="chevron-right" size={20} color={isDark ? '#6B7280' : '#94A3B8'} />
@@ -181,21 +154,13 @@ export const RecordActionSheet: React.FC<RecordActionSheetProps> = ({
                   <Icon name="animals" size={24} color="#FFFFFF" />
                 </View>
                 <View style={styles.actionDetails}>
-                  <Text
-                    style={[
-                      styles.actionTitle,
-                      { color: isDark ? '#F9FAFB' : '#0F172A' },
-                    ]}
-                  >
-                    Quick Sighting
+                  <Text style={[styles.actionTitle, { color: isDark ? '#F9FAFB' : '#0F172A' }]}>
+                    {t('ui_recordActionSheet.quick_sighting')}
                   </Text>
                   <Text
-                    style={[
-                      styles.actionDescription,
-                      { color: isDark ? '#9CA3AF' : '#64748B' },
-                    ]}
+                    style={[styles.actionDescription, { color: isDark ? '#9CA3AF' : '#64748B' }]}
                   >
-                    Instantly capture a free-roaming cat or dog sighting with photo
+                    {t('ui_recordActionSheet.instantly_capture_a_free_roaming_cat')}
                   </Text>
                 </View>
                 <Icon name="chevron-right" size={20} color={isDark ? '#6B7280' : '#94A3B8'} />
@@ -214,13 +179,8 @@ export const RecordActionSheet: React.FC<RecordActionSheetProps> = ({
                   onClose();
                 }}
               >
-                <Text
-                  style={[
-                    styles.cancelText,
-                    { color: isDark ? '#E5E7EB' : '#475569' },
-                  ]}
-                >
-                  Cancel
+                <Text style={[styles.cancelText, { color: isDark ? '#E5E7EB' : '#475569' }]}>
+                  {t('ui_recordActionSheet.cancel')}
                 </Text>
               </TouchableOpacity>
             </View>

@@ -43,16 +43,13 @@ export const AuthGateScreen: React.FC<AuthGateScreenProps> = ({ onAuthenticated 
       const result = await signInWithGoogle();
       if (!result.success) {
         Alert.alert(
-          'Google Sign-In',
-          result.error || 'Failed to authenticate with Google.'
+          t('ui_authGate.google_sign_in'),
+          result.error || t('ui_authGate.failed_to_authenticate_with_google')
         );
       } else if (result.user) {
         const userMeta = result.user.user_metadata || {};
         const displayName =
-          userMeta.full_name ||
-          userMeta.name ||
-          result.user.email?.split('@')[0] ||
-          'Surveyor';
+          userMeta.full_name || userMeta.name || result.user.email?.split('@')[0] || 'Surveyor';
 
         const account: UserAccount = {
           name: displayName,
@@ -64,11 +61,17 @@ export const AuthGateScreen: React.FC<AuthGateScreenProps> = ({ onAuthenticated 
           createdAt: result.user.created_at || new Date().toISOString(),
         };
 
-        Alert.alert('Signed In', `Welcome to Hawem Observatory, ${displayName}!`);
+        Alert.alert(
+          t('ui_authGate.signed_in'),
+          t('ui_authGate.welcome_to_hawem_observatory', { displayName })
+        );
         onAuthenticated(account);
       }
     } catch (err: any) {
-      Alert.alert('Google Sign-In Error', err?.message || 'Authentication failed');
+      Alert.alert(
+        t('ui_authGate.google_sign_in_error'),
+        err?.message || t('ui_authGate.authentication_failed')
+      );
     } finally {
       setIsLoading(false);
     }
@@ -76,12 +79,18 @@ export const AuthGateScreen: React.FC<AuthGateScreenProps> = ({ onAuthenticated 
 
   const handleEmailAuth = async () => {
     if (!email.trim() || !password) {
-      Alert.alert('Required Fields', 'Please enter both your email address and password.');
+      Alert.alert(
+        t('ui_authGate.required_fields'),
+        t('ui_authGate.please_enter_both_your_email_address')
+      );
       return;
     }
 
     if (authMode === 'signup' && !fullName.trim()) {
-      Alert.alert('Required Field', 'Please enter your full name for your surveyor profile.');
+      Alert.alert(
+        t('ui_authGate.required_field'),
+        t('ui_authGate.please_enter_your_full_name_for')
+      );
       return;
     }
 
@@ -121,19 +130,16 @@ export const AuthGateScreen: React.FC<AuthGateScreenProps> = ({ onAuthenticated 
         if (finalError) {
           if (finalError.message.toLowerCase().includes('email not confirmed')) {
             Alert.alert(
-              'Email Confirmation Required',
-              'Your account has been created, but your email is not confirmed yet. In Supabase Dashboard > Authentication > Users, click "..." next to your email and select "Confirm User".'
+              t('ui_authGate.email_confirmation_required'),
+              t('ui_authGate.your_account_has_been_created_but')
             );
           } else {
-            Alert.alert('Sign In Failed', finalError.message);
+            Alert.alert(t('ui_authGate.sign_in_failed'), finalError.message);
           }
         } else if (authedUser) {
           const userMeta = authedUser.user_metadata || {};
           const displayName =
-            userMeta.full_name ||
-            userMeta.name ||
-            authedUser.email?.split('@')[0] ||
-            'Surveyor';
+            userMeta.full_name || userMeta.name || authedUser.email?.split('@')[0] || 'Surveyor';
 
           const account: UserAccount = {
             name: displayName,
@@ -145,7 +151,10 @@ export const AuthGateScreen: React.FC<AuthGateScreenProps> = ({ onAuthenticated 
             createdAt: authedUser.created_at || new Date().toISOString(),
           };
 
-          Alert.alert('Signed In', `Welcome to Hawem Observatory, ${displayName}!`);
+          Alert.alert(
+            t('ui_authGate.signed_in'),
+            t('ui_authGate.welcome_to_hawem_observatory', { displayName })
+          );
           onAuthenticated(account);
         }
       } else {
@@ -164,7 +173,7 @@ export const AuthGateScreen: React.FC<AuthGateScreenProps> = ({ onAuthenticated 
         });
 
         if (error) {
-          Alert.alert('Account Creation Failed', error.message);
+          Alert.alert(t('ui_authGate.account_creation_failed'), error.message);
         } else if (data.session && data.user) {
           // Instant session granted (email confirmation disabled)
           const account: UserAccount = {
@@ -177,19 +186,25 @@ export const AuthGateScreen: React.FC<AuthGateScreenProps> = ({ onAuthenticated 
             createdAt: data.user.created_at || new Date().toISOString(),
           };
 
-          Alert.alert('Account Ready', `Welcome to Hawem Observatory, ${fullName.trim()}!`);
+          Alert.alert(
+            t('ui_authGate.account_ready'),
+            t('ui_authGate.welcome_to_hawem_observatory_2', { v0: fullName.trim() })
+          );
           onAuthenticated(account);
         } else if (data.user) {
           // Email confirmation is required by Supabase project
           Alert.alert(
-            'Account Created',
-            `A confirmation email has been sent to ${email.trim()}. Please click the link in your email to activate your account, then sign in.`
+            t('ui_authGate.account_created'),
+            t('ui_authGate.a_confirmation_email_has_been_sent', { v0: email.trim() })
           );
           setAuthMode('signin');
         }
       }
     } catch (err: any) {
-      Alert.alert('Authentication Error', err?.message || 'Network error');
+      Alert.alert(
+        t('ui_authGate.authentication_error'),
+        err?.message || t('ui_authGate.network_error')
+      );
     } finally {
       setIsLoading(false);
     }
@@ -204,167 +219,171 @@ export const AuthGateScreen: React.FC<AuthGateScreenProps> = ({ onAuthenticated 
         style={StyleSheet.absoluteFill}
       />
       <SafeAreaView style={styles.safeArea} edges={['top', 'left', 'right']}>
-      <KeyboardAvoidingView
-        style={{ flex: 1 }}
-        behavior={Platform.OS === 'ios' ? 'padding' : undefined}
-      >
-        <ScrollView
-          contentContainerStyle={styles.scrollContent}
-          showsVerticalScrollIndicator={false}
-          keyboardShouldPersistTaps="handled"
+        <KeyboardAvoidingView
+          style={{ flex: 1 }}
+          behavior={Platform.OS === 'ios' ? 'padding' : undefined}
         >
-          {/* Scientific App Badge */}
-          <View style={styles.badgeContainer}>
-            <Text style={styles.badgeText}>HAWEM V2.0 · CITIZEN SCIENCE</Text>
-          </View>
-
-          {/* Hero Branding Header */}
-          <View style={styles.heroSection}>
-            <View style={styles.heroLogoCircle}>
-              <Image
-                source={require('../../assets/icon_cat_primary.png')}
-                style={{ width: 44, height: 44, resizeMode: 'contain' }}
-              />
+          <ScrollView
+            contentContainerStyle={styles.scrollContent}
+            showsVerticalScrollIndicator={false}
+            keyboardShouldPersistTaps="handled"
+          >
+            {/* Scientific App Badge */}
+            <View style={styles.badgeContainer}>
+              <Text style={styles.badgeText}>{t('ui_authGate.hawem_v2_0_citizen_science')}</Text>
             </View>
 
-            <Text style={styles.brandTitle}>Hawem</Text>
-            <Text style={styles.brandSubtitle}>
-              National Fauna & Stray Animal Observatory of Tunisia
-            </Text>
-            <Text style={styles.authNotice}>
-              Connect with your surveyor account to access transects, species mapping, and field records.
-            </Text>
-          </View>
-
-          {/* Main Auth Container Card */}
-          <View style={styles.card}>
-            {/* Mode Switcher */}
-            <IOSSegmentedControl<'signin' | 'signup'>
-              selectedValue={authMode}
-              onValueChange={setAuthMode}
-              values={[
-                { label: 'Sign In', value: 'signin' },
-                { label: 'Create Account', value: 'signup' },
-              ]}
-            />
-
-            {/* Form Fields */}
-            <View style={styles.formFields}>
-              {authMode === 'signup' && (
-                <>
-                  <View style={styles.inputContainer}>
-                    <Text style={styles.inputLabel}>Full Name</Text>
-                    <TextInput
-                      style={styles.input}
-                      value={fullName}
-                      onChangeText={setFullName}
-                      placeholder="e.g. Sami Trabelsi"
-                      placeholderTextColor={IOSColors.tertiaryLabel}
-                      autoCapitalize="words"
-                    />
-                  </View>
-
-                  <View style={styles.inputContainer}>
-                    <Text style={styles.inputLabel}>Organization / Institution</Text>
-                    <TextInput
-                      style={styles.input}
-                      value={organization}
-                      onChangeText={setOrganization}
-                      placeholder="Institut Pasteur de Tunis"
-                      placeholderTextColor={IOSColors.tertiaryLabel}
-                    />
-                  </View>
-                </>
-              )}
-
-              <View style={styles.inputContainer}>
-                <Text style={styles.inputLabel}>Email Address</Text>
-                <TextInput
-                  style={styles.input}
-                  value={email}
-                  onChangeText={setEmail}
-                  placeholder="surveyor@pasteur.tn"
-                  placeholderTextColor={IOSColors.tertiaryLabel}
-                  keyboardType="email-address"
-                  autoCapitalize="none"
-                  autoCorrect={false}
+            {/* Hero Branding Header */}
+            <View style={styles.heroSection}>
+              <View style={styles.heroLogoCircle}>
+                <Image
+                  source={require('../../assets/icon_cat_primary.png')}
+                  style={{ width: 44, height: 44, resizeMode: 'contain' }}
                 />
               </View>
 
-              <View style={styles.inputContainer}>
-                <Text style={styles.inputLabel}>Password</Text>
-                <View style={styles.passwordWrapper}>
-                  <TextInput
-                    style={[styles.input, styles.passwordInput]}
-                    value={password}
-                    onChangeText={setPassword}
-                    placeholder="Enter your password"
-                    placeholderTextColor={IOSColors.tertiaryLabel}
-                    secureTextEntry={!showPassword}
-                  />
-                  <TouchableOpacity
-                    style={styles.eyeBtn}
-                    onPress={() => setShowPassword(!showPassword)}
-                    hitSlop={{ top: 12, bottom: 12, left: 12, right: 12 }}
-                  >
-                    <IOSIcon
-                      name="eye"
-                      size={18}
-                      color={showPassword ? IOSColors.systemTeal : IOSColors.tertiaryLabel}
-                    />
-                  </TouchableOpacity>
-                </View>
-              </View>
-
-              {/* Submit Button */}
-              <TouchableOpacity
-                onPress={handleEmailAuth}
-                style={[styles.submitBtn, isLoading && { opacity: 0.7 }]}
-                disabled={isLoading}
-              >
-                {isLoading ? (
-                  <ActivityIndicator size="small" color="#FFFFFF" />
-                ) : (
-                  <Text style={styles.submitBtnText}>
-                    {authMode === 'signin' ? 'Sign In' : 'Create Surveyor Account'}
-                  </Text>
-                )}
-              </TouchableOpacity>
-
-              {/* Divider */}
-              <View style={styles.dividerRow}>
-                <View style={styles.dividerLine} />
-                <Text style={styles.dividerText}>or</Text>
-                <View style={styles.dividerLine} />
-              </View>
-
-              {/* Google Sign-In Action */}
-              <TouchableOpacity
-                onPress={handleGoogleSignIn}
-                style={styles.googleBtn}
-                disabled={isLoading}
-                activeOpacity={0.8}
-              >
-                <View style={styles.googleIconBadge}>
-                  <Text style={styles.googleGLetter}>G</Text>
-                </View>
-                <Text style={styles.googleBtnText}>Continue with Google</Text>
-              </TouchableOpacity>
+              <Text style={styles.brandTitle}>{t('ui_authGate.hawem')}</Text>
+              <Text style={styles.brandSubtitle}>
+                {t('ui_authGate.national_fauna_stray_animal_observatory_of')}
+              </Text>
+              <Text style={styles.authNotice}>
+                {t('ui_authGate.connect_with_your_surveyor_account_to')}
+              </Text>
             </View>
-          </View>
 
-          {/* Research & Compliance Badge */}
-          <View style={styles.complianceSection}>
-            <IOSIcon name="shield" size={16} color={IOSColors.systemTeal} />
-            <Text style={styles.complianceText}>
-              Institut Pasteur de Tunis • Scientific Survey Standards ICAM 1-5
-            </Text>
-          </View>
-        </ScrollView>
-      </KeyboardAvoidingView>
-    </SafeAreaView>
-  </View>
-);
+            {/* Main Auth Container Card */}
+            <View style={styles.card}>
+              {/* Mode Switcher */}
+              <IOSSegmentedControl<'signin' | 'signup'>
+                selectedValue={authMode}
+                onValueChange={setAuthMode}
+                values={[
+                  { label: 'Sign In', value: 'signin' },
+                  { label: 'Create Account', value: 'signup' },
+                ]}
+              />
+
+              {/* Form Fields */}
+              <View style={styles.formFields}>
+                {authMode === 'signup' && (
+                  <>
+                    <View style={styles.inputContainer}>
+                      <Text style={styles.inputLabel}>{t('ui_authGate.full_name')}</Text>
+                      <TextInput
+                        style={styles.input}
+                        value={fullName}
+                        onChangeText={setFullName}
+                        placeholder={t('ui_authGate.e_g_sami_trabelsi')}
+                        placeholderTextColor={IOSColors.tertiaryLabel}
+                        autoCapitalize="words"
+                      />
+                    </View>
+
+                    <View style={styles.inputContainer}>
+                      <Text style={styles.inputLabel}>
+                        {t('ui_authGate.organization_institution')}
+                      </Text>
+                      <TextInput
+                        style={styles.input}
+                        value={organization}
+                        onChangeText={setOrganization}
+                        placeholder={t('ui_authGate.institut_pasteur_de_tunis')}
+                        placeholderTextColor={IOSColors.tertiaryLabel}
+                      />
+                    </View>
+                  </>
+                )}
+
+                <View style={styles.inputContainer}>
+                  <Text style={styles.inputLabel}>{t('ui_authGate.email_address')}</Text>
+                  <TextInput
+                    style={styles.input}
+                    value={email}
+                    onChangeText={setEmail}
+                    placeholder={t('ui_common.email_placeholder')}
+                    placeholderTextColor={IOSColors.tertiaryLabel}
+                    keyboardType="email-address"
+                    autoCapitalize="none"
+                    autoCorrect={false}
+                  />
+                </View>
+
+                <View style={styles.inputContainer}>
+                  <Text style={styles.inputLabel}>{t('ui_authGate.password')}</Text>
+                  <View style={styles.passwordWrapper}>
+                    <TextInput
+                      style={[styles.input, styles.passwordInput]}
+                      value={password}
+                      onChangeText={setPassword}
+                      placeholder={t('ui_authGate.enter_your_password')}
+                      placeholderTextColor={IOSColors.tertiaryLabel}
+                      secureTextEntry={!showPassword}
+                    />
+                    <TouchableOpacity
+                      style={styles.eyeBtn}
+                      onPress={() => setShowPassword(!showPassword)}
+                      hitSlop={{ top: 12, bottom: 12, left: 12, right: 12 }}
+                    >
+                      <IOSIcon
+                        name="eye"
+                        size={18}
+                        color={showPassword ? IOSColors.systemTeal : IOSColors.tertiaryLabel}
+                      />
+                    </TouchableOpacity>
+                  </View>
+                </View>
+
+                {/* Submit Button */}
+                <TouchableOpacity
+                  onPress={handleEmailAuth}
+                  style={[styles.submitBtn, isLoading && { opacity: 0.7 }]}
+                  disabled={isLoading}
+                >
+                  {isLoading ? (
+                    <ActivityIndicator size="small" color="#FFFFFF" />
+                  ) : (
+                    <Text style={styles.submitBtnText}>
+                      {authMode === 'signin'
+                        ? t('ui_authGate.sign_in')
+                        : t('ui_authGate.create_surveyor_account')}
+                    </Text>
+                  )}
+                </TouchableOpacity>
+
+                {/* Divider */}
+                <View style={styles.dividerRow}>
+                  <View style={styles.dividerLine} />
+                  <Text style={styles.dividerText}>{t('ui_authGate.or')}</Text>
+                  <View style={styles.dividerLine} />
+                </View>
+
+                {/* Google Sign-In Action */}
+                <TouchableOpacity
+                  onPress={handleGoogleSignIn}
+                  style={styles.googleBtn}
+                  disabled={isLoading}
+                  activeOpacity={0.8}
+                >
+                  <View style={styles.googleIconBadge}>
+                    <Text style={styles.googleGLetter}>G</Text>
+                  </View>
+                  <Text style={styles.googleBtnText}>{t('ui_authGate.continue_with_google')}</Text>
+                </TouchableOpacity>
+              </View>
+            </View>
+
+            {/* Research & Compliance Badge */}
+            <View style={styles.complianceSection}>
+              <IOSIcon name="shield" size={16} color={IOSColors.systemTeal} />
+              <Text style={styles.complianceText}>
+                {t('ui_authGate.institut_pasteur_de_tunis_scientific_survey')}
+              </Text>
+            </View>
+          </ScrollView>
+        </KeyboardAvoidingView>
+      </SafeAreaView>
+    </View>
+  );
 };
 
 const styles = StyleSheet.create({

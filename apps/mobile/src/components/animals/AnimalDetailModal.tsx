@@ -1,3 +1,4 @@
+import { useTranslation } from 'react-i18next';
 import React, { useState } from 'react';
 import {
   View,
@@ -28,6 +29,7 @@ export const AnimalDetailModal: React.FC<AnimalDetailModalProps> = ({
   onClose,
   onLogResighting,
 }) => {
+  const { t } = useTranslation();
   const [selectedPhotoIndex, setSelectedPhotoIndex] = useState<number>(0);
 
   if (!animal) return null;
@@ -55,7 +57,10 @@ export const AnimalDetailModal: React.FC<AnimalDetailModalProps> = ({
   // Calculate days monitored
   const firstSeenDate = new Date(animal.first_seen_at);
   const lastSeenDate = new Date(animal.last_seen_at);
-  const diffDays = Math.max(1, Math.round((lastSeenDate.getTime() - firstSeenDate.getTime()) / (1000 * 60 * 60 * 24)));
+  const diffDays = Math.max(
+    1,
+    Math.round((lastSeenDate.getTime() - firstSeenDate.getTime()) / (1000 * 60 * 60 * 24))
+  );
 
   return (
     <Modal
@@ -68,15 +73,18 @@ export const AnimalDetailModal: React.FC<AnimalDetailModalProps> = ({
         {/* Navigation Bar */}
         <View style={styles.navBar}>
           <TouchableOpacity onPress={handleClose} style={styles.navBtn} activeOpacity={0.7}>
-            <Text style={styles.navBtnText}>Done</Text>
+            <Text style={styles.navBtnText}>{t('ui_animalDetailModal.done')}</Text>
           </TouchableOpacity>
-          <Text style={styles.navTitle}>Animal Dossier</Text>
+          <Text style={styles.navTitle}>{t('ui_animalDetailModal.animal_dossier')}</Text>
           <View style={styles.idPill}>
             <Text style={styles.idText}>#{animal.id.toUpperCase()}</Text>
           </View>
         </View>
 
-        <ScrollView contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
+        <ScrollView
+          contentContainerStyle={styles.scrollContent}
+          showsVerticalScrollIndicator={false}
+        >
           {/* Header Identity Card */}
           <View style={styles.headerCard}>
             <View style={styles.headerTopRow}>
@@ -96,7 +104,9 @@ export const AnimalDetailModal: React.FC<AnimalDetailModalProps> = ({
                 {animal.ear_tipped && (
                   <View style={styles.tnrBadge}>
                     <IOSIcon name="shield" size={11} color="#059669" />
-                    <Text style={styles.tnrBadgeText}>TNR EAR-TIPPED</Text>
+                    <Text style={styles.tnrBadgeText}>
+                      {t('ui_animalDetailModal.tnr_ear_tipped')}
+                    </Text>
                   </View>
                 )}
                 <View
@@ -104,7 +114,9 @@ export const AnimalDetailModal: React.FC<AnimalDetailModalProps> = ({
                     styles.idScoreBadge,
                     {
                       backgroundColor:
-                        animal.identifiability === 'high' ? 'rgba(2, 132, 199, 0.12)' : 'rgba(100, 116, 139, 0.12)',
+                        animal.identifiability === 'high'
+                          ? 'rgba(2, 132, 199, 0.12)'
+                          : 'rgba(100, 116, 139, 0.12)',
                     },
                   ]}
                 >
@@ -114,7 +126,9 @@ export const AnimalDetailModal: React.FC<AnimalDetailModalProps> = ({
                       { color: animal.identifiability === 'high' ? '#0284C7' : '#64748B' },
                     ]}
                   >
-                    {animal.identifiability === 'high' ? 'HIGH ID CONFIDENCE' : 'STANDARD ID'}
+                    {animal.identifiability === 'high'
+                      ? t('ui_animalDetailModal.high_id_confidence')
+                      : t('ui_animalDetailModal.standard_id')}
                   </Text>
                 </View>
               </View>
@@ -122,7 +136,9 @@ export const AnimalDetailModal: React.FC<AnimalDetailModalProps> = ({
 
             <Text style={styles.animalNickname}>{animal.nickname}</Text>
             <Text style={styles.animalSubtitle}>
-              {isCat ? 'Felis catus • Free-Roaming Cat' : 'Canis familiaris • Free-Roaming Dog'}
+              {isCat
+                ? t('ui_animalDetailModal.felis_catus_free_roaming_cat')
+                : t('ui_animalDetailModal.canis_familiaris_free_roaming_dog')}
             </Text>
 
             {/* Photo Showcase Carousel */}
@@ -134,8 +150,8 @@ export const AnimalDetailModal: React.FC<AnimalDetailModalProps> = ({
                       activePhoto.uri.startsWith('http') || activePhoto.uri.startsWith('file://')
                         ? { uri: activePhoto.uri }
                         : isCat
-                        ? require('../../../assets/cat_pose_1_primary.png')
-                        : require('../../../assets/dog_pose_1_amber.png')
+                          ? require('../../../assets/cat_pose_1_primary.png')
+                          : require('../../../assets/dog_pose_1_amber.png')
                     }
                     style={styles.photoHeroImage}
                     resizeMode="cover"
@@ -159,7 +175,7 @@ export const AnimalDetailModal: React.FC<AnimalDetailModalProps> = ({
                     resizeMode="contain"
                   />
                   <Text style={[styles.photoFallbackText, { color: primaryThemeColor }]}>
-                    Standardized Angle Photographs
+                    {t('ui_animalDetailModal.standardized_angle_photographs')}
                   </Text>
                 </View>
               )}
@@ -172,7 +188,10 @@ export const AnimalDetailModal: React.FC<AnimalDetailModalProps> = ({
                       key={idx}
                       style={[
                         styles.thumbnailPill,
-                        selectedPhotoIndex === idx && { borderColor: primaryThemeColor, borderWidth: 2 },
+                        selectedPhotoIndex === idx && {
+                          borderColor: primaryThemeColor,
+                          borderWidth: 2,
+                        },
                       ]}
                       onPress={() => {
                         hapticButtonPress();
@@ -183,7 +202,10 @@ export const AnimalDetailModal: React.FC<AnimalDetailModalProps> = ({
                       <Text
                         style={[
                           styles.thumbnailText,
-                          selectedPhotoIndex === idx && { color: primaryThemeColor, fontWeight: '700' },
+                          selectedPhotoIndex === idx && {
+                            color: primaryThemeColor,
+                            fontWeight: '700',
+                          },
                         ]}
                       >
                         {ph.angle.replace('_', ' ')}
@@ -197,61 +219,73 @@ export const AnimalDetailModal: React.FC<AnimalDetailModalProps> = ({
 
           {/* Mark-Recapture Metrics Bento */}
           <View style={styles.sectionCard}>
-            <Text style={styles.sectionHeader}>Mark-Resight Telemetry</Text>
+            <Text style={styles.sectionHeader}>
+              {t('ui_animalDetailModal.mark_resight_telemetry')}
+            </Text>
             <View style={styles.metricsGrid}>
               <View style={styles.metricItem}>
                 <Text style={styles.metricValue}>{animal.sightings_count}</Text>
-                <Text style={styles.metricLabel}>Total Sightings</Text>
-                <Text style={styles.metricSub}>Independent logs</Text>
+                <Text style={styles.metricLabel}>{t('ui_animalDetailModal.total_sightings')}</Text>
+                <Text style={styles.metricSub}>{t('ui_animalDetailModal.independent_logs')}</Text>
               </View>
 
               <View style={styles.metricDivider} />
 
               <View style={styles.metricItem}>
                 <Text style={styles.metricValue}>{diffDays}d</Text>
-                <Text style={styles.metricLabel}>Observation Span</Text>
-                <Text style={styles.metricSub}>Days monitored</Text>
+                <Text style={styles.metricLabel}>{t('ui_animalDetailModal.observation_span')}</Text>
+                <Text style={styles.metricSub}>{t('ui_animalDetailModal.days_monitored')}</Text>
               </View>
 
               <View style={styles.metricDivider} />
 
               <View style={styles.metricItem}>
-                <Text style={[styles.metricValue, { color: animal.ear_tipped ? '#059669' : '#D97706' }]}>
-                  {animal.ear_tipped ? 'Yes' : 'No'}
+                <Text
+                  style={[styles.metricValue, { color: animal.ear_tipped ? '#059669' : '#D97706' }]}
+                >
+                  {animal.ear_tipped ? t('ui_animalDetailModal.yes') : t('ui_animalDetailModal.no')}
                 </Text>
-                <Text style={styles.metricLabel}>Sterilized</Text>
-                <Text style={styles.metricSub}>{animal.ear_tipped ? 'Ear-Tipped TNR' : 'Intact'}</Text>
+                <Text style={styles.metricLabel}>{t('ui_animalDetailModal.sterilized')}</Text>
+                <Text style={styles.metricSub}>
+                  {animal.ear_tipped
+                    ? t('ui_animalDetailModal.ear_tipped_tnr')
+                    : t('ui_animalDetailModal.intact')}
+                </Text>
               </View>
             </View>
           </View>
 
           {/* Biological Characteristics & Morphology */}
           <View style={styles.sectionCard}>
-            <Text style={styles.sectionHeader}>Morphological Characteristics</Text>
+            <Text style={styles.sectionHeader}>
+              {t('ui_animalDetailModal.morphological_characteristics')}
+            </Text>
 
             <View style={styles.charRow}>
-              <Text style={styles.charLabel}>Coat Pattern</Text>
+              <Text style={styles.charLabel}>{t('ui_animalDetailModal.coat_pattern')}</Text>
               <View style={styles.charValuePill}>
-                <Text style={styles.charValueText}>{animal.coat_pattern.replace('_', ' ').toUpperCase()}</Text>
+                <Text style={styles.charValueText}>
+                  {animal.coat_pattern.replace('_', ' ').toUpperCase()}
+                </Text>
               </View>
             </View>
 
             {animal.primary_colour && (
               <View style={styles.charRow}>
-                <Text style={styles.charLabel}>Coloration</Text>
+                <Text style={styles.charLabel}>{t('ui_animalDetailModal.coloration')}</Text>
                 <Text style={styles.charValuePlain}>{animal.primary_colour}</Text>
               </View>
             )}
 
             <View style={styles.charRow}>
-              <Text style={styles.charLabel}>Colony Station</Text>
+              <Text style={styles.charLabel}>{t('ui_animalDetailModal.colony_station')}</Text>
               <Text style={styles.charValuePlain}>
-                {animal.colony_name || 'Solitary / Free-Roaming Hub'}
+                {animal.colony_name || t('ui_animalDetailModal.solitary_free_roaming_hub')}
               </Text>
             </View>
 
             <View style={styles.charRow}>
-              <Text style={styles.charLabel}>First Recorded</Text>
+              <Text style={styles.charLabel}>{t('ui_animalDetailModal.first_recorded')}</Text>
               <Text style={styles.charValuePlain}>
                 {new Date(animal.first_seen_at).toLocaleDateString([], {
                   year: 'numeric',
@@ -262,7 +296,7 @@ export const AnimalDetailModal: React.FC<AnimalDetailModalProps> = ({
             </View>
 
             <View style={[styles.charRow, { borderBottomWidth: 0 }]}>
-              <Text style={styles.charLabel}>Last Resighted</Text>
+              <Text style={styles.charLabel}>{t('ui_animalDetailModal.last_resighted')}</Text>
               <Text style={styles.charValuePlain}>
                 {new Date(animal.last_seen_at).toLocaleDateString([], {
                   year: 'numeric',
@@ -275,7 +309,9 @@ export const AnimalDetailModal: React.FC<AnimalDetailModalProps> = ({
 
           {/* Geolocation & Home Range Territory */}
           <View style={styles.sectionCard}>
-            <Text style={styles.sectionHeader}>Territory & Sighting Location</Text>
+            <Text style={styles.sectionHeader}>
+              {t('ui_animalDetailModal.territory_sighting_location')}
+            </Text>
             <View style={styles.geoCoordsBar}>
               <IOSIcon name="location" size={13} color="#0284C7" />
               <Text style={styles.geoCoordsText}>
@@ -295,10 +331,14 @@ export const AnimalDetailModal: React.FC<AnimalDetailModalProps> = ({
                 </View>
                 <View style={styles.territoryInfoBar}>
                   <View style={styles.territoryPinBadge}>
-                    <Text style={styles.territoryPinText}>Frequent Activity Corridor</Text>
+                    <Text style={styles.territoryPinText}>
+                      {t('ui_animalDetailModal.frequent_activity_corridor')}
+                    </Text>
                   </View>
                   <View style={styles.territoryRadiusPill}>
-                    <Text style={styles.territoryRadiusText}>Est. Radius: ~250m</Text>
+                    <Text style={styles.territoryRadiusText}>
+                      {t('ui_animalDetailModal.est_radius_250m')}
+                    </Text>
                   </View>
                 </View>
               </View>
@@ -313,10 +353,10 @@ export const AnimalDetailModal: React.FC<AnimalDetailModalProps> = ({
           >
             <IOSIcon name="camera" size={18} color="#FFFFFF" />
             <Text style={styles.logResightingBtnText} numberOfLines={1} ellipsizeMode="tail">
-              + Log Sighting for {animal.nickname}
+              {t('ui_animalDetailModal.log_sighting_for', { nickname: animal.nickname })}
             </Text>
             <View style={styles.xpBonusBadge}>
-              <Text style={styles.xpBonusBadgeText}>+10 XP</Text>
+              <Text style={styles.xpBonusBadgeText}>{t('ui_animalDetailModal.10_xp')}</Text>
             </View>
           </TouchableOpacity>
         </ScrollView>

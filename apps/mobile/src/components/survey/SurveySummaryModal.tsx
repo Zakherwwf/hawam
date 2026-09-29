@@ -1,3 +1,4 @@
+import { useTranslation } from 'react-i18next';
 import React, { useState } from 'react';
 import {
   View,
@@ -13,11 +14,7 @@ import { LinearGradient } from 'expo-linear-gradient';
 import { Icon } from '../design-system/Icon';
 import { Button } from '../design-system/Button';
 import { FixedRoute } from '../../features/routes/routesStore';
-import {
-  hapticModalClose,
-  hapticButtonPress,
-  hapticSuccess,
-} from '../../utils/haptics';
+import { hapticModalClose, hapticButtonPress, hapticSuccess } from '../../utils/haptics';
 
 export interface SurveySummaryData {
   protocol: string;
@@ -48,6 +45,7 @@ export const SurveySummaryModal: React.FC<SurveySummaryModalProps> = ({
   data,
   onConfirmAndClose,
 }) => {
+  const { t } = useTranslation();
   const [step, setStep] = useState<'checklist' | 'summary'>('checklist');
   const [isChecklistComplete, setIsChecklistComplete] = useState<boolean>(data.completeChecklist);
 
@@ -58,9 +56,7 @@ export const SurveySummaryModal: React.FC<SurveySummaryModalProps> = ({
   };
 
   const avgPaceKmH =
-    data.durationSeconds > 0
-      ? (data.distanceKm / (data.durationSeconds / 3600)).toFixed(1)
-      : '0.0';
+    data.durationSeconds > 0 ? (data.distanceKm / (data.durationSeconds / 3600)).toFixed(1) : '0.0';
 
   const handleSelectChecklist = (complete: boolean) => {
     hapticButtonPress();
@@ -96,24 +92,21 @@ export const SurveySummaryModal: React.FC<SurveySummaryModalProps> = ({
             <View style={styles.stepContainer}>
               <View style={styles.stepHeader}>
                 <View style={styles.badgePill}>
-                  <Text style={styles.badgePillText}>SCIENTIFIC PROTOCOL</Text>
+                  <Text style={styles.badgePillText}>
+                    {t('ui_surveySummaryModal.scientific_protocol')}
+                  </Text>
                 </View>
                 <Text style={styles.questionTitle}>
-                  Did you record every cat and dog you saw?
+                  {t('ui_surveySummaryModal.did_you_record_every_cat_and')}
                 </Text>
                 <Text style={styles.questionContext}>
-                  Complete checklists allow scientists to calculate true encounter rates,
-                  including areas where zero animals were present. A zero-sighting walk is
-                  scientifically just as valuable.
+                  {t('ui_surveySummaryModal.complete_checklists_allow_scientists_to_calculat')}
                 </Text>
               </View>
 
               <View style={styles.optionsContainer}>
                 <TouchableOpacity
-                  style={[
-                    styles.optionCard,
-                    isChecklistComplete && styles.optionCardSelected,
-                  ]}
+                  style={[styles.optionCard, isChecklistComplete && styles.optionCardSelected]}
                   onPress={() => handleSelectChecklist(true)}
                   activeOpacity={0.8}
                 >
@@ -121,18 +114,17 @@ export const SurveySummaryModal: React.FC<SurveySummaryModalProps> = ({
                     <Icon name="check" size={24} color={colors.light.success} />
                   </View>
                   <View style={styles.optionTextContainer}>
-                    <Text style={styles.optionTitle}>Yes, all animals were recorded</Text>
+                    <Text style={styles.optionTitle}>
+                      {t('ui_surveySummaryModal.yes_all_animals_were_recorded')}
+                    </Text>
                     <Text style={styles.optionDescription}>
-                      Every cat and dog observed along the transect was logged. Eligible for full scientific XP.
+                      {t('ui_surveySummaryModal.every_cat_and_dog_observed_along')}
                     </Text>
                   </View>
                 </TouchableOpacity>
 
                 <TouchableOpacity
-                  style={[
-                    styles.optionCard,
-                    !isChecklistComplete && styles.optionCardSelected,
-                  ]}
+                  style={[styles.optionCard, !isChecklistComplete && styles.optionCardSelected]}
                   onPress={() => handleSelectChecklist(false)}
                   activeOpacity={0.8}
                 >
@@ -140,9 +132,11 @@ export const SurveySummaryModal: React.FC<SurveySummaryModalProps> = ({
                     <Icon name="close" size={24} color={colors.light.warning} />
                   </View>
                   <View style={styles.optionTextContainer}>
-                    <Text style={styles.optionTitle}>No, some animals were missed</Text>
+                    <Text style={styles.optionTitle}>
+                      {t('ui_surveySummaryModal.no_some_animals_were_missed')}
+                    </Text>
                     <Text style={styles.optionDescription}>
-                      The survey was opportunistic or interrupted. Sightings will be recorded as incidental encounters.
+                      {t('ui_surveySummaryModal.the_survey_was_opportunistic_or_interrupted')}
                     </Text>
                   </View>
                 </TouchableOpacity>
@@ -156,13 +150,17 @@ export const SurveySummaryModal: React.FC<SurveySummaryModalProps> = ({
             >
               <View style={styles.summaryHeader}>
                 <View style={styles.debriefPill}>
-                  <Text style={styles.debriefPillText}>SURVEY DEBRIEF</Text>
+                  <Text style={styles.debriefPillText}>
+                    {t('ui_surveySummaryModal.survey_debrief')}
+                  </Text>
                 </View>
-                <Text style={styles.summaryHeadline}>Survey Complete</Text>
+                <Text style={styles.summaryHeadline}>
+                  {t('ui_surveySummaryModal.survey_complete')}
+                </Text>
                 <Text style={styles.summarySubheadline}>
                   {data.selectedRoute
                     ? `${data.selectedRoute.name} · ${data.selectedRoute.zone}`
-                    : `${data.protocol.toUpperCase()} TRANSECT`}
+                    : t('ui_surveySummaryModal.transect', { v0: data.protocol.toUpperCase() })}
                 </Text>
               </View>
 
@@ -175,7 +173,9 @@ export const SurveySummaryModal: React.FC<SurveySummaryModalProps> = ({
                 {isChecklistComplete && (
                   <View style={styles.completeBadge}>
                     <Icon name="check" size={14} color={colors.light.success} />
-                    <Text style={styles.completeBadgeText}>COMPLETE CHECKLIST</Text>
+                    <Text style={styles.completeBadgeText}>
+                      {t('ui_surveySummaryModal.complete_checklist')}
+                    </Text>
                   </View>
                 )}
               </View>
@@ -184,59 +184,84 @@ export const SurveySummaryModal: React.FC<SurveySummaryModalProps> = ({
               <View style={styles.metricsGrid}>
                 <View style={styles.metricCard}>
                   <Text style={styles.metricBig}>{data.distanceKm.toFixed(2)}</Text>
-                  <Text style={styles.metricLabel}>KM WALKED</Text>
+                  <Text style={styles.metricLabel}>{t('ui_surveySummaryModal.km_walked')}</Text>
                 </View>
 
                 <View style={styles.metricCard}>
                   <Text style={styles.metricBig}>{formatTime(data.durationSeconds)}</Text>
-                  <Text style={styles.metricLabel}>DURATION</Text>
+                  <Text style={styles.metricLabel}>{t('ui_surveySummaryModal.duration')}</Text>
                 </View>
 
                 <View style={styles.metricCard}>
                   <Text style={styles.metricBig}>{avgPaceKmH}</Text>
-                  <Text style={styles.metricLabel}>KM/H PACE</Text>
+                  <Text style={styles.metricLabel}>{t('ui_surveySummaryModal.km_h_pace')}</Text>
                 </View>
 
                 <View style={styles.metricCard}>
                   <Text style={styles.metricBig}>{data.detectionsCount}</Text>
                   <Text style={styles.metricLabel}>
-                    SIGHTINGS ({data.catsCount}C · {data.dogsCount}D)
+                    {t('ui_surveySummaryModal.sightings_c_d', {
+                      catsCount: data.catsCount,
+                      dogsCount: data.dogsCount,
+                    })}
                   </Text>
                 </View>
               </View>
 
               {/* Transparent XP Effort Breakdown */}
               <View style={styles.xpCard}>
-                <Text style={styles.xpCardTitle}>EFFORT-FIRST REWARD</Text>
+                <Text style={styles.xpCardTitle}>
+                  {t('ui_surveySummaryModal.effort_first_reward')}
+                </Text>
                 <View style={styles.xpRow}>
-                  <Text style={styles.xpLabel}>Distance & Pace Effort</Text>
-                  <Text style={styles.xpValue}>+{data.effortXp} XP</Text>
+                  <Text style={styles.xpLabel}>
+                    {t('ui_surveySummaryModal.distance_pace_effort')}
+                  </Text>
+                  <Text style={styles.xpValue}>
+                    {t('ui_surveySummaryModal.xp', { effortXp: data.effortXp })}
+                  </Text>
                 </View>
                 {isChecklistComplete && (
                   <View style={styles.xpRow}>
-                    <Text style={styles.xpLabel}>Complete Scientific Checklist</Text>
-                    <Text style={styles.xpValue}>+{data.completeBonus || 25} XP</Text>
+                    <Text style={styles.xpLabel}>
+                      {t('ui_surveySummaryModal.complete_scientific_checklist')}
+                    </Text>
+                    <Text style={styles.xpValue}>
+                      {t('ui_surveySummaryModal.xp_2', { v1: data.completeBonus || 25 })}
+                    </Text>
                   </View>
                 )}
                 {data.detectionsCount > 0 && (
                   <View style={styles.xpRow}>
-                    <Text style={styles.xpLabel}>Individual Encounters ({data.detectionsCount})</Text>
-                    <Text style={styles.xpValue}>+{data.animalsBonus} XP</Text>
+                    <Text style={styles.xpLabel}>
+                      {t('ui_surveySummaryModal.individual_encounters', {
+                        detectionsCount: data.detectionsCount,
+                      })}
+                    </Text>
+                    <Text style={styles.xpValue}>
+                      {t('ui_surveySummaryModal.xp_3', { animalsBonus: data.animalsBonus })}
+                    </Text>
                   </View>
                 )}
                 {data.selectedRoute && (
                   <View style={styles.xpRow}>
-                    <Text style={styles.xpLabel}>Fixed Observatory Route</Text>
-                    <Text style={styles.xpValue}>+{data.routeBonus || 15} XP</Text>
+                    <Text style={styles.xpLabel}>
+                      {t('ui_surveySummaryModal.fixed_observatory_route')}
+                    </Text>
+                    <Text style={styles.xpValue}>
+                      {t('ui_surveySummaryModal.xp_2', { v1: data.routeBonus || 15 })}
+                    </Text>
                   </View>
                 )}
 
                 <View style={styles.xpDivider} />
 
                 <View style={styles.xpRowTotal}>
-                  <Text style={styles.xpTotalLabel}>TOTAL REWARD</Text>
+                  <Text style={styles.xpTotalLabel}>{t('ui_surveySummaryModal.total_reward')}</Text>
                   <Text style={styles.xpTotalValue}>
-                    +{data.totalXp + (isChecklistComplete ? 0 : -(data.completeBonus || 0))} XP
+                    {t('ui_surveySummaryModal.xp_2', {
+                      v1: data.totalXp + (isChecklistComplete ? 0 : -(data.completeBonus || 0)),
+                    })}
                   </Text>
                 </View>
               </View>
@@ -244,7 +269,7 @@ export const SurveySummaryModal: React.FC<SurveySummaryModalProps> = ({
               {/* Action Buttons */}
               <View style={styles.actionButtonsCol}>
                 <Button
-                  label="Save Survey & Sync"
+                  label={t('ui_surveySummaryModal.save_survey_sync')}
                   onPress={handleSaveAndFinish}
                   variant="primary"
                   size="hero"
@@ -255,7 +280,9 @@ export const SurveySummaryModal: React.FC<SurveySummaryModalProps> = ({
                   onPress={() => setStep('checklist')}
                   activeOpacity={0.7}
                 >
-                  <Text style={styles.backStepText}>Change checklist answer</Text>
+                  <Text style={styles.backStepText}>
+                    {t('ui_surveySummaryModal.change_checklist_answer')}
+                  </Text>
                 </TouchableOpacity>
               </View>
             </ScrollView>

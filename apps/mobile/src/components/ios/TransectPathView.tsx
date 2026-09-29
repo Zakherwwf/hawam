@@ -1,3 +1,4 @@
+import { useTranslation } from 'react-i18next';
 import React from 'react';
 import { View, Text, StyleSheet, Dimensions } from 'react-native';
 import Svg, { Path, Circle, Polyline, Rect, Line, G } from 'react-native-svg';
@@ -31,22 +32,25 @@ export const TransectPathView: React.FC<TransectPathViewProps> = ({
   waypoints = [],
   routePathCoordinates,
 }) => {
+  const { t } = useTranslation();
   // SVG Canvas dimensions for map track
   const svgWidth = 330;
   const svgHeight = 160;
 
   // Visual path simulation coordinates using standard SVG Path d
-  const simulatedPathD = "M 30 130 L 70 110 L 120 115 L 170 75 L 220 60 L 270 40 L 300 35";
+  const simulatedPathD = 'M 30 130 L 70 110 L 120 115 L 170 75 L 220 60 L 270 40 L 300 35';
 
   return (
     <View style={styles.card}>
       <View style={styles.headerRow}>
         <View style={styles.headerLeft}>
           <IOSIcon name="map" size={16} color={IOSColors.systemTeal} />
-          <Text style={styles.headerTitle}>TRANSECT TRACK</Text>
+          <Text style={styles.headerTitle}>{t('ui_transectPathView.transect_track')}</Text>
         </View>
         <View style={styles.liveBeacon}>
-          <Text style={styles.liveText}>{distanceKm.toFixed(2)} km</Text>
+          <Text style={styles.liveText}>
+            {t('ui_transectPathView.km', { v0: distanceKm.toFixed(2) })}
+          </Text>
         </View>
       </View>
 
@@ -54,12 +58,54 @@ export const TransectPathView: React.FC<TransectPathViewProps> = ({
       <View style={styles.canvasWrapper}>
         <Svg width="100%" height={svgHeight} viewBox={`0 0 ${svgWidth} ${svgHeight}`}>
           {/* Subtle Grid Lines */}
-          <Line x1="0" y1="40" x2={svgWidth} y2="40" stroke="rgba(0,0,0,0.05)" strokeDasharray="4 4" />
-          <Line x1="0" y1="80" x2={svgWidth} y2="80" stroke="rgba(0,0,0,0.05)" strokeDasharray="4 4" />
-          <Line x1="0" y1="120" x2={svgWidth} y2="120" stroke="rgba(0,0,0,0.05)" strokeDasharray="4 4" />
-          <Line x1="80" y1="0" x2="80" y2={svgHeight} stroke="rgba(0,0,0,0.05)" strokeDasharray="4 4" />
-          <Line x1="160" y1="0" x2="160" y2={svgHeight} stroke="rgba(0,0,0,0.05)" strokeDasharray="4 4" />
-          <Line x1="240" y1="0" x2="240" y2={svgHeight} stroke="rgba(0,0,0,0.05)" strokeDasharray="4 4" />
+          <Line
+            x1="0"
+            y1="40"
+            x2={svgWidth}
+            y2="40"
+            stroke="rgba(0,0,0,0.05)"
+            strokeDasharray="4 4"
+          />
+          <Line
+            x1="0"
+            y1="80"
+            x2={svgWidth}
+            y2="80"
+            stroke="rgba(0,0,0,0.05)"
+            strokeDasharray="4 4"
+          />
+          <Line
+            x1="0"
+            y1="120"
+            x2={svgWidth}
+            y2="120"
+            stroke="rgba(0,0,0,0.05)"
+            strokeDasharray="4 4"
+          />
+          <Line
+            x1="80"
+            y1="0"
+            x2="80"
+            y2={svgHeight}
+            stroke="rgba(0,0,0,0.05)"
+            strokeDasharray="4 4"
+          />
+          <Line
+            x1="160"
+            y1="0"
+            x2="160"
+            y2={svgHeight}
+            stroke="rgba(0,0,0,0.05)"
+            strokeDasharray="4 4"
+          />
+          <Line
+            x1="240"
+            y1="0"
+            x2="240"
+            y2={svgHeight}
+            stroke="rgba(0,0,0,0.05)"
+            strokeDasharray="4 4"
+          />
 
           {/* Planned / Traversed Search Path (Teal line) */}
           <Path
@@ -88,13 +134,26 @@ export const TransectPathView: React.FC<TransectPathViewProps> = ({
           {/* Plotted Observation Waypoints along Transect */}
           {waypoints.map((wp, idx) => {
             // Plot points along simulated path
-            const x = 70 + (idx * 55) % 200;
-            const y = 110 - (idx * 25) % 80;
+            const x = 70 + ((idx * 55) % 200);
+            const y = 110 - ((idx * 25) % 80);
             const isCat = wp.species === 'cat';
             return (
               <G key={wp.id || idx}>
-                <Line x1={x} y1={y} x2={x} y2={y - 12} stroke="#3C3C43" strokeWidth={1} strokeDasharray="2 2" />
-                <Circle cx={x} cy={y - 14} r="8" fill={isCat ? IOSColors.systemTeal : IOSColors.systemOrange} />
+                <Line
+                  x1={x}
+                  y1={y}
+                  x2={x}
+                  y2={y - 12}
+                  stroke="#3C3C43"
+                  strokeWidth={1}
+                  strokeDasharray="2 2"
+                />
+                <Circle
+                  cx={x}
+                  cy={y - 14}
+                  r="8"
+                  fill={isCat ? IOSColors.systemTeal : IOSColors.systemOrange}
+                />
                 <Circle cx={x} cy={y} r="3" fill="#000" />
               </G>
             );
@@ -110,19 +169,19 @@ export const TransectPathView: React.FC<TransectPathViewProps> = ({
         <View style={styles.legendOverlay}>
           <View style={styles.legendItem}>
             <View style={[styles.legendDot, { backgroundColor: '#34C759' }]} />
-            <Text style={styles.legendText}>Start</Text>
+            <Text style={styles.legendText}>{t('ui_transectPathView.start')}</Text>
           </View>
           <View style={styles.legendItem}>
             <View style={[styles.legendDot, { backgroundColor: IOSColors.systemBlue }]} />
-            <Text style={styles.legendText}>Current</Text>
+            <Text style={styles.legendText}>{t('ui_transectPathView.current')}</Text>
           </View>
           <View style={styles.legendItem}>
             <View style={[styles.legendDot, { backgroundColor: IOSColors.systemTeal }]} />
-            <Text style={styles.legendText}>Cat</Text>
+            <Text style={styles.legendText}>{t('ui_transectPathView.cat')}</Text>
           </View>
           <View style={styles.legendItem}>
             <View style={[styles.legendDot, { backgroundColor: IOSColors.systemOrange }]} />
-            <Text style={styles.legendText}>Dog</Text>
+            <Text style={styles.legendText}>{t('ui_transectPathView.dog')}</Text>
           </View>
         </View>
       </View>
@@ -130,17 +189,17 @@ export const TransectPathView: React.FC<TransectPathViewProps> = ({
       {/* High-Accuracy Telemetry Bar */}
       <View style={styles.telemetryBar}>
         <View style={styles.telemetryCol}>
-          <Text style={styles.telemetryLabel}>LATITUDE</Text>
+          <Text style={styles.telemetryLabel}>{t('ui_transectPathView.latitude')}</Text>
           <Text style={styles.telemetryValue}>{currentLat.toFixed(6)}° N</Text>
         </View>
         <View style={styles.telemetryDivider} />
         <View style={styles.telemetryCol}>
-          <Text style={styles.telemetryLabel}>LONGITUDE</Text>
+          <Text style={styles.telemetryLabel}>{t('ui_transectPathView.longitude')}</Text>
           <Text style={styles.telemetryValue}>{currentLon.toFixed(6)}° E</Text>
         </View>
         <View style={styles.telemetryDivider} />
         <View style={styles.telemetryCol}>
-          <Text style={styles.telemetryLabel}>ACCURACY</Text>
+          <Text style={styles.telemetryLabel}>{t('ui_transectPathView.accuracy')}</Text>
           <Text style={styles.telemetryValue}>±{gpsAccuracyM.toFixed(1)} m</Text>
         </View>
       </View>

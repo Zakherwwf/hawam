@@ -132,14 +132,10 @@ export const GuidedPhotoScreen: React.FC<GuidedPhotoScreenProps> = ({
               >
                 <View style={{ flexDirection: 'row', alignItems: 'center', gap: 3 }}>
                   <Text style={[styles.stepDotText, isCurrent && styles.stepDotTextActive]}>
-                    Step {idx + 1}
+                    {t('ui_guidedPhoto.step', { v1: idx + 1 })}
                   </Text>
                   {isDone ? (
-                    <IOSIcon
-                      name="check"
-                      size={12}
-                      color={isCurrent ? '#000000' : '#FFFFFF'}
-                    />
+                    <IOSIcon name="check" size={12} color={isCurrent ? '#000000' : '#FFFFFF'} />
                   ) : null}
                 </View>
               </TouchableOpacity>
@@ -158,10 +154,10 @@ export const GuidedPhotoScreen: React.FC<GuidedPhotoScreenProps> = ({
           <IOSIcon name="camera" size={14} color={IOSColors.systemYellow} />
           <Text style={styles.targetText}>
             {activeAngle === 'left_flank'
-              ? 'FRAME LEFT FLANK (Asymmetric Pattern)'
+              ? t('ui_guidedPhoto.frame_left_flank_asymmetric_pattern')
               : activeAngle === 'right_flank'
-              ? 'FRAME RIGHT FLANK'
-              : 'FRAME FACE (Eyes & Nose Markings)'}
+                ? t('ui_guidedPhoto.frame_right_flank')
+                : t('ui_guidedPhoto.frame_face_eyes_nose_markings')}
           </Text>
         </View>
       </View>
@@ -187,7 +183,7 @@ export const GuidedPhotoScreen: React.FC<GuidedPhotoScreenProps> = ({
             <View style={styles.capturedOverlayContainer}>
               <View style={styles.photoCapturedPill}>
                 <IOSIcon name="check" size={15} color="#FFFFFF" />
-                <Text style={styles.photoCapturedText}>Photo Captured</Text>
+                <Text style={styles.photoCapturedText}>{t('ui_guidedPhoto.photo_captured')}</Text>
               </View>
               <TouchableOpacity
                 style={styles.retakeBtn}
@@ -198,12 +194,12 @@ export const GuidedPhotoScreen: React.FC<GuidedPhotoScreenProps> = ({
                 activeOpacity={0.8}
               >
                 <IOSIcon name="camera" size={14} color="#FFFFFF" />
-                <Text style={styles.retakeBtnText}>Retake Angle</Text>
+                <Text style={styles.retakeBtnText}>{t('ui_guidedPhoto.retake_angle')}</Text>
               </TouchableOpacity>
             </View>
           ) : (
             <Text style={styles.viewfinderHelp}>
-              Tap shutter to take photo or choose from library.
+              {t('ui_guidedPhoto.tap_shutter_to_take_photo_or')}
             </Text>
           )}
         </View>
@@ -221,7 +217,11 @@ export const GuidedPhotoScreen: React.FC<GuidedPhotoScreenProps> = ({
       <View style={styles.patternBar}>
         <Text style={styles.patternLabel}>{t('photo.coat_pattern')}:</Text>
         <View style={styles.scrollWrapper}>
-          <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.patternScroll}>
+          <ScrollView
+            horizontal
+            showsHorizontalScrollIndicator={false}
+            contentContainerStyle={styles.patternScroll}
+          >
             {coatPatterns.map((pat) => (
               <TouchableOpacity
                 key={pat.key}
@@ -276,7 +276,7 @@ export const GuidedPhotoScreen: React.FC<GuidedPhotoScreenProps> = ({
         {/* Photo Library Picker Button */}
         <TouchableOpacity style={styles.galleryButton} onPress={handlePickFromGallery}>
           <IOSIcon name="photo" size={22} color="#FFFFFF" />
-          <Text style={styles.galleryButtonText}>Library</Text>
+          <Text style={styles.galleryButtonText}>{t('ui_guidedPhoto.library')}</Text>
         </TouchableOpacity>
       </View>
     </SafeAreaView>

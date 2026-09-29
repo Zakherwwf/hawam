@@ -1,13 +1,6 @@
+import { useTranslation } from 'react-i18next';
 import React, { useState } from 'react';
-import {
-  View,
-  Text,
-  StyleSheet,
-  Modal,
-  TouchableOpacity,
-  ScrollView,
-  Image,
-} from 'react-native';
+import { View, Text, StyleSheet, Modal, TouchableOpacity, ScrollView, Image } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { IOSColors, IOSTypography, IOSLayout } from '../../theme/ios';
 import { IOSIcon, IOSSegmentedControl, IOSButton } from '../ios';
@@ -32,6 +25,7 @@ export const RoutePickerModal: React.FC<RoutePickerModalProps> = ({
   onSelectRoute,
   onClose,
 }) => {
+  const { t } = useTranslation();
   const { routes, toggleAdoptRoute } = useRoutesStore();
   const [filterMode, setFilterMode] = useState<'all' | 'adopted'>('all');
 
@@ -71,13 +65,16 @@ export const RoutePickerModal: React.FC<RoutePickerModalProps> = ({
             }}
             style={styles.navBtn}
           >
-            <Text style={styles.navBtnText}>Done</Text>
+            <Text style={styles.navBtnText}>{t('ui_routePickerModal.done')}</Text>
           </TouchableOpacity>
-          <Text style={styles.navTitle}>Transect Catalog</Text>
+          <Text style={styles.navTitle}>{t('ui_routePickerModal.transect_catalog')}</Text>
           <View style={styles.navRightPlaceholder} />
         </View>
 
-        <ScrollView contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
+        <ScrollView
+          contentContainerStyle={styles.scrollContent}
+          showsVerticalScrollIndicator={false}
+        >
           {/* Mediterranean Transect Illustration Header */}
           <View style={styles.catalogHeroWrapper}>
             <Image
@@ -91,7 +88,9 @@ export const RoutePickerModal: React.FC<RoutePickerModalProps> = ({
                   source={require('../../../assets/icon_cat_white.png')}
                   style={{ width: 14, height: 14, resizeMode: 'contain' }}
                 />
-                <Text style={styles.catalogHeroBadgeText}>MEDITERRANEAN CORRIDORS</Text>
+                <Text style={styles.catalogHeroBadgeText}>
+                  {t('ui_routePickerModal.mediterranean_corridors')}
+                </Text>
                 <Image
                   source={require('../../../assets/icon_dog_white.png')}
                   style={{ width: 14, height: 14, resizeMode: 'contain' }}
@@ -102,9 +101,9 @@ export const RoutePickerModal: React.FC<RoutePickerModalProps> = ({
 
           {/* Header Explanation */}
           <View style={styles.headerBox}>
-            <Text style={styles.headline}>Standardized Transects</Text>
+            <Text style={styles.headline}>{t('ui_routePickerModal.standardized_transects')}</Text>
             <Text style={styles.subheadline}>
-              Surveying recurring routes allows rigorous spatial mark-resight and distance sampling models for Tunis municipal policy.
+              {t('ui_routePickerModal.surveying_recurring_routes_allows_rigorous_spati')}
             </Text>
           </View>
 
@@ -129,10 +128,7 @@ export const RoutePickerModal: React.FC<RoutePickerModalProps> = ({
           {/* Free Unconstrained Route Option */}
           {filterMode === 'all' && (
             <TouchableOpacity
-              style={[
-                styles.routeCard,
-                selectedRouteId === null && styles.routeCardSelected,
-              ]}
+              style={[styles.routeCard, selectedRouteId === null && styles.routeCardSelected]}
               onPress={() => {
                 hapticButtonPress();
                 onSelectRoute(null);
@@ -143,7 +139,7 @@ export const RoutePickerModal: React.FC<RoutePickerModalProps> = ({
               <View style={styles.cardHeader}>
                 <View style={styles.zoneTag}>
                   <IOSIcon name="map" size={13} color={IOSColors.systemTeal} />
-                  <Text style={styles.zoneTagText}>EXPLORATION</Text>
+                  <Text style={styles.zoneTagText}>{t('ui_routePickerModal.exploration')}</Text>
                 </View>
                 {selectedRouteId === null && (
                   <View style={styles.selectedBadge}>
@@ -151,9 +147,11 @@ export const RoutePickerModal: React.FC<RoutePickerModalProps> = ({
                   </View>
                 )}
               </View>
-              <Text style={styles.routeTitle}>Free-Form Dynamic Route</Text>
+              <Text style={styles.routeTitle}>
+                {t('ui_routePickerModal.free_form_dynamic_route')}
+              </Text>
               <Text style={styles.routeDescription}>
-                Survey arbitrary streets or unmapped corridors. Telemetry records your exact path.
+                {t('ui_routePickerModal.survey_arbitrary_streets_or_unmapped_corridors')}
               </Text>
             </TouchableOpacity>
           )}
@@ -176,7 +174,9 @@ export const RoutePickerModal: React.FC<RoutePickerModalProps> = ({
 
                   <View style={[styles.densityBadge, { backgroundColor: densityColors.bg }]}>
                     <Text style={[styles.densityText, { color: densityColors.text }]}>
-                      {route.densityClassification.toUpperCase()} DENSITY
+                      {t('ui_routePickerModal.density', {
+                        v1: route.densityClassification.toUpperCase(),
+                      })}
                     </Text>
                   </View>
                 </View>
@@ -197,21 +197,27 @@ export const RoutePickerModal: React.FC<RoutePickerModalProps> = ({
                 {/* Metrics Pill Grid */}
                 <View style={styles.metricsRow}>
                   <View style={styles.metricPill}>
-                    <Text style={styles.metricLabel}>Distance</Text>
-                    <Text style={styles.metricValue}>{route.distanceKm} km</Text>
+                    <Text style={styles.metricLabel}>{t('ui_routePickerModal.distance')}</Text>
+                    <Text style={styles.metricValue}>
+                      {t('ui_routePickerModal.km', { distanceKm: route.distanceKm })}
+                    </Text>
                   </View>
                   <View style={styles.metricPill}>
-                    <Text style={styles.metricLabel}>Target Pace</Text>
-                    <Text style={styles.metricValue}>{route.targetPaceKmH} km/h</Text>
+                    <Text style={styles.metricLabel}>{t('ui_routePickerModal.target_pace')}</Text>
+                    <Text style={styles.metricValue}>
+                      {t('ui_routePickerModal.km_h', { targetPaceKmH: route.targetPaceKmH })}
+                    </Text>
                   </View>
                   <View style={styles.metricPill}>
-                    <Text style={styles.metricLabel}>Surveyed</Text>
-                    <Text style={styles.metricValue}>{route.timesSurveyed} times</Text>
+                    <Text style={styles.metricLabel}>{t('ui_routePickerModal.surveyed')}</Text>
+                    <Text style={styles.metricValue}>
+                      {t('ui_routePickerModal.times', { timesSurveyed: route.timesSurveyed })}
+                    </Text>
                   </View>
                   <View style={styles.metricPill}>
-                    <Text style={styles.metricLabel}>Bonus</Text>
+                    <Text style={styles.metricLabel}>{t('ui_routePickerModal.bonus')}</Text>
                     <Text style={[styles.metricValue, { color: IOSColors.systemTeal }]}>
-                      +{route.bonusXp} XP
+                      {t('ui_routePickerModal.xp', { bonusXp: route.bonusXp })}
                     </Text>
                   </View>
                 </View>
@@ -219,10 +225,7 @@ export const RoutePickerModal: React.FC<RoutePickerModalProps> = ({
                 {/* Adoption and Selection Actions */}
                 <View style={styles.cardActions}>
                   <TouchableOpacity
-                    style={[
-                      styles.adoptBtn,
-                      route.isAdopted && styles.adoptBtnActive,
-                    ]}
+                    style={[styles.adoptBtn, route.isAdopted && styles.adoptBtnActive]}
                     onPress={() => {
                       hapticSuccess();
                       toggleAdoptRoute(route.id);
@@ -235,21 +238,17 @@ export const RoutePickerModal: React.FC<RoutePickerModalProps> = ({
                       color={route.isAdopted ? '#FFFFFF' : IOSColors.systemIndigo}
                     />
                     <Text
-                      style={[
-                        styles.adoptBtnText,
-                        route.isAdopted && styles.adoptBtnTextActive,
-                      ]}
+                      style={[styles.adoptBtnText, route.isAdopted && styles.adoptBtnTextActive]}
                       numberOfLines={1}
                     >
-                      {route.isAdopted ? 'Adopted' : 'Adopt Route'}
+                      {route.isAdopted
+                        ? t('ui_routePickerModal.adopted')
+                        : t('ui_routePickerModal.adopt_route')}
                     </Text>
                   </TouchableOpacity>
 
                   <TouchableOpacity
-                    style={[
-                      styles.selectBtn,
-                      isSelected && styles.selectBtnActive,
-                    ]}
+                    style={[styles.selectBtn, isSelected && styles.selectBtnActive]}
                     onPress={() => {
                       hapticButtonPress();
                       onSelectRoute(route);
@@ -258,13 +257,12 @@ export const RoutePickerModal: React.FC<RoutePickerModalProps> = ({
                     activeOpacity={0.7}
                   >
                     <Text
-                      style={[
-                        styles.selectBtnText,
-                        isSelected && styles.selectBtnTextActive,
-                      ]}
+                      style={[styles.selectBtnText, isSelected && styles.selectBtnTextActive]}
                       numberOfLines={1}
                     >
-                      {isSelected ? 'Active Route' : 'Select'}
+                      {isSelected
+                        ? t('ui_routePickerModal.active_route')
+                        : t('ui_routePickerModal.select')}
                     </Text>
                   </TouchableOpacity>
                 </View>
@@ -275,9 +273,11 @@ export const RoutePickerModal: React.FC<RoutePickerModalProps> = ({
           {filteredRoutes.length === 0 && filterMode === 'adopted' && (
             <View style={styles.emptyState}>
               <IOSIcon name="shield" size={36} color={IOSColors.systemGray3} />
-              <Text style={styles.emptyTitle}>No Adopted Routes Yet</Text>
+              <Text style={styles.emptyTitle}>
+                {t('ui_routePickerModal.no_adopted_routes_yet')}
+              </Text>
               <Text style={styles.emptySubtitle}>
-                Switch to 'All Transects' and tap 'Adopt Route' to become a Route Guardian and earn repeat-survey bonuses.
+                {t('ui_routePickerModal.switch_to_all_transects_and_tap')}
               </Text>
             </View>
           )}

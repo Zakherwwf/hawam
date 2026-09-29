@@ -44,11 +44,13 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({
   const { t } = useTranslation();
   const { themeMode, colors, toggleTheme } = useThemeStore();
 
-  const dateFormatted = new Date().toLocaleDateString('en-GB', {
-    weekday: 'short',
-    day: 'numeric',
-    month: 'short',
-  }).toUpperCase();
+  const dateFormatted = new Date()
+    .toLocaleDateString('en-GB', {
+      weekday: 'short',
+      day: 'numeric',
+      month: 'short',
+    })
+    .toUpperCase();
 
   const effortIndexPercent = Math.min(100, Math.max(15, stats.sessionsCompleted * 10));
 
@@ -83,7 +85,9 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({
                 </View>
                 <View style={styles.frostedInstitutionPill}>
                   <IOSIcon name="shield" size={12} color="#D9F944" />
-                  <Text style={styles.frostedInstitutionText}>{userAccount?.organization || 'Institut Pasteur'}</Text>
+                  <Text style={styles.frostedInstitutionText}>
+                    {userAccount?.organization || t('ui_home.institut_pasteur')}
+                  </Text>
                 </View>
               </View>
 
@@ -98,16 +102,20 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({
                     activeOpacity={0.8}
                   >
                     <IOSIcon name="map" size={13} color="#0F172A" />
-                    <Text style={styles.heroMapToggleText}>Live Map</Text>
+                    <Text style={styles.heroMapToggleText}>{t('ui_home.live_map')}</Text>
                   </TouchableOpacity>
                 )}
                 <TouchableOpacity
                   style={styles.heroSettingsBtn}
                   onPress={toggleTheme}
                   activeOpacity={0.8}
-                  accessibilityLabel="Toggle Day or Night theme"
+                  accessibilityLabel={t('ui_home.toggle_day_or_night_theme')}
                 >
-                  <IOSIcon name={themeMode === 'night' ? 'moon' : 'sun'} size={15} color="#FFFFFF" />
+                  <IOSIcon
+                    name={themeMode === 'night' ? 'moon' : 'sun'}
+                    size={15}
+                    color="#FFFFFF"
+                  />
                 </TouchableOpacity>
                 {onOpenSettings && (
                   <TouchableOpacity
@@ -131,11 +139,13 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({
             <View style={styles.bentoTile}>
               <View style={styles.bentoTopRow}>
                 <View style={styles.bentoLabelGroup}>
-                  <Text style={styles.bentoLabelText}>FIELD TELEMETRY EFFORT</Text>
-                  <Text style={styles.bentoSubLabelText}>Verified Standardized Surveys</Text>
+                  <Text style={styles.bentoLabelText}>{t('ui_home.field_telemetry_effort')}</Text>
+                  <Text style={styles.bentoSubLabelText}>
+                    {t('ui_home.verified_standardized_surveys')}
+                  </Text>
                 </View>
                 <View style={styles.bentoCitronBadge}>
-                  <Text style={styles.bentoCitronBadgeText}>TIER 1</Text>
+                  <Text style={styles.bentoCitronBadgeText}>{t('ui_home.tier_1')}</Text>
                 </View>
               </View>
 
@@ -159,15 +169,12 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({
               {/* Electric Citron Progress Bar */}
               <View style={styles.bentoProgressContainer}>
                 <View style={styles.bentoProgressTrack}>
-                  <View
-                    style={[
-                      styles.bentoProgressFill,
-                      { width: `${effortIndexPercent}%` },
-                    ]}
-                  />
+                  <View style={[styles.bentoProgressFill, { width: `${effortIndexPercent}%` }]} />
                 </View>
                 <View style={styles.bentoProgressFoot}>
-                  <Text style={styles.bentoProgressFootText}>Census Effort Completion</Text>
+                  <Text style={styles.bentoProgressFootText}>
+                    {t('ui_home.census_effort_completion')}
+                  </Text>
                   <Text style={styles.bentoProgressFootVal}>{effortIndexPercent}%</Text>
                 </View>
               </View>
@@ -175,8 +182,8 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({
 
             {/* Field Operations Section Header */}
             <View style={styles.sectionHeaderRow}>
-              <Text style={styles.sectionTitle}>Field Operations</Text>
-              <Text style={styles.sectionBadge}>ACTIVE WORKFLOWS</Text>
+              <Text style={styles.sectionTitle}>{t('ui_home.field_operations')}</Text>
+              <Text style={styles.sectionBadge}>{t('ui_home.active_workflows')}</Text>
             </View>
 
             {/* Featured Action Bento Card: Start Standardized Transect */}
@@ -199,19 +206,19 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({
                     <IOSIcon name="compass" size={18} color="#D9F944" />
                   </View>
                   <View style={styles.featuredProtocolBadge}>
-                    <Text style={styles.featuredProtocolText}>DISTANCE SAMPLING</Text>
+                    <Text style={styles.featuredProtocolText}>
+                      {t('ui_home.distance_sampling')}
+                    </Text>
                   </View>
                 </View>
 
                 <Text style={styles.featuredTitle}>{t('home.start_survey_btn')}</Text>
-                <Text style={styles.featuredSubtitle}>
-                  {t('home.start_survey_subtitle')}
-                </Text>
+                <Text style={styles.featuredSubtitle}>{t('home.start_survey_subtitle')}</Text>
 
                 <View style={styles.featuredBottomRow}>
                   <View style={styles.activePillLive}>
                     <View style={styles.livePulseDot} />
-                    <Text style={styles.activePillLiveText}>Standard Protocol</Text>
+                    <Text style={styles.activePillLiveText}>{t('ui_home.standard_protocol')}</Text>
                   </View>
                   <View style={styles.startArrowCircle}>
                     <IOSIcon name="chevronRight" size={13} color="#0F172A" />
@@ -242,7 +249,9 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({
                   {t('home.quick_sighting_subtitle')}
                 </Text>
                 <View style={styles.splitCardFooter}>
-                  <Text style={[styles.splitFooterTag, { color: '#D97706' }]}>Incidental</Text>
+                  <Text style={[styles.splitFooterTag, { color: '#D97706' }]}>
+                    {t('ui_home.incidental')}
+                  </Text>
                   <IOSIcon name="chevronRight" size={12} color="#94A3B8" />
                 </View>
               </TouchableOpacity>
@@ -264,7 +273,9 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({
                   {t('home.training_subtitle')}
                 </Text>
                 <View style={styles.splitCardFooter}>
-                  <Text style={[styles.splitFooterTag, { color: '#4F46E5' }]}>Certification</Text>
+                  <Text style={[styles.splitFooterTag, { color: '#4F46E5' }]}>
+                    {t('ui_home.certification')}
+                  </Text>
                   <IOSIcon name="chevronRight" size={12} color="#94A3B8" />
                 </View>
               </TouchableOpacity>
@@ -277,21 +288,21 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({
                 subtitle={t('home.spatial_charter_sub')}
                 icon="location"
                 iconColor={IOSColors.systemGreen}
-                value="Active"
+                value={t('ui_home.active')}
               />
               <IOSListRow
                 title={t('home.statistical_models_title')}
                 subtitle={t('home.statistical_models_sub')}
                 icon="chart"
                 iconColor={IOSColors.systemIndigo}
-                value="Standard"
+                value={t('ui_home.standard')}
               />
               <IOSListRow
-                title="Darwin Core & SECR Matrices"
-                subtitle="Automated export compatibility for R and GBIF"
+                title={t('ui_home.darwin_core_secr_matrices')}
+                subtitle={t('ui_home.automated_export_compatibility_for_r_and')}
                 icon="squareStack"
                 iconColor={IOSColors.systemPurple}
-                value="Ready"
+                value={t('ui_home.ready')}
                 isLast
               />
             </IOSGroupedList>

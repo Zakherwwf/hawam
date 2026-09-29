@@ -1,12 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import {
-  View,
-  Text,
-  StyleSheet,
-  ScrollView,
-  TouchableOpacity,
-  Platform,
-} from 'react-native';
+import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Platform } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useTranslation } from 'react-i18next';
 import { LinearGradient } from 'expo-linear-gradient';
@@ -16,11 +9,7 @@ import { colors, typography, spacing, radius, touchTargets } from '@tunisia-surv
 import { Icon } from '../components/design-system/Icon';
 import { Button } from '../components/design-system/Button';
 import { IOSSegmentedControl } from '../components/ios';
-import {
-  hapticTabSwitch,
-  hapticButtonPress,
-  hapticSuccess,
-} from '../utils/haptics';
+import { hapticTabSwitch, hapticButtonPress, hapticSuccess } from '../utils/haptics';
 
 export const CURRENT_CONSENT_VERSION = 'v1.0-tn-pasteur';
 
@@ -31,18 +20,21 @@ interface ConsentScreenProps {
 
 type OnboardingStep = 0 | 1 | 2 | 3;
 
-export const ConsentScreen: React.FC<ConsentScreenProps> = ({
-  onAccept,
-  onLanguageChange,
-}) => {
+export const ConsentScreen: React.FC<ConsentScreenProps> = ({ onAccept, onLanguageChange }) => {
   const { t, i18n } = useTranslation();
   const [currentStep, setCurrentStep] = useState<OnboardingStep>(0);
   const [agreed, setAgreed] = useState(false);
 
   // Permission statuses
-  const [fgLocationStatus, setFgLocationStatus] = useState<'undetermined' | 'granted' | 'denied'>('undetermined');
-  const [bgLocationStatus, setBgLocationStatus] = useState<'undetermined' | 'granted' | 'denied'>('undetermined');
-  const [cameraStatus, setCameraStatus] = useState<'undetermined' | 'granted' | 'denied'>('undetermined');
+  const [fgLocationStatus, setFgLocationStatus] = useState<'undetermined' | 'granted' | 'denied'>(
+    'undetermined'
+  );
+  const [bgLocationStatus, setBgLocationStatus] = useState<'undetermined' | 'granted' | 'denied'>(
+    'undetermined'
+  );
+  const [cameraStatus, setCameraStatus] = useState<'undetermined' | 'granted' | 'denied'>(
+    'undetermined'
+  );
   const [isRequestingPermissions, setIsRequestingPermissions] = useState(false);
 
   // Check existing permissions on mount
@@ -51,13 +43,16 @@ export const ConsentScreen: React.FC<ConsentScreenProps> = ({
     const checkPermissions = async () => {
       try {
         const fg = await Location.getForegroundPermissionsAsync();
-        if (isMounted) setFgLocationStatus(fg.granted ? 'granted' : fg.canAskAgain ? 'undetermined' : 'denied');
+        if (isMounted)
+          setFgLocationStatus(fg.granted ? 'granted' : fg.canAskAgain ? 'undetermined' : 'denied');
 
         const bg = await Location.getBackgroundPermissionsAsync();
-        if (isMounted) setBgLocationStatus(bg.granted ? 'granted' : bg.canAskAgain ? 'undetermined' : 'denied');
+        if (isMounted)
+          setBgLocationStatus(bg.granted ? 'granted' : bg.canAskAgain ? 'undetermined' : 'denied');
 
         const cam = await ImagePicker.getCameraPermissionsAsync();
-        if (isMounted) setCameraStatus(cam.granted ? 'granted' : cam.canAskAgain ? 'undetermined' : 'denied');
+        if (isMounted)
+          setCameraStatus(cam.granted ? 'granted' : cam.canAskAgain ? 'undetermined' : 'denied');
       } catch {
         // Fallback for mock environments
       }
@@ -133,17 +128,17 @@ export const ConsentScreen: React.FC<ConsentScreenProps> = ({
               onPress={handlePrevStep}
               style={styles.backButton}
               accessibilityRole="button"
-              accessibilityLabel="Back to previous step"
+              accessibilityLabel={t('ui_consent.back_to_previous_step')}
             >
               <Icon name="chevron-left" size={20} color={colors.light.label} />
-              <Text style={styles.backButtonText}>Back</Text>
+              <Text style={styles.backButtonText}>{t('ui_consent.back')}</Text>
             </TouchableOpacity>
           ) : (
             <View style={styles.backPlaceholder} />
           )}
 
           <View style={styles.topRightBadge}>
-            <Text style={styles.topRightBadgeText}>HAWEM V2.0</Text>
+            <Text style={styles.topRightBadgeText}>{t('ui_consent.hawem_v2_0')}</Text>
           </View>
         </View>
 
@@ -171,11 +166,10 @@ export const ConsentScreen: React.FC<ConsentScreenProps> = ({
               <View style={styles.heroIconWrapper}>
                 <Icon name="shield" size={40} color={colors.light.accent} />
               </View>
-              <Text style={styles.stepPill}>FAUNA OBSERVATORY</Text>
-              <Text style={styles.stepTitle}>Scientific Field Monitoring</Text>
+              <Text style={styles.stepPill}>{t('ui_consent.fauna_observatory')}</Text>
+              <Text style={styles.stepTitle}>{t('ui_consent.scientific_field_monitoring')}</Text>
               <Text style={styles.stepSubtitle}>
-                Hawem powers structured stray dog and cat population surveillance across Tunisia in
-                partnership with veterinary researchers and the Pasteur Institute.
+                {t('ui_consent.hawem_powers_structured_stray_dog_and')}
               </Text>
 
               <View style={styles.featureList}>
@@ -184,10 +178,11 @@ export const ConsentScreen: React.FC<ConsentScreenProps> = ({
                     <Icon name="compass" size={18} color="#FFFFFF" />
                   </View>
                   <View style={styles.featureDetails}>
-                    <Text style={styles.featureHeading}>Standardized Transects</Text>
+                    <Text style={styles.featureHeading}>
+                      {t('ui_consent.standardized_transects')}
+                    </Text>
                     <Text style={styles.featureDescription}>
-                      Replacing guesswork with calibrated distance-sampling walks and reproducible spatial
-                      routes.
+                      {t('ui_consent.replacing_guesswork_with_calibrated_distance_sam')}
                     </Text>
                   </View>
                 </View>
@@ -197,10 +192,11 @@ export const ConsentScreen: React.FC<ConsentScreenProps> = ({
                     <Icon name="animals" size={18} color="#FFFFFF" />
                   </View>
                   <View style={styles.featureDetails}>
-                    <Text style={styles.featureHeading}>Individual Health & Welfare</Text>
+                    <Text style={styles.featureHeading}>
+                      {t('ui_consent.individual_health_welfare')}
+                    </Text>
                     <Text style={styles.featureDescription}>
-                      Observing body condition (BCS 1-5), reproductive status, ear-notches, and rabies
-                      vaccination tags.
+                      {t('ui_consent.observing_body_condition_bcs_1_5')}
                     </Text>
                   </View>
                 </View>
@@ -210,9 +206,11 @@ export const ConsentScreen: React.FC<ConsentScreenProps> = ({
                     <Icon name="map" size={18} color="#FFFFFF" />
                   </View>
                   <View style={styles.featureDetails}>
-                    <Text style={styles.featureHeading}>Evidence-Based Policy</Text>
+                    <Text style={styles.featureHeading}>
+                      {t('ui_consent.evidence_based_policy')}
+                    </Text>
                     <Text style={styles.featureDescription}>
-                      Data drives humane trap-neuter-vaccinate-return (TNVR) allocation rather than lethal culling.
+                      {t('ui_consent.data_drives_humane_trap_neuter_vaccinate')}
                     </Text>
                   </View>
                 </View>
@@ -226,11 +224,10 @@ export const ConsentScreen: React.FC<ConsentScreenProps> = ({
               <View style={styles.heroIconWrapper}>
                 <Icon name="survey" size={40} color={colors.light.accent} />
               </View>
-              <Text style={styles.stepPill}>SAMPLING METHODOLOGY</Text>
-              <Text style={styles.stepTitle}>How Transect Walks Work</Text>
+              <Text style={styles.stepPill}>{t('ui_consent.sampling_methodology')}</Text>
+              <Text style={styles.stepTitle}>{t('ui_consent.how_transect_walks_work')}</Text>
               <Text style={styles.stepSubtitle}>
-                Scientific surveys record your track continuously to estimate total animal density per square
-                kilometer.
+                {t('ui_consent.scientific_surveys_record_your_track_continuousl')}
               </Text>
 
               <View style={styles.featureList}>
@@ -239,10 +236,11 @@ export const ConsentScreen: React.FC<ConsentScreenProps> = ({
                     <Icon name="survey" size={18} color="#FFFFFF" />
                   </View>
                   <View style={styles.featureDetails}>
-                    <Text style={styles.featureHeading}>Pace & Path Continuity</Text>
+                    <Text style={styles.featureHeading}>
+                      {t('ui_consent.pace_path_continuity')}
+                    </Text>
                     <Text style={styles.featureDescription}>
-                      Walk at a normal steady pace (2 to 5 km/h). Avoid lingering in one spot. Speeds above
-                      15 km/h are filtered out.
+                      {t('ui_consent.walk_at_a_normal_steady_pace')}
                     </Text>
                   </View>
                 </View>
@@ -252,23 +250,27 @@ export const ConsentScreen: React.FC<ConsentScreenProps> = ({
                     <Icon name="check" size={18} color="#FFFFFF" />
                   </View>
                   <View style={styles.featureDetails}>
-                    <Text style={styles.featureHeading}>The Value of Zero Sightings</Text>
+                    <Text style={styles.featureHeading}>
+                      {t('ui_consent.the_value_of_zero_sightings')}
+                    </Text>
                     <Text style={styles.featureDescription}>
-                      A transect where you see zero animals is high-value negative evidence. It proves absence in
-                      that zone and earns equal scientific XP.
+                      {t('ui_consent.a_transect_where_you_see_zero')}
                     </Text>
                   </View>
                 </View>
 
                 <View style={styles.featureItem}>
-                  <View style={[styles.featureBullet, { backgroundColor: colors.light.labelTertiary }]}>
+                  <View
+                    style={[styles.featureBullet, { backgroundColor: colors.light.labelTertiary }]}
+                  >
                     <Icon name="crosshair" size={18} color="#FFFFFF" />
                   </View>
                   <View style={styles.featureDetails}>
-                    <Text style={styles.featureHeading}>Perpendicular Distance</Text>
+                    <Text style={styles.featureHeading}>
+                      {t('ui_consent.perpendicular_distance')}
+                    </Text>
                     <Text style={styles.featureDescription}>
-                      Note how far an animal is from your walk line. Distance modeling mathematically corrects
-                      for animals missed further away.
+                      {t('ui_consent.note_how_far_an_animal_is')}
                     </Text>
                   </View>
                 </View>
@@ -282,10 +284,10 @@ export const ConsentScreen: React.FC<ConsentScreenProps> = ({
               <View style={styles.heroIconWrapper}>
                 <Icon name="settings" size={40} color={colors.light.accent} />
               </View>
-              <Text style={styles.stepPill}>SENSOR ACCESS</Text>
-              <Text style={styles.stepTitle}>Device Permissions</Text>
+              <Text style={styles.stepPill}>{t('ui_consent.sensor_access')}</Text>
+              <Text style={styles.stepTitle}>{t('ui_consent.device_permissions')}</Text>
               <Text style={styles.stepSubtitle}>
-                We explain why each sensor is required before your operating system displays a prompt.
+                {t('ui_consent.we_explain_why_each_sensor_is')}
               </Text>
 
               <View style={styles.permissionList}>
@@ -296,7 +298,9 @@ export const ConsentScreen: React.FC<ConsentScreenProps> = ({
                   </View>
                   <View style={styles.permissionBodyCol}>
                     <View style={styles.permissionTitleRow}>
-                      <Text style={styles.permissionTitle}>Foreground Location</Text>
+                      <Text style={styles.permissionTitle}>
+                        {t('ui_consent.foreground_location')}
+                      </Text>
                       <View
                         style={[
                           styles.statusBadge,
@@ -313,12 +317,14 @@ export const ConsentScreen: React.FC<ConsentScreenProps> = ({
                               : styles.statusBadgeTextPending,
                           ]}
                         >
-                          {fgLocationStatus === 'granted' ? 'GRANTED' : 'REQUIRED'}
+                          {fgLocationStatus === 'granted'
+                            ? t('ui_consent.granted')
+                            : t('ui_consent.required')}
                         </Text>
                       </View>
                     </View>
                     <Text style={styles.permissionText}>
-                      Records GPS track points and calculates distance and pace while performing transect walks.
+                      {t('ui_consent.records_gps_track_points_and_calculates')}
                     </Text>
                   </View>
                 </View>
@@ -330,7 +336,9 @@ export const ConsentScreen: React.FC<ConsentScreenProps> = ({
                   </View>
                   <View style={styles.permissionBodyCol}>
                     <View style={styles.permissionTitleRow}>
-                      <Text style={styles.permissionTitle}>Background Location</Text>
+                      <Text style={styles.permissionTitle}>
+                        {t('ui_consent.background_location')}
+                      </Text>
                       <View
                         style={[
                           styles.statusBadge,
@@ -347,13 +355,14 @@ export const ConsentScreen: React.FC<ConsentScreenProps> = ({
                               : styles.statusBadgeTextPending,
                           ]}
                         >
-                          {bgLocationStatus === 'granted' ? 'GRANTED' : 'RECOMMENDED'}
+                          {bgLocationStatus === 'granted'
+                            ? t('ui_consent.granted')
+                            : t('ui_consent.recommended')}
                         </Text>
                       </View>
                     </View>
                     <Text style={styles.permissionText}>
-                      Keeps recording your transect line even when your phone is locked or screen is off in your
-                      pocket.
+                      {t('ui_consent.keeps_recording_your_transect_line_even')}
                     </Text>
                   </View>
                 </View>
@@ -365,7 +374,7 @@ export const ConsentScreen: React.FC<ConsentScreenProps> = ({
                   </View>
                   <View style={styles.permissionBodyCol}>
                     <View style={styles.permissionTitleRow}>
-                      <Text style={styles.permissionTitle}>Camera</Text>
+                      <Text style={styles.permissionTitle}>{t('ui_consent.camera')}</Text>
                       <View
                         style={[
                           styles.statusBadge,
@@ -382,13 +391,14 @@ export const ConsentScreen: React.FC<ConsentScreenProps> = ({
                               : styles.statusBadgeTextPending,
                           ]}
                         >
-                          {cameraStatus === 'granted' ? 'GRANTED' : 'REQUIRED'}
+                          {cameraStatus === 'granted'
+                            ? t('ui_consent.granted')
+                            : t('ui_consent.required')}
                         </Text>
                       </View>
                     </View>
                     <Text style={styles.permissionText}>
-                      Allows capturing flank and face photographs for individual animal re-identification and
-                      body scoring.
+                      {t('ui_consent.allows_capturing_flank_and_face_photographs')}
                     </Text>
                   </View>
                 </View>
@@ -402,7 +412,9 @@ export const ConsentScreen: React.FC<ConsentScreenProps> = ({
               >
                 <Icon name="check" size={18} color="#FFFFFF" />
                 <Text style={styles.grantButtonText}>
-                  {isRequestingPermissions ? 'Requesting Permissions...' : 'Grant Device Permissions'}
+                  {isRequestingPermissions
+                    ? t('ui_consent.requesting_permissions')
+                    : t('ui_consent.grant_device_permissions')}
                 </Text>
               </TouchableOpacity>
             </View>
@@ -414,10 +426,12 @@ export const ConsentScreen: React.FC<ConsentScreenProps> = ({
               <View style={styles.heroIconWrapper}>
                 <Icon name="award" size={40} color={colors.light.accent} />
               </View>
-              <Text style={styles.stepPill}>PROTOCOL CHARTER · {CURRENT_CONSENT_VERSION}</Text>
-              <Text style={styles.stepTitle}>Surveyor Code of Conduct</Text>
+              <Text style={styles.stepPill}>
+                {t('ui_consent.protocol_charter', { CURRENT_CONSENT_VERSION })}
+              </Text>
+              <Text style={styles.stepTitle}>{t('ui_consent.surveyor_code_of_conduct')}</Text>
               <Text style={styles.stepSubtitle}>
-                Observing free-roaming animals requires adherence to strict ethics and privacy principles.
+                {t('ui_consent.observing_free_roaming_animals_requires_adherenc')}
               </Text>
 
               <View style={styles.featureList}>
@@ -426,10 +440,11 @@ export const ConsentScreen: React.FC<ConsentScreenProps> = ({
                     <Icon name="shield" size={18} color="#FFFFFF" />
                   </View>
                   <View style={styles.featureDetails}>
-                    <Text style={styles.featureHeading}>Absolute Geodata Protection</Text>
+                    <Text style={styles.featureHeading}>
+                      {t('ui_consent.absolute_geodata_protection')}
+                    </Text>
                     <Text style={styles.featureDescription}>
-                      High-resolution coordinates are strictly confidential and never publicly released,
-                      preventing municipal culling or poisoning risks. Public maps display only aggregated cells.
+                      {t('ui_consent.high_resolution_coordinates_are_strictly_confide')}
                     </Text>
                   </View>
                 </View>
@@ -439,23 +454,27 @@ export const ConsentScreen: React.FC<ConsentScreenProps> = ({
                     <Icon name="animals" size={18} color="#FFFFFF" />
                   </View>
                   <View style={styles.featureDetails}>
-                    <Text style={styles.featureHeading}>Non-Invasive Observation</Text>
+                    <Text style={styles.featureHeading}>
+                      {t('ui_consent.non_invasive_observation')}
+                    </Text>
                     <Text style={styles.featureDescription}>
-                      Never chase, corner, corner, or handle free-roaming animals. Observe from a calm distance
-                      without altering natural behavior.
+                      {t('ui_consent.never_chase_corner_corner_or_handle')}
                     </Text>
                   </View>
                 </View>
 
                 <View style={styles.featureItem}>
-                  <View style={[styles.featureBullet, { backgroundColor: colors.light.labelTertiary }]}>
+                  <View
+                    style={[styles.featureBullet, { backgroundColor: colors.light.labelTertiary }]}
+                  >
                     <Icon name="user" size={18} color="#FFFFFF" />
                   </View>
                   <View style={styles.featureDetails}>
-                    <Text style={styles.featureHeading}>Human Privacy & Safety</Text>
+                    <Text style={styles.featureHeading}>
+                      {t('ui_consent.human_privacy_safety')}
+                    </Text>
                     <Text style={styles.featureDescription}>
-                      Never photograph bystanders, private properties, or license plates. All photos are
-                      automatically scrubbed of EXIF metadata before upload.
+                      {t('ui_consent.never_photograph_bystanders_private_properties_o')}
                     </Text>
                   </View>
                 </View>
@@ -474,7 +493,9 @@ export const ConsentScreen: React.FC<ConsentScreenProps> = ({
                   {agreed && <Icon name="check" size={16} color="#FFFFFF" />}
                 </View>
                 <Text style={styles.agreementText}>
-                  I accept the scientific ethics charter, privacy terms, and versioned protocol ({CURRENT_CONSENT_VERSION}).
+                  {t('ui_consent.i_accept_the_scientific_ethics_charter', {
+                    CURRENT_CONSENT_VERSION,
+                  })}
                 </Text>
               </TouchableOpacity>
             </View>
@@ -485,14 +506,14 @@ export const ConsentScreen: React.FC<ConsentScreenProps> = ({
         <View style={styles.bottomFooter}>
           {currentStep < 3 ? (
             <Button
-              title="Continue"
+              title={t('ui_consent.continue')}
               variant="primary"
               size="lg"
               onPress={handleNextStep}
             />
           ) : (
             <Button
-              title="Accept Charter & Start"
+              title={t('ui_consent.accept_charter_start')}
               variant="primary"
               size="lg"
               disabled={!agreed}

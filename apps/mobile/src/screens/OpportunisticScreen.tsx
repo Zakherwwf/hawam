@@ -55,8 +55,8 @@ interface IcamBcsTier {
 const ICAM_BCS_TIERS: IcamBcsTier[] = [
   {
     score: 1,
-    name: 'Score 1 • Emaciated',
-    status: 'Critical Alert',
+    name: 'ui_opportunistic.score_1_emaciated',
+    status: 'ui_opportunistic.critical_alert',
     accentColor: '#EF4444',
     bgColor: '#FEF2F2',
     borderColor: '#FCA5A5',
@@ -64,8 +64,8 @@ const ICAM_BCS_TIERS: IcamBcsTier[] = [
   },
   {
     score: 2,
-    name: 'Score 2 • Underweight',
-    status: 'Lean Frame',
+    name: 'ui_opportunistic.score_2_underweight',
+    status: 'ui_opportunistic.lean_frame',
     accentColor: '#F59E0B',
     bgColor: '#FFFBEB',
     borderColor: '#FDE68A',
@@ -73,8 +73,8 @@ const ICAM_BCS_TIERS: IcamBcsTier[] = [
   },
   {
     score: 3,
-    name: 'Score 3 • Ideal',
-    status: 'ICAM Benchmark',
+    name: 'ui_opportunistic.score_3_ideal',
+    status: 'ui_opportunistic.icam_benchmark',
     accentColor: '#10B981',
     bgColor: '#ECFDF5',
     borderColor: '#A7F3D0',
@@ -82,8 +82,8 @@ const ICAM_BCS_TIERS: IcamBcsTier[] = [
   },
   {
     score: 4,
-    name: 'Score 4 • Overweight',
-    status: 'Heavy Cover',
+    name: 'ui_opportunistic.score_4_overweight',
+    status: 'ui_opportunistic.heavy_cover',
     accentColor: '#F59E0B',
     bgColor: '#FFFBEB',
     borderColor: '#FDE68A',
@@ -91,8 +91,8 @@ const ICAM_BCS_TIERS: IcamBcsTier[] = [
   },
   {
     score: 5,
-    name: 'Score 5 • Obese',
-    status: 'High Risk',
+    name: 'ui_opportunistic.score_5_obese',
+    status: 'ui_opportunistic.high_risk',
     accentColor: '#EF4444',
     bgColor: '#FEF2F2',
     borderColor: '#FCA5A5',
@@ -101,43 +101,43 @@ const ICAM_BCS_TIERS: IcamBcsTier[] = [
 ];
 
 const AGE_CLASS_OPTIONS: { label: string; value: AgeClass }[] = [
-  { label: 'Adult', value: 'adult' },
-  { label: 'Juvenile / Kitten / Puppy', value: 'juvenile' },
-  { label: 'Unknown', value: 'unknown' },
+  { label: 'ui_opportunistic.adult', value: 'adult' },
+  { label: 'ui_opportunistic.juvenile_kitten_puppy', value: 'juvenile' },
+  { label: 'ui_opportunistic.unknown', value: 'unknown' },
 ];
 
 const COLLAR_OPTIONS: { label: string; value: YesNoUnknown }[] = [
-  { label: 'No Collar (Free-Roaming)', value: 'no' },
-  { label: 'Collared / Tagged (Owned)', value: 'yes' },
-  { label: 'Uncertain', value: 'unknown' },
+  { label: 'ui_opportunistic.no_collar_free_roaming', value: 'no' },
+  { label: 'ui_opportunistic.collared_tagged_owned', value: 'yes' },
+  { label: 'ui_opportunistic.uncertain', value: 'unknown' },
 ];
 
 const HABITAT_OPTIONS: { label: string; value: HabitatType }[] = [
-  { label: 'Residential Street', value: 'residential' },
-  { label: 'Market / Souk', value: 'market' },
-  { label: 'Waste Dump / Bin Site', value: 'landfill_garbage_site' },
-  { label: 'Commercial Zone', value: 'commercial' },
-  { label: 'Port / Coastal Area', value: 'beach_coastal' },
-  { label: 'Rural / Agricultural', value: 'agricultural' },
-  { label: 'Slaughterhouse Perimeter', value: 'slaughterhouse_vicinity' },
-  { label: 'Natural / Parkland', value: 'natural_area' },
-  { label: 'Other', value: 'other' },
+  { label: 'ui_opportunistic.residential_street', value: 'residential' },
+  { label: 'ui_opportunistic.market_souk', value: 'market' },
+  { label: 'ui_opportunistic.waste_dump_bin_site', value: 'landfill_garbage_site' },
+  { label: 'ui_opportunistic.commercial_zone', value: 'commercial' },
+  { label: 'ui_opportunistic.port_coastal_area', value: 'beach_coastal' },
+  { label: 'ui_opportunistic.rural_agricultural', value: 'agricultural' },
+  { label: 'ui_opportunistic.slaughterhouse_perimeter', value: 'slaughterhouse_vicinity' },
+  { label: 'ui_opportunistic.natural_parkland', value: 'natural_area' },
+  { label: 'ui_opportunistic.other', value: 'other' },
 ];
 
 const TEMPERAMENT_OPTIONS: { label: string; value: AnimalBehaviour }[] = [
-  { label: 'Approachable', value: 'approachable' },
-  { label: 'Neutral', value: 'neutral' },
-  { label: 'Fearful', value: 'fearful' },
-  { label: 'Aggressive', value: 'aggressive' },
+  { label: 'ui_opportunistic.approachable', value: 'approachable' },
+  { label: 'ui_opportunistic.neutral', value: 'neutral' },
+  { label: 'ui_opportunistic.fearful', value: 'fearful' },
+  { label: 'ui_opportunistic.aggressive', value: 'aggressive' },
 ];
 
 const HEALTH_ISSUE_OPTIONS: { key: HealthIssue; label: string }[] = [
-  { key: 'none', label: 'Healthy / No Issues' },
-  { key: 'skin_lesions_mange', label: 'Skin Lesions / Mange' },
-  { key: 'wound', label: 'Open Wound' },
-  { key: 'limp', label: 'Limping / Mobility Issue' },
-  { key: 'eye_nose_discharge', label: 'Eye / Nose Discharge' },
-  { key: 'tumour', label: 'Tumour / Growth (TVT)' },
+  { key: 'none', label: 'ui_opportunistic.healthy_no_issues' },
+  { key: 'skin_lesions_mange', label: 'ui_opportunistic.skin_lesions_mange' },
+  { key: 'wound', label: 'ui_opportunistic.open_wound' },
+  { key: 'limp', label: 'ui_opportunistic.limping_mobility_issue' },
+  { key: 'eye_nose_discharge', label: 'ui_opportunistic.eye_nose_discharge' },
+  { key: 'tumour', label: 'ui_opportunistic.tumour_growth_tvt' },
 ];
 
 const QUICK_NOTE_CHIPS = [
@@ -249,7 +249,8 @@ export const OpportunisticScreen: React.FC<OpportunisticScreenProps> = ({
       return;
     }
 
-    const cleanId = identifier.trim() || generateOpportunisticCode(species, Math.floor(Date.now() / 1000) % 1000);
+    const cleanId =
+      identifier.trim() || generateOpportunisticCode(species, Math.floor(Date.now() / 1000) % 1000);
     onSaveObservation({
       identifier: cleanId,
       species,
@@ -271,7 +272,7 @@ export const OpportunisticScreen: React.FC<OpportunisticScreenProps> = ({
     });
   };
 
-  const selectedBcsTier = ICAM_BCS_TIERS.find((t) => t.score === bcs) || ICAM_BCS_TIERS[2];
+  const selectedBcsTier = ICAM_BCS_TIERS.find((tier) => tier.score === bcs) || ICAM_BCS_TIERS[2];
 
   return (
     <View style={styles.outerContainer}>
@@ -283,7 +284,7 @@ export const OpportunisticScreen: React.FC<OpportunisticScreenProps> = ({
       />
       <SafeAreaView style={styles.safeArea} edges={['top', 'left', 'right']}>
         <IOSNavigationBar
-          title="Log Observation"
+          title={t('ui_opportunistic.log_observation')}
           onBack={() => {
             hapticModalClose();
             onBack();
@@ -307,20 +308,24 @@ export const OpportunisticScreen: React.FC<OpportunisticScreenProps> = ({
           >
             {/* Photo Capture Inset Group */}
             <IOSGroupedList
-              header="Identification Photos"
-              footer="Multi-angle photos enable capture-recapture identification and catalogue matching."
+              header={t('ui_opportunistic.identification_photos')}
+              footer={t('ui_opportunistic.multi_angle_photos_enable_capture_recapture')}
             >
               <IOSListRow
                 title={t('photo.guided_title')}
                 subtitle={
                   capturedPhotosCount > 0
-                    ? `${capturedPhotosCount} angle(s) captured • Flanks & Face`
-                    : 'Left flank, right flank, face'
+                    ? t('ui_opportunistic.angles_captured', { count: capturedPhotosCount })
+                    : t('ui_opportunistic.left_flank_right_flank_face')
                 }
                 icon="camera"
                 iconColor={IOSColors.systemTeal}
                 showDisclosure
-                value={capturedPhotosCount > 0 ? `${capturedPhotosCount} Attached` : 'Take Photo'}
+                value={
+                  capturedPhotosCount > 0
+                    ? t('ui_opportunistic.attached', { capturedPhotosCount })
+                    : t('ui_opportunistic.take_photo')
+                }
                 isLast
                 onPress={onOpenPhotoCapture}
               />
@@ -329,11 +334,13 @@ export const OpportunisticScreen: React.FC<OpportunisticScreenProps> = ({
                 <View style={styles.photoThumbnailsContainer}>
                   <View style={styles.photoThumbHeader}>
                     <Text style={styles.photoThumbCountText}>
-                      {capturedPhotosCount} Photo(s) Attached
+                      {t('ui_opportunistic.photos_attached', { count: capturedPhotosCount })}
                     </Text>
                     {onClearPhotos && (
                       <TouchableOpacity onPress={onClearPhotos} activeOpacity={0.7}>
-                        <Text style={styles.photoClearBtnText}>Clear All</Text>
+                        <Text style={styles.photoClearBtnText}>
+                          {t('ui_opportunistic.clear_all')}
+                        </Text>
                       </TouchableOpacity>
                     )}
                   </View>
@@ -379,30 +386,36 @@ export const OpportunisticScreen: React.FC<OpportunisticScreenProps> = ({
             </IOSGroupedList>
 
             {/* Species & Abundance */}
-            <IOSGroupedList header="Species & Abundance">
+            <IOSGroupedList header={t('ui_opportunistic.species_abundance')}>
               <View style={styles.speciesCardContainer}>
                 <TouchableOpacity
-                  style={[
-                    styles.speciesCard,
-                    species === 'cat' && styles.speciesCardCatActive,
-                  ]}
+                  style={[styles.speciesCard, species === 'cat' && styles.speciesCardCatActive]}
                   onPress={() => {
                     hapticTabSwitch();
                     setSpecies('cat');
                   }}
                   activeOpacity={0.8}
                 >
-                  <View style={[styles.speciesAvatarCircle, { backgroundColor: species === 'cat' ? '#E0F2FE' : '#F1F5F9' }]}>
+                  <View
+                    style={[
+                      styles.speciesAvatarCircle,
+                      { backgroundColor: species === 'cat' ? '#E0F2FE' : '#F1F5F9' },
+                    ]}
+                  >
                     <Image
                       source={require('../../assets/icon_cat_primary.png')}
                       style={{ width: 34, height: 34, resizeMode: 'contain' }}
                     />
                   </View>
                   <View style={styles.speciesCardInfo}>
-                    <Text style={[styles.speciesCardTitle, species === 'cat' && { color: '#0284C7' }]}>
+                    <Text
+                      style={[styles.speciesCardTitle, species === 'cat' && { color: '#0284C7' }]}
+                    >
                       {t('animal.cat')}
                     </Text>
-                    <Text style={styles.speciesCardSubtitle}>Felis catus</Text>
+                    <Text style={styles.speciesCardSubtitle}>
+                      {t('ui_opportunistic.felis_catus')}
+                    </Text>
                   </View>
                   {species === 'cat' && (
                     <View style={[styles.speciesCheckBadge, { backgroundColor: '#0284C7' }]}>
@@ -412,27 +425,33 @@ export const OpportunisticScreen: React.FC<OpportunisticScreenProps> = ({
                 </TouchableOpacity>
 
                 <TouchableOpacity
-                  style={[
-                    styles.speciesCard,
-                    species === 'dog' && styles.speciesCardDogActive,
-                  ]}
+                  style={[styles.speciesCard, species === 'dog' && styles.speciesCardDogActive]}
                   onPress={() => {
                     hapticTabSwitch();
                     setSpecies('dog');
                   }}
                   activeOpacity={0.8}
                 >
-                  <View style={[styles.speciesAvatarCircle, { backgroundColor: species === 'dog' ? '#FEF3C7' : '#F1F5F9' }]}>
+                  <View
+                    style={[
+                      styles.speciesAvatarCircle,
+                      { backgroundColor: species === 'dog' ? '#FEF3C7' : '#F1F5F9' },
+                    ]}
+                  >
                     <Image
                       source={require('../../assets/icon_dog_amber.png')}
                       style={{ width: 34, height: 34, resizeMode: 'contain' }}
                     />
                   </View>
                   <View style={styles.speciesCardInfo}>
-                    <Text style={[styles.speciesCardTitle, species === 'dog' && { color: '#D97706' }]}>
+                    <Text
+                      style={[styles.speciesCardTitle, species === 'dog' && { color: '#D97706' }]}
+                    >
                       {t('animal.dog')}
                     </Text>
-                    <Text style={styles.speciesCardSubtitle}>Canis familiaris</Text>
+                    <Text style={styles.speciesCardSubtitle}>
+                      {t('ui_opportunistic.canis_familiaris')}
+                    </Text>
                   </View>
                   {species === 'dog' && (
                     <View style={[styles.speciesCheckBadge, { backgroundColor: '#F59E0B' }]}>
@@ -447,7 +466,11 @@ export const OpportunisticScreen: React.FC<OpportunisticScreenProps> = ({
                 <View style={styles.groupSizeHeaderRow}>
                   <Text style={styles.chipRowLabel}>{t('animal.group_size')}</Text>
                   <Text style={styles.groupSizeHint}>
-                    {groupSize === 1 ? 'Solitary Animal' : groupSize <= 3 ? 'Small Group' : 'Pack / Litter'}
+                    {groupSize === 1
+                      ? t('ui_opportunistic.solitary_animal')
+                      : groupSize <= 3
+                        ? t('ui_opportunistic.small_group')
+                        : t('ui_opportunistic.pack_litter')}
                   </Text>
                 </View>
                 <View style={styles.groupSizeControlsRow}>
@@ -508,8 +531,8 @@ export const OpportunisticScreen: React.FC<OpportunisticScreenProps> = ({
 
             {/* Observation Identifier / Field Tag */}
             <IOSGroupedList
-              header="Observation Identifier / Tag (Optional)"
-              footer="Give this animal or sighting a recognizable tag (e.g. Rex, White-Flanked Tabby, Ear-Tag #12) so you never confuse it with other animals on the map."
+              header={t('ui_opportunistic.observation_identifier_tag_optional')}
+              footer={t('ui_opportunistic.give_this_animal_or_sighting_a')}
             >
               <View style={styles.identifierRow}>
                 <IOSIcon name="paw" size={18} color={species === 'cat' ? '#0284C7' : '#D97706'} />
@@ -517,12 +540,17 @@ export const OpportunisticScreen: React.FC<OpportunisticScreenProps> = ({
                   style={styles.identifierInput}
                   value={identifier}
                   onChangeText={setIdentifier}
-                  placeholder={`e.g. ${species === 'cat' ? 'Bab Souika Tabby' : 'Rex (Souk Gate)'} or Tag #...`}
+                  placeholder={t('ui_opportunistic.e_g_or_tag', {
+                    v0: species === 'cat' ? 'Bab Souika Tabby' : 'Rex (Souk Gate)',
+                  })}
                   placeholderTextColor="#94A3B8"
                   autoCapitalize="words"
                 />
                 {identifier.length > 0 && (
-                  <TouchableOpacity onPress={() => setIdentifier('')} hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}>
+                  <TouchableOpacity
+                    onPress={() => setIdentifier('')}
+                    hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+                  >
                     <IOSIcon name="xmark" size={14} color="#94A3B8" />
                   </TouchableOpacity>
                 )}
@@ -532,7 +560,7 @@ export const OpportunisticScreen: React.FC<OpportunisticScreenProps> = ({
             {/* Compact ICAM Body Condition Score (BCS 1 to 5) Bar */}
             <IOSGroupedList
               header={t('animal.bcs_title')}
-              footer="Standardized ICAM 5-point body condition assessment for free-roaming dogs and cats."
+              footer={t('ui_opportunistic.standardized_icam_5_point_body_condition')}
             >
               <View style={styles.bcsContainer}>
                 {/* 5-Segment Visual Bar */}
@@ -588,7 +616,7 @@ export const OpportunisticScreen: React.FC<OpportunisticScreenProps> = ({
                 >
                   <View style={styles.bcsActiveHeader}>
                     <Text style={[styles.bcsActiveTitle, { color: selectedBcsTier.accentColor }]}>
-                      {selectedBcsTier.name}
+                      {t(selectedBcsTier.name)}
                     </Text>
                     <View
                       style={[
@@ -597,12 +625,9 @@ export const OpportunisticScreen: React.FC<OpportunisticScreenProps> = ({
                       ]}
                     >
                       <Text
-                        style={[
-                          styles.bcsActiveBadgeText,
-                          { color: selectedBcsTier.accentColor },
-                        ]}
+                        style={[styles.bcsActiveBadgeText, { color: selectedBcsTier.accentColor }]}
                       >
-                        {selectedBcsTier.status}
+                        {t(selectedBcsTier.status)}
                       </Text>
                     </View>
                   </View>
@@ -612,7 +637,7 @@ export const OpportunisticScreen: React.FC<OpportunisticScreenProps> = ({
             </IOSGroupedList>
 
             {/* Demographics & Sterilization */}
-            <IOSGroupedList header="Demographics & Sterilization">
+            <IOSGroupedList header={t('ui_opportunistic.demographics_sterilization')}>
               {/* Sex Selection */}
               <View style={styles.chipRowSection}>
                 <Text style={styles.chipRowLabel}>{t('animal.sex')}</Text>
@@ -622,9 +647,9 @@ export const OpportunisticScreen: React.FC<OpportunisticScreenProps> = ({
                   contentContainerStyle={styles.chipsScrollRow}
                 >
                   {[
-                    { label: 'Male', value: 'male' as Sex },
-                    { label: 'Female', value: 'female' as Sex },
-                    { label: 'Unknown', value: 'unknown' as Sex },
+                    { label: t('ui_opportunistic.male'), value: 'male' as Sex },
+                    { label: t('ui_opportunistic.female'), value: 'female' as Sex },
+                    { label: t('ui_opportunistic.unknown'), value: 'unknown' as Sex },
                   ].map((opt) => {
                     const isSelected = sex === opt.value;
                     return (
@@ -643,7 +668,7 @@ export const OpportunisticScreen: React.FC<OpportunisticScreenProps> = ({
                             isSelected && styles.demographicChipTextActive,
                           ]}
                         >
-                          {opt.label}
+                          {t(opt.label)}
                         </Text>
                       </TouchableOpacity>
                     );
@@ -653,7 +678,7 @@ export const OpportunisticScreen: React.FC<OpportunisticScreenProps> = ({
 
               {/* Age Class Selection */}
               <View style={[styles.chipRowSection, styles.topDivider]}>
-                <Text style={styles.chipRowLabel}>Age Class</Text>
+                <Text style={styles.chipRowLabel}>{t('ui_opportunistic.age_class')}</Text>
                 <ScrollView
                   horizontal
                   showsHorizontalScrollIndicator={false}
@@ -677,7 +702,7 @@ export const OpportunisticScreen: React.FC<OpportunisticScreenProps> = ({
                             isSelected && styles.demographicChipTextActive,
                           ]}
                         >
-                          {opt.label}
+                          {t(opt.label)}
                         </Text>
                       </TouchableOpacity>
                     );
@@ -687,7 +712,9 @@ export const OpportunisticScreen: React.FC<OpportunisticScreenProps> = ({
 
               {/* Collar / Ownership Status */}
               <View style={[styles.chipRowSection, styles.topDivider]}>
-                <Text style={styles.chipRowLabel}>Collar / Tag (Ownership)</Text>
+                <Text style={styles.chipRowLabel}>
+                  {t('ui_opportunistic.collar_tag_ownership')}
+                </Text>
                 <ScrollView
                   horizontal
                   showsHorizontalScrollIndicator={false}
@@ -711,7 +738,7 @@ export const OpportunisticScreen: React.FC<OpportunisticScreenProps> = ({
                             isSelected && styles.demographicChipTextActive,
                           ]}
                         >
-                          {opt.label}
+                          {t(opt.label)}
                         </Text>
                       </TouchableOpacity>
                     );
@@ -728,9 +755,21 @@ export const OpportunisticScreen: React.FC<OpportunisticScreenProps> = ({
                   contentContainerStyle={styles.chipsScrollRow}
                 >
                   {[
-                    { label: 'Ear-Tipped (Yes)', value: 'yes' as YesNoUnknown, hasIcon: true },
-                    { label: 'Intact (No)', value: 'no' as YesNoUnknown, hasIcon: false },
-                    { label: 'Uncertain (?)', value: 'unknown' as YesNoUnknown, hasIcon: false },
+                    {
+                      label: t('ui_opportunistic.ear_tipped_yes'),
+                      value: 'yes' as YesNoUnknown,
+                      hasIcon: true,
+                    },
+                    {
+                      label: t('ui_opportunistic.intact_no'),
+                      value: 'no' as YesNoUnknown,
+                      hasIcon: false,
+                    },
+                    {
+                      label: t('ui_opportunistic.uncertain_2'),
+                      value: 'unknown' as YesNoUnknown,
+                      hasIcon: false,
+                    },
                   ].map((opt) => {
                     const isSelected = earTip === opt.value;
                     return (
@@ -756,7 +795,7 @@ export const OpportunisticScreen: React.FC<OpportunisticScreenProps> = ({
                             isSelected && styles.demographicChipTextActive,
                           ]}
                         >
-                          {opt.label}
+                          {t(opt.label)}
                         </Text>
                       </TouchableOpacity>
                     );
@@ -769,7 +808,7 @@ export const OpportunisticScreen: React.FC<OpportunisticScreenProps> = ({
                 <View style={styles.chipRowLabelRow}>
                   <Text style={styles.chipRowLabel}>{t('animal.reproductive')}</Text>
                   {sex === 'male' && (
-                    <Text style={styles.chipRowNote}>Female only</Text>
+                    <Text style={styles.chipRowNote}>{t('ui_opportunistic.female_only')}</Text>
                   )}
                 </View>
                 <ScrollView
@@ -778,11 +817,25 @@ export const OpportunisticScreen: React.FC<OpportunisticScreenProps> = ({
                   contentContainerStyle={styles.chipsScrollRow}
                 >
                   {(sex === 'male'
-                    ? [{ label: 'None Visible', value: 'none_visible' as ReproductiveStatus }]
+                    ? [
+                        {
+                          label: t('ui_opportunistic.none_visible'),
+                          value: 'none_visible' as ReproductiveStatus,
+                        },
+                      ]
                     : [
-                        { label: 'None Visible', value: 'none_visible' as ReproductiveStatus },
-                        { label: 'Lactating', value: 'lactating' as ReproductiveStatus },
-                        { label: 'Visibly Pregnant', value: 'visibly_pregnant' as ReproductiveStatus },
+                        {
+                          label: t('ui_opportunistic.none_visible'),
+                          value: 'none_visible' as ReproductiveStatus,
+                        },
+                        {
+                          label: t('ui_opportunistic.lactating'),
+                          value: 'lactating' as ReproductiveStatus,
+                        },
+                        {
+                          label: t('ui_opportunistic.visibly_pregnant'),
+                          value: 'visibly_pregnant' as ReproductiveStatus,
+                        },
                       ]
                   ).map((opt) => {
                     const isSelected = reproductiveStatus === opt.value;
@@ -802,7 +855,7 @@ export const OpportunisticScreen: React.FC<OpportunisticScreenProps> = ({
                             isSelected && styles.demographicChipTextActive,
                           ]}
                         >
-                          {opt.label}
+                          {t(opt.label)}
                         </Text>
                       </TouchableOpacity>
                     );
@@ -813,8 +866,8 @@ export const OpportunisticScreen: React.FC<OpportunisticScreenProps> = ({
 
             {/* Temperament / Approach Behaviour */}
             <IOSGroupedList
-              header="Temperament & Approachability"
-              footer="Indicates rabies transmission risk, public safety, and handling / trapability for TNR."
+              header={t('ui_opportunistic.temperament_approachability')}
+              footer={t('ui_opportunistic.indicates_rabies_transmission_risk_public_safety')}
             >
               <View style={styles.chipRowSection}>
                 <ScrollView
@@ -827,10 +880,7 @@ export const OpportunisticScreen: React.FC<OpportunisticScreenProps> = ({
                     return (
                       <TouchableOpacity
                         key={opt.value}
-                        style={[
-                          styles.demographicChip,
-                          isSelected && styles.demographicChipActive,
-                        ]}
+                        style={[styles.demographicChip, isSelected && styles.demographicChipActive]}
                         onPress={() => {
                           hapticTabSwitch();
                           setBehaviour(opt.value);
@@ -843,7 +893,7 @@ export const OpportunisticScreen: React.FC<OpportunisticScreenProps> = ({
                             isSelected && styles.demographicChipTextActive,
                           ]}
                         >
-                          {opt.label}
+                          {t(opt.label)}
                         </Text>
                       </TouchableOpacity>
                     );
@@ -854,8 +904,8 @@ export const OpportunisticScreen: React.FC<OpportunisticScreenProps> = ({
 
             {/* Habitat / Ecological Context */}
             <IOSGroupedList
-              header="Habitat & Surroundings"
-              footer="Identifies food attractants, waste disposal points, and environmental carrying capacity."
+              header={t('ui_opportunistic.habitat_surroundings')}
+              footer={t('ui_opportunistic.identifies_food_attractants_waste_disposal_point')}
             >
               <View style={styles.chipRowSection}>
                 <ScrollView
@@ -868,10 +918,7 @@ export const OpportunisticScreen: React.FC<OpportunisticScreenProps> = ({
                     return (
                       <TouchableOpacity
                         key={opt.value}
-                        style={[
-                          styles.demographicChip,
-                          isSelected && styles.demographicChipActive,
-                        ]}
+                        style={[styles.demographicChip, isSelected && styles.demographicChipActive]}
                         onPress={() => {
                           hapticTabSwitch();
                           setHabitat(opt.value);
@@ -884,7 +931,7 @@ export const OpportunisticScreen: React.FC<OpportunisticScreenProps> = ({
                             isSelected && styles.demographicChipTextActive,
                           ]}
                         >
-                          {opt.label}
+                          {t(opt.label)}
                         </Text>
                       </TouchableOpacity>
                     );
@@ -896,7 +943,7 @@ export const OpportunisticScreen: React.FC<OpportunisticScreenProps> = ({
             {/* Visible Health Symptoms */}
             <IOSGroupedList
               header={t('animal.health_issues')}
-              footer="Multi-select visible health issues. Tag healthy if no issues observed."
+              footer={t('ui_opportunistic.multi_select_visible_health_issues_tag')}
             >
               <View style={styles.healthTagCloud}>
                 {HEALTH_ISSUE_OPTIONS.map((item) => {
@@ -912,10 +959,8 @@ export const OpportunisticScreen: React.FC<OpportunisticScreenProps> = ({
                       activeOpacity={0.75}
                     >
                       {isChecked && <IOSIcon name="check" size={13} color="#FFFFFF" />}
-                      <Text
-                        style={[styles.healthTagText, isChecked && styles.healthTagTextActive]}
-                      >
-                        {item.label}
+                      <Text style={[styles.healthTagText, isChecked && styles.healthTagTextActive]}>
+                        {t(item.label)}
                       </Text>
                     </TouchableOpacity>
                   );
@@ -953,7 +998,9 @@ export const OpportunisticScreen: React.FC<OpportunisticScreenProps> = ({
                   style={styles.notesInput}
                   value={notes}
                   onChangeText={setNotes}
-                  placeholder="Field observations, coat coloration, distinctive marks..."
+                  placeholder={t(
+                    'ui_opportunistic.field_observations_coat_coloration_distinctive_m'
+                  )}
                   placeholderTextColor={IOSColors.tertiaryLabel}
                   multiline
                 />
@@ -962,7 +1009,10 @@ export const OpportunisticScreen: React.FC<OpportunisticScreenProps> = ({
 
             {/* Bottom Save Action */}
             <View style={styles.bottomBtnContainer}>
-              <IOSButton title="Save Observation Record" onPress={handleSave} />
+              <IOSButton
+                title={t('ui_opportunistic.save_observation_record')}
+                onPress={handleSave}
+              />
             </View>
           </ScrollView>
         </KeyboardAvoidingView>

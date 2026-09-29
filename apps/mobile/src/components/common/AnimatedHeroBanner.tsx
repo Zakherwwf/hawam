@@ -1,3 +1,4 @@
+import { useTranslation } from 'react-i18next';
 import React, { useState } from 'react';
 import {
   View,
@@ -58,6 +59,7 @@ export const AnimatedHeroBanner: React.FC<AnimatedHeroBannerProps> = ({
   children,
   style,
 }) => {
+  const { t } = useTranslation();
   const currentScene: BannerScene = scene || initialScene || initialSpecies || 'patrol';
   const [hasVideoError, setHasVideoError] = useState<boolean>(false);
 
@@ -136,7 +138,7 @@ export const AnimatedHeroBanner: React.FC<AnimatedHeroBannerProps> = ({
             style={styles.frostedBackBtn}
             onPress={onBack}
             activeOpacity={0.75}
-            accessibilityLabel="Back"
+            accessibilityLabel={t('ui_animatedHeroBanner.back')}
             hitSlop={{ top: 12, bottom: 12, left: 12, right: 12 }}
           >
             <IOSIcon name="chevronLeft" size={18} color="#FFFFFF" />

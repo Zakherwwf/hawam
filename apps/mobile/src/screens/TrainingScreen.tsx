@@ -1,12 +1,5 @@
 import React, { useState } from 'react';
-import {
-  View,
-  Text,
-  StyleSheet,
-  ScrollView,
-  TouchableOpacity,
-  Platform,
-} from 'react-native';
+import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Platform } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useTranslation } from 'react-i18next';
 import { IOSColors, IOSTypography } from '../theme/ios';
@@ -52,141 +45,148 @@ export const TrainingScreen: React.FC<TrainingScreenProps> = ({ onBack }) => {
   const modules: TrainingModule[] = [
     {
       id: 'pace',
-      title: 'Effort & Search Pace',
+      title: t('ui_training.effort_search_pace'),
       icon: 'compass',
-      subtitle: 'Scientific density modeling requires constant, standardized observer effort.',
+      subtitle: t('ui_training.scientific_density_modeling_requires_constant_st'),
       keyConcepts: [
-        'Maintain a steady walking pace (~3.0 to 4.0 km/h) along the entire transect.',
-        'Keep GPS active continuously; start and end times record the exact survey duration.',
-        'Never deviate off-trail to search behind bushes or inside private properties.',
+        t('ui_training.maintain_a_steady_walking_pace_3'),
+        t('ui_training.keep_gps_active_continuously_start_and'),
+        t('ui_training.never_deviate_off_trail_to_search'),
       ],
       referenceGuide: [
-        { label: 'Recommended Speed', value: '3.0 – 4.0 km/h' },
-        { label: 'GPS Accuracy Threshold', value: '< 20 meters' },
-        { label: 'Minimum Transect Length', value: '1.0 km' },
+        { label: t('ui_training.recommended_speed'), value: t('ui_training.3_0_4_0_km_h') },
+        { label: t('ui_training.gps_accuracy_threshold'), value: t('ui_training.20_meters') },
+        { label: t('ui_training.minimum_transect_length'), value: t('ui_training.1_0_km') },
       ],
       quiz: {
-        question: 'Why must surveyors maintain a consistent walking pace without searching off-trail?',
+        question: t('ui_training.why_must_surveyors_maintain_a_consistent'),
         options: [
-          'To maximize the sheer quantity of animals spotted in the neighborhood',
-          'To ensure standardized observer effort per unit of distance for statistical density estimation',
-          'To minimize mobile phone battery consumption during GPS tracking',
+          t('ui_training.to_maximize_the_sheer_quantity_of'),
+          t('ui_training.to_ensure_standardized_observer_effort_per'),
+          t('ui_training.to_minimize_mobile_phone_battery_consumption'),
         ],
         correctIndex: 1,
-        explanation:
-          'Consistent pace standardizes the detection probability function g(x) across time and space, allowing statistical models to extrapolate true population size.',
+        explanation: t('ui_training.consistent_pace_standardizes_the_detection_proba'),
       },
     },
     {
       id: 'distance',
-      title: 'Perpendicular Distance',
+      title: t('ui_training.perpendicular_distance'),
       icon: 'ruler',
-      subtitle: 'Distance Sampling relies on the 90° perpendicular offset from the transect line.',
+      subtitle: t('ui_training.distance_sampling_relies_on_the_90'),
       keyConcepts: [
-        'Perpendicular distance is the shortest distance from the centerline to the initial animal location.',
-        'Record the animal location at the exact instant of first detection, before it moves.',
-        'Detection directly on the centerline is assumed to be certain: g(0) = 1.0.',
+        t('ui_training.perpendicular_distance_is_the_shortest_distance'),
+        t('ui_training.record_the_animal_location_at_the'),
+        t('ui_training.detection_directly_on_the_centerline_is'),
       ],
       referenceGuide: [
-        { label: '1 Standard Car Length', value: '≈ 4.0 – 4.5 m' },
-        { label: '1 Urban Shop Frontage', value: '≈ 8.0 – 10.0 m' },
-        { label: '1 Multi-Story Building', value: '≈ 15.0 – 20.0 m' },
+        { label: t('ui_training.1_standard_car_length'), value: '≈ 4.0 – 4.5 m' },
+        { label: t('ui_training.1_urban_shop_frontage'), value: '≈ 8.0 – 10.0 m' },
+        { label: t('ui_training.1_multi_story_building'), value: '≈ 15.0 – 20.0 m' },
       ],
       quiz: {
-        question: 'Which distance measurement is mathematically required for Distance Sampling models?',
+        question: t('ui_training.which_distance_measurement_is_mathematically_req'),
         options: [
-          'The straight-line diagonal distance from the observer when first spotted',
-          'The 90-degree perpendicular distance from the transect path centerline to the animal',
-          'The distance the animal runs away after noticing the observer',
+          t('ui_training.the_straight_line_diagonal_distance_from'),
+          t('ui_training.the_90_degree_perpendicular_distance_from'),
+          t('ui_training.the_distance_the_animal_runs_away'),
         ],
         correctIndex: 1,
-        explanation:
-          'Distance Sampling specifically integrates the perpendicular distance distribution to model how detection probability decays away from the line.',
+        explanation: t('ui_training.distance_sampling_specifically_integrates_the_pe'),
       },
     },
     {
       id: 'condition',
-      title: 'ICAM Body Condition Scoring',
+      title: t('ui_training.icam_body_condition_scoring'),
       icon: 'paw',
-      subtitle: 'A validated 5-point visual scale assessing animal nutritional and welfare state.',
+      subtitle: t('ui_training.a_validated_5_point_visual_scale'),
       keyConcepts: [
-        'Score 1 (Emaciated): Ribs, lumbar vertebrae, and pelvic bones visibly prominent.',
-        'Score 2 (Thin): Ribs easily visible; distinct waist hourglass silhouette.',
-        'Score 3 (Ideal): Ribs easily palpable with light fat cover; well-proportioned body.',
-        'Score 4 (Overweight): Heavy fat cover along lumbar vertebrae and base of tail.',
-        'Score 5 (Obese): Distended abdomen with heavy subcutaneous fat deposits.',
+        t('ui_training.score_1_emaciated_ribs_lumbar_vertebrae'),
+        t('ui_training.score_2_thin_ribs_easily_visible'),
+        t('ui_training.score_3_ideal_ribs_easily_palpable'),
+        t('ui_training.score_4_overweight_heavy_fat_cover'),
+        t('ui_training.score_5_obese_distended_abdomen_with'),
       ],
       referenceGuide: [
-        { label: 'Score 1', value: 'Emaciated (Severe Rib Prominence)' },
-        { label: 'Score 2', value: 'Thin (Visible Waist & Ribs)' },
-        { label: 'Score 3', value: 'Ideal (Well-Balanced Silhouette)' },
-        { label: 'Score 4/5', value: 'Overweight / Obese' },
+        {
+          label: t('ui_training.score_1'),
+          value: t('ui_training.emaciated_severe_rib_prominence'),
+        },
+        { label: t('ui_training.score_2'), value: t('ui_training.thin_visible_waist_ribs') },
+        { label: t('ui_training.score_3'), value: t('ui_training.ideal_well_balanced_silhouette') },
+        { label: t('ui_training.score_4_5'), value: t('ui_training.overweight_obese') },
       ],
       quiz: {
-        question: 'An adult dog has easily visible ribs and an hourglass waist, but lumbar spine bones do not severely protrude. What is the ICAM score?',
+        question: t('ui_training.an_adult_dog_has_easily_visible'),
         options: [
-          'Score 1 (Emaciated)',
-          'Score 2 (Thin)',
-          'Score 3 (Ideal)',
+          t('ui_training.score_1_emaciated'),
+          t('ui_training.score_2_thin'),
+          t('ui_training.score_3_ideal'),
         ],
         correctIndex: 1,
-        explanation:
-          'Score 2 indicates a thin animal with easily visible ribs and waist indentation, without the severe muscle wasting and bone protrusion of Score 1.',
+        explanation: t('ui_training.score_2_indicates_a_thin_animal'),
       },
     },
     {
       id: 'photos',
-      title: 'Photographic Mark-Resight',
+      title: t('ui_training.photographic_mark_resight'),
       icon: 'camera',
-      subtitle: 'Individual identification requires capturing unique, asymmetric coat patterns.',
+      subtitle: t('ui_training.individual_identification_requires_capturing_uni'),
       keyConcepts: [
-        'Left and right flanks of cats and dogs have distinct pigmentation patterns.',
-        'A full ID set requires 3 standardized angles: Left Flank, Right Flank, and Face.',
-        'Note ear-tipping: a straight horizontal tip notch on the left ear indicates a sterilized animal (TNR).',
+        t('ui_training.left_and_right_flanks_of_cats'),
+        t('ui_training.a_full_id_set_requires_3'),
+        t('ui_training.note_ear_tipping_a_straight_horizontal'),
       ],
       referenceGuide: [
-        { label: 'Angle 1', value: 'Left Flank (Lateral Profile)' },
-        { label: 'Angle 2', value: 'Right Flank (Lateral Profile)' },
-        { label: 'Angle 3', value: 'Frontal Face (Facial Mask & Whiskers)' },
-        { label: 'TNR Mark', value: 'Ear-Tip Notch (Sterilized)' },
+        { label: t('ui_training.angle_1'), value: t('ui_training.left_flank_lateral_profile') },
+        { label: t('ui_training.angle_2'), value: t('ui_training.right_flank_lateral_profile') },
+        {
+          label: t('ui_training.angle_3'),
+          value: t('ui_training.frontal_face_facial_mask_whiskers'),
+        },
+        { label: t('ui_training.tnr_mark'), value: t('ui_training.ear_tip_notch_sterilized') },
       ],
       quiz: {
-        question: 'Why is a single flank photograph often insufficient for capture-recapture re-identification?',
+        question: t('ui_training.why_is_a_single_flank_photograph'),
         options: [
-          'Because coat pigmentation and tabby stripes are asymmetric between left and right sides',
-          'Because the camera sensor cannot process colors from only one perspective',
-          'Because free-roaming animals change coat color seasonally',
+          t('ui_training.because_coat_pigmentation_and_tabby_stripes'),
+          t('ui_training.because_the_camera_sensor_cannot_process'),
+          t('ui_training.because_free_roaming_animals_change_coat'),
         ],
         correctIndex: 0,
-        explanation:
-          'Mammalian coat patterns develop through complex embryological migration, creating unique asymmetric patterns on either side. Both flanks are needed to confirm matches from any angle.',
+        explanation: t('ui_training.mammalian_coat_patterns_develop_through_complex'),
       },
     },
     {
       id: 'zerodata',
-      title: 'Complete Checklists & Non-Detections',
+      title: t('ui_training.complete_checklists_non_detections'),
       icon: 'check',
-      subtitle: 'In population ecology, recording zero animals is just as valuable as recording fifty.',
+      subtitle: t('ui_training.in_population_ecology_recording_zero_animals'),
       keyConcepts: [
-        'If you walk 2 km along a transect and spot zero animals, never discard the survey!',
-        'Confirm "Yes" on the final complete checklist: you searched and saw zero animals.',
-        'Non-detection data is the mathematical foundation for Occupancy and N-mixture models.',
+        t('ui_training.if_you_walk_2_km_along'),
+        t('ui_training.confirm_yes_on_the_final_complete'),
+        t('ui_training.non_detection_data_is_the_mathematical'),
       ],
       referenceGuide: [
-        { label: 'eBird Standard', value: 'Every complete search recorded' },
-        { label: 'Reward', value: 'Full completion XP awarded for zero counts' },
-        { label: 'Badge', value: 'Unlocks the Zero Hero badge' },
+        {
+          label: t('ui_training.ebird_standard'),
+          value: t('ui_training.every_complete_search_recorded'),
+        },
+        {
+          label: t('ui_training.reward'),
+          value: t('ui_training.full_completion_xp_awarded_for_zero'),
+        },
+        { label: t('ui_training.badge'), value: t('ui_training.unlocks_the_zero_hero_badge') },
       ],
       quiz: {
-        question: 'You walked a 2.5 km transect for 40 minutes and saw zero cats and zero dogs. What should you do?',
+        question: t('ui_training.you_walked_a_2_5_km'),
         options: [
-          'Delete the session because an empty survey contains no useful data',
-          'Invent at least one sighting nearby to ensure you earn experience points',
-          'Save the session and confirm "Yes" to the complete checklist (Non-detection)',
+          t('ui_training.delete_the_session_because_an_empty'),
+          t('ui_training.invent_at_least_one_sighting_nearby'),
+          t('ui_training.save_the_session_and_confirm_yes'),
         ],
         correctIndex: 2,
-        explanation:
-          'Non-detections establish the absence probability in statistical models. In Hawem, complete zero-count surveys receive full effort XP (+20 XP completion bonus) with zero penalty.',
+        explanation: t('ui_training.non_detections_establish_the_absence_probability'),
       },
     },
   ];
@@ -244,51 +244,52 @@ export const TrainingScreen: React.FC<TrainingScreenProps> = ({ onBack }) => {
     return (
       <SafeAreaView style={styles.safeArea} edges={['top', 'left', 'right']}>
         <IOSNavigationBar
-          title="Field Academy Certificate"
+          title={t('ui_training.field_academy_certificate')}
           onBack={handleBack}
           backTitle={t('nav.profile')}
         />
 
-        <ScrollView contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
+        <ScrollView
+          contentContainerStyle={styles.scrollContent}
+          showsVerticalScrollIndicator={false}
+        >
           {/* Certificate Card */}
           <View style={styles.certCard}>
             <View style={styles.certBadgeCircle}>
               <IOSIcon name="paw" size={40} color={IOSColors.systemTeal} />
             </View>
 
-            <Text style={styles.certSuperTitle}>REPUBLIC OF TUNISIA</Text>
-            <Text style={styles.certTitle}>Certified Field Surveyor</Text>
+            <Text style={styles.certSuperTitle}>{t('ui_training.republic_of_tunisia')}</Text>
+            <Text style={styles.certTitle}>{t('ui_training.certified_field_surveyor')}</Text>
             <Text style={styles.certSubtitle}>
-              Fauna Observatory • Free-Roaming Animal Population Research
+              {t('ui_training.fauna_observatory_free_roaming_animal_population')}
             </Text>
 
             <View style={styles.certDivider} />
 
             <Text style={styles.certBody}>
-              This credential certifies that the surveyor has demonstrated complete competency in standardized
-              transect pacing, perpendicular distance sampling estimation, ICAM body condition scoring, and eBird
-              complete checklist non-detection protocols.
+              {t('ui_training.this_credential_certifies_that_the_surveyor')}
             </Text>
 
             <View style={styles.certMetaRow}>
               <View style={styles.certMetaItem}>
-                <Text style={styles.certMetaLabel}>Credential</Text>
-                <Text style={styles.certMetaValue}>Trained Surveyor</Text>
+                <Text style={styles.certMetaLabel}>{t('ui_training.credential')}</Text>
+                <Text style={styles.certMetaValue}>{t('ui_training.trained_surveyor')}</Text>
               </View>
               <View style={styles.certMetaItem}>
-                <Text style={styles.certMetaLabel}>XP Award</Text>
-                <Text style={styles.certMetaValue}>+25 XP Awarded</Text>
+                <Text style={styles.certMetaLabel}>{t('ui_training.xp_award')}</Text>
+                <Text style={styles.certMetaValue}>{t('ui_training.25_xp_awarded')}</Text>
               </View>
               <View style={styles.certMetaItem}>
-                <Text style={styles.certMetaLabel}>Badge</Text>
-                <Text style={styles.certMetaValue}>Academy Graduate</Text>
+                <Text style={styles.certMetaLabel}>{t('ui_training.badge')}</Text>
+                <Text style={styles.certMetaValue}>{t('ui_training.academy_graduate')}</Text>
               </View>
             </View>
           </View>
 
           <View style={{ marginTop: 24 }}>
             <IOSButton
-              title="Return to Profile"
+              title={t('ui_training.return_to_profile')}
               variant="primary"
               onPress={handleBack}
             />
@@ -301,7 +302,7 @@ export const TrainingScreen: React.FC<TrainingScreenProps> = ({ onBack }) => {
   return (
     <SafeAreaView style={styles.safeArea} edges={['top', 'left', 'right']}>
       <IOSNavigationBar
-        title={`Field Academy (${currentStep + 1}/5)`}
+        title={t('ui_training.field_academy_5', { v0: currentStep + 1 })}
         onBack={handleBack}
         backTitle={t('nav.profile')}
       />
@@ -346,7 +347,7 @@ export const TrainingScreen: React.FC<TrainingScreenProps> = ({ onBack }) => {
 
         {/* Scientific Concepts List */}
         <View style={styles.sectionCard}>
-          <Text style={styles.sectionHeader}>Core Protocol Standards</Text>
+          <Text style={styles.sectionHeader}>{t('ui_training.core_protocol_standards')}</Text>
           {currentModule.keyConcepts.map((concept, index) => (
             <View key={index} style={styles.bulletRow}>
               <View style={styles.bulletDot} />
@@ -358,7 +359,7 @@ export const TrainingScreen: React.FC<TrainingScreenProps> = ({ onBack }) => {
         {/* Field Reference Metric Guide */}
         {currentModule.referenceGuide && (
           <View style={styles.sectionCard}>
-            <Text style={styles.sectionHeader}>Field Reference Standards</Text>
+            <Text style={styles.sectionHeader}>{t('ui_training.field_reference_standards')}</Text>
             <View style={styles.refGrid}>
               {currentModule.referenceGuide.map((ref, idx) => (
                 <View key={idx} style={styles.refItem}>
@@ -374,7 +375,7 @@ export const TrainingScreen: React.FC<TrainingScreenProps> = ({ onBack }) => {
         <View style={styles.quizCard}>
           <View style={styles.quizHeaderRow}>
             <IOSIcon name="shield" size={16} color={IOSColors.systemTeal} />
-            <Text style={styles.quizHeader}>Competency Verification Quiz</Text>
+            <Text style={styles.quizHeader}>{t('ui_training.competency_verification_quiz')}</Text>
           </View>
 
           <Text style={styles.quizQuestion}>{currentModule.quiz.question}</Text>
@@ -404,9 +405,7 @@ export const TrainingScreen: React.FC<TrainingScreenProps> = ({ onBack }) => {
                   activeOpacity={0.7}
                 >
                   <View style={styles.optionLetterBox}>
-                    <Text style={styles.optionLetter}>
-                      {String.fromCharCode(65 + optIdx)}
-                    </Text>
+                    <Text style={styles.optionLetter}>{String.fromCharCode(65 + optIdx)}</Text>
                   </View>
                   <Text style={textStyle}>{opt}</Text>
                 </TouchableOpacity>
@@ -426,12 +425,10 @@ export const TrainingScreen: React.FC<TrainingScreenProps> = ({ onBack }) => {
             >
               <Text style={styles.feedbackTitle}>
                 {selectedAnswer === currentModule.quiz.correctIndex
-                  ? 'Correct Assessment'
-                  : 'Needs Review'}
+                  ? t('ui_training.correct_assessment')
+                  : t('ui_training.needs_review')}
               </Text>
-              <Text style={styles.feedbackExplanation}>
-                {currentModule.quiz.explanation}
-              </Text>
+              <Text style={styles.feedbackExplanation}>{currentModule.quiz.explanation}</Text>
             </View>
           )}
         </View>
@@ -441,7 +438,7 @@ export const TrainingScreen: React.FC<TrainingScreenProps> = ({ onBack }) => {
           {currentStep > 0 && (
             <View style={{ flex: 1, marginRight: 8 }}>
               <IOSButton
-                title="Previous"
+                title={t('ui_training.previous')}
                 variant="secondary"
                 onPress={handlePrevious}
               />
@@ -452,11 +449,11 @@ export const TrainingScreen: React.FC<TrainingScreenProps> = ({ onBack }) => {
               title={
                 currentStep === modules.length - 1
                   ? isCurrentQuizAnswered
-                    ? 'View Certificate'
-                    : 'Finish Quiz'
+                    ? t('ui_training.view_certificate')
+                    : t('ui_training.finish_quiz')
                   : isCurrentQuizAnswered
-                  ? 'Next Module'
-                  : 'Continue'
+                    ? t('ui_training.next_module')
+                    : t('ui_training.continue')
               }
               variant="primary"
               disabled={!isCurrentQuizAnswered}

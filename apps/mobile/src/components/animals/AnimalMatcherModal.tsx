@@ -1,3 +1,4 @@
+import { useTranslation } from 'react-i18next';
 import React, { useState } from 'react';
 import { View, Text, StyleSheet, Modal, TouchableOpacity, ScrollView, Image } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
@@ -31,6 +32,7 @@ export const AnimalMatcherModal: React.FC<AnimalMatcherModalProps> = ({
   onSelectUnsure,
   onClose,
 }) => {
+  const { t } = useTranslation();
   const [comparingAnimal, setComparingAnimal] = useState<AnimalProfile | null>(null);
 
   return (
@@ -40,11 +42,16 @@ export const AnimalMatcherModal: React.FC<AnimalMatcherModalProps> = ({
           {/* Header */}
           <View style={styles.modalHeader}>
             <View>
-              <Text style={styles.modalTitle}>Known Animals Nearby</Text>
+              <Text style={styles.modalTitle}>
+                {t('ui_animalMatcherModal.known_animals_nearby')}
+              </Text>
               <Text style={styles.modalSubtitle}>
                 {candidates.length > 0
-                  ? `Found ${candidates.length} known ${species} within 300m`
-                  : `No previously recorded ${species} nearby`}
+                  ? t('ui_animalMatcherModal.found_known_within_300m', {
+                      v0: candidates.length,
+                      species,
+                    })
+                  : t('ui_animalMatcherModal.no_previously_recorded_nearby', { species })}
               </Text>
             </View>
             <TouchableOpacity
@@ -73,8 +80,14 @@ export const AnimalMatcherModal: React.FC<AnimalMatcherModalProps> = ({
                     </View>
 
                     <Text style={styles.candidateName}>{animal.nickname}</Text>
-                    <Text style={styles.candidateCoat}>Coat: {animal.coat_pattern}</Text>
-                    <Text style={styles.candidateSightings}>{animal.sightings_count} prior sightings</Text>
+                    <Text style={styles.candidateCoat}>
+                      {t('ui_animalMatcherModal.coat', { coat_pattern: animal.coat_pattern })}
+                    </Text>
+                    <Text style={styles.candidateSightings}>
+                      {t('ui_animalMatcherModal.prior_sightings', {
+                        sightings_count: animal.sightings_count,
+                      })}
+                    </Text>
 
                     {animal.colony_name ? (
                       <Text style={styles.candidateColony} numberOfLines={1}>
@@ -90,7 +103,9 @@ export const AnimalMatcherModal: React.FC<AnimalMatcherModalProps> = ({
                       }}
                       activeOpacity={0.7}
                     >
-                      <Text style={styles.selectMatchBtnText}>Same Animal</Text>
+                      <Text style={styles.selectMatchBtnText}>
+                        {t('ui_animalMatcherModal.same_animal')}
+                      </Text>
                     </TouchableOpacity>
                   </View>
                 ))}
@@ -114,7 +129,7 @@ export const AnimalMatcherModal: React.FC<AnimalMatcherModalProps> = ({
             <View style={styles.emptyCandidatesBox}>
               <IOSIcon name="paw" size={32} color={DesignTokens.colors.tertiaryLabel} />
               <Text style={styles.emptyCandidatesText}>
-                This appears to be the first time this individual is recorded in this location.
+                {t('ui_animalMatcherModal.this_appears_to_be_the_first')}
               </Text>
             </View>
           )}
@@ -130,7 +145,7 @@ export const AnimalMatcherModal: React.FC<AnimalMatcherModalProps> = ({
               activeOpacity={0.7}
             >
               <Text style={styles.primaryActionBtnText} numberOfLines={1} ellipsizeMode="tail">
-                + Register New Animal
+                {t('ui_animalMatcherModal.register_new_animal')}
               </Text>
             </TouchableOpacity>
 
@@ -143,7 +158,7 @@ export const AnimalMatcherModal: React.FC<AnimalMatcherModalProps> = ({
               activeOpacity={0.7}
             >
               <Text style={styles.secondaryActionBtnText} numberOfLines={1} ellipsizeMode="tail">
-                Save for Review
+                {t('ui_animalMatcherModal.save_for_review')}
               </Text>
             </TouchableOpacity>
           </View>

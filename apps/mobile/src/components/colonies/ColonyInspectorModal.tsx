@@ -1,3 +1,4 @@
+import { useTranslation } from 'react-i18next';
 import React, { useState } from 'react';
 import {
   View,
@@ -50,6 +51,7 @@ export const ColonyInspectorModal: React.FC<ColonyInspectorModalProps> = ({
   colony,
   onClose,
 }) => {
+  const { t } = useTranslation();
   const { recordInspection } = useColoniesStore();
   const [inspectionNotes, setInspectionNotes] = useState('');
   const [selectedQuickTags, setSelectedQuickTags] = useState<string[]>([]);
@@ -89,9 +91,9 @@ export const ColonyInspectorModal: React.FC<ColonyInspectorModalProps> = ({
     setInspectionNotes('');
     setSelectedQuickTags([]);
     Alert.alert(
-      'Inspection Recorded',
-      `Welfare check logged for ${colony.name}.\n+10 XP awarded!`,
-      [{ text: 'OK', onPress: handleCloseModal }]
+      t('ui_colonyInspectorModal.inspection_recorded'),
+      t('ui_colonyInspectorModal.welfare_check_logged_for_10_xp', { v0: colony.name }),
+      [{ text: t('ui_colonyInspectorModal.ok'), onPress: handleCloseModal }]
     );
   };
 
@@ -106,20 +108,30 @@ export const ColonyInspectorModal: React.FC<ColonyInspectorModalProps> = ({
         {/* Navigation Bar */}
         <View style={styles.navBar}>
           <TouchableOpacity onPress={handleCloseModal} style={styles.navBtn}>
-            <Text style={styles.navBtnText}>Done</Text>
+            <Text style={styles.navBtnText}>{t('ui_colonyInspectorModal.done')}</Text>
           </TouchableOpacity>
-          <Text style={styles.navTitle}>{isDog ? 'Dog Pack Dossier' : 'Colony Dossier'}</Text>
+          <Text style={styles.navTitle}>
+            {isDog
+              ? t('ui_colonyInspectorModal.dog_pack_dossier')
+              : t('ui_colonyInspectorModal.colony_dossier')}
+          </Text>
           <View style={styles.navPlaceholder} />
         </View>
 
-        <ScrollView contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
+        <ScrollView
+          contentContainerStyle={styles.scrollContent}
+          showsVerticalScrollIndicator={false}
+        >
           {/* Header Card */}
           <View style={styles.headerCard}>
             <View style={styles.zoneRow}>
               <View style={[styles.zoneBadge, isDog && styles.zoneBadgeDog]}>
                 <IOSIcon name="shield" size={13} color={isDog ? '#EA580C' : '#8B5CF6'} />
                 <Text style={[styles.zoneBadgeText, isDog && styles.zoneBadgeTextDog]}>
-                  {isDog ? 'DOG PACK' : 'CAT COLONY'} • {colony.zone.toUpperCase()}
+                  {isDog
+                    ? t('ui_colonyInspectorModal.dog_pack')
+                    : t('ui_colonyInspectorModal.cat_colony')}{' '}
+                  • {colony.zone.toUpperCase()}
                 </Text>
               </View>
               <View style={[styles.popBadge, isDog && styles.popBadgeDog]}>
@@ -147,10 +159,16 @@ export const ColonyInspectorModal: React.FC<ColonyInspectorModalProps> = ({
                 </View>
                 <View style={styles.territoryInfoBar}>
                   <View style={styles.territoryPinBadge}>
-                    <Text style={styles.territoryPinText}>{isDog ? 'Pack Territory Core' : 'Colony Station Core'}</Text>
+                    <Text style={styles.territoryPinText}>
+                      {isDog
+                        ? t('ui_colonyInspectorModal.pack_territory_core')
+                        : t('ui_colonyInspectorModal.colony_station_core')}
+                    </Text>
                   </View>
                   <View style={styles.territoryRadiusPill}>
-                    <Text style={styles.territoryRadiusText}>Core Radius: ~150m</Text>
+                    <Text style={styles.territoryRadiusText}>
+                      {t('ui_colonyInspectorModal.core_radius_150m')}
+                    </Text>
                   </View>
                 </View>
               </View>
@@ -160,7 +178,9 @@ export const ColonyInspectorModal: React.FC<ColonyInspectorModalProps> = ({
           {/* TNR Sterilization Progress Card */}
           <View style={styles.sectionCard}>
             <View style={styles.sectionHeaderRow}>
-              <Text style={styles.sectionTitle}>TNR Sterilization Rate</Text>
+              <Text style={styles.sectionTitle}>
+                {t('ui_colonyInspectorModal.tnr_sterilization_rate')}
+              </Text>
               <Text style={[styles.tnrPercentText, { color: getTnrColor(tnrPercent) }]}>
                 {tnrPercent}%
               </Text>
@@ -170,27 +190,43 @@ export const ColonyInspectorModal: React.FC<ColonyInspectorModalProps> = ({
               <View
                 style={[
                   styles.progressBarFill,
-                  { width: `${Math.min(100, tnrPercent)}%`, backgroundColor: getTnrColor(tnrPercent) },
+                  {
+                    width: `${Math.min(100, tnrPercent)}%`,
+                    backgroundColor: getTnrColor(tnrPercent),
+                  },
                 ]}
               />
             </View>
 
             <View style={styles.tnrStatsRow}>
               <Text style={styles.tnrStatsText}>
-                {colony.tnrSterilizedCount} of {colony.estimatedPopulation} {isDog ? 'vaccinated & sterilized' : 'ear-tipped & sterilized'}
+                {t('ui_colonyInspectorModal.of', {
+                  tnrSterilizedCount: colony.tnrSterilizedCount,
+                  estimatedPopulation: colony.estimatedPopulation,
+                  v5: isDog ? 'vaccinated & sterilized' : 'ear-tipped & sterilized',
+                })}
               </Text>
               <Text style={styles.tnrTargetText}>
-                {tnrPercent >= 75 ? 'Target achieved (≥75%)' : 'Needs sterilization drive'}
+                {tnrPercent >= 75
+                  ? t('ui_colonyInspectorModal.target_achieved_75')
+                  : t('ui_colonyInspectorModal.needs_sterilization_drive')}
               </Text>
             </View>
           </View>
 
           {/* Infrastructure & Facilities */}
           <View style={styles.sectionCard}>
-            <Text style={styles.sectionTitle}>Station Facilities</Text>
+            <Text style={styles.sectionTitle}>
+              {t('ui_colonyInspectorModal.station_facilities')}
+            </Text>
 
             <View style={styles.facilityGrid}>
-              <View style={[styles.facilityPill, colony.hasWaterStation && styles.facilityPillWaterActive]}>
+              <View
+                style={[
+                  styles.facilityPill,
+                  colony.hasWaterStation && styles.facilityPillWaterActive,
+                ]}
+              >
                 <IOSIcon
                   name="shield"
                   size={14}
@@ -204,11 +240,15 @@ export const ColonyInspectorModal: React.FC<ColonyInspectorModalProps> = ({
                   numberOfLines={1}
                   ellipsizeMode="tail"
                 >
-                  {colony.hasWaterStation ? 'Water Station' : 'No Water'}
+                  {colony.hasWaterStation
+                    ? t('ui_colonyInspectorModal.water_station')
+                    : t('ui_colonyInspectorModal.no_water')}
                 </Text>
               </View>
 
-              <View style={[styles.facilityPill, colony.hasShelter && styles.facilityPillShelterActive]}>
+              <View
+                style={[styles.facilityPill, colony.hasShelter && styles.facilityPillShelterActive]}
+              >
                 <IOSIcon
                   name="shield"
                   size={14}
@@ -222,7 +262,9 @@ export const ColonyInspectorModal: React.FC<ColonyInspectorModalProps> = ({
                   numberOfLines={1}
                   ellipsizeMode="tail"
                 >
-                  {colony.hasShelter ? 'Shelter Installed' : 'No Shelter'}
+                  {colony.hasShelter
+                    ? t('ui_colonyInspectorModal.shelter_installed')
+                    : t('ui_colonyInspectorModal.no_shelter')}
                 </Text>
               </View>
             </View>
@@ -230,22 +272,27 @@ export const ColonyInspectorModal: React.FC<ColonyInspectorModalProps> = ({
 
           {/* Caretaker & Feeding Schedule */}
           <View style={styles.sectionCard}>
-            <Text style={styles.sectionTitle}>Caretaker & Feeding Schedule</Text>
+            <Text style={styles.sectionTitle}>
+              {t('ui_colonyInspectorModal.caretaker_feeding_schedule')}
+            </Text>
 
             <View style={styles.infoRow}>
-              <Text style={styles.infoLabel}>Primary Caretaker</Text>
+              <Text style={styles.infoLabel}>{t('ui_colonyInspectorModal.primary_caretaker')}</Text>
               <Text style={styles.infoValue}>{colony.caretakerName}</Text>
             </View>
 
             <View style={styles.infoRow}>
-              <Text style={styles.infoLabel}>Feeding Hours</Text>
+              <Text style={styles.infoLabel}>{t('ui_colonyInspectorModal.feeding_hours')}</Text>
               <Text style={styles.infoValue}>{colony.feedingSchedule}</Text>
             </View>
 
             <View style={styles.infoRow}>
-              <Text style={styles.infoLabel}>Last Inspected</Text>
+              <Text style={styles.infoLabel}>{t('ui_colonyInspectorModal.last_inspected')}</Text>
               <Text style={styles.infoValue}>
-                {new Date(colony.lastInspectedAt).toLocaleDateString()} ({colony.inspectionsCount} checks)
+                {t('ui_colonyInspectorModal.checks', {
+                  v1: new Date(colony.lastInspectedAt).toLocaleDateString(),
+                  inspectionsCount: colony.inspectionsCount,
+                })}
               </Text>
             </View>
 
@@ -259,8 +306,12 @@ export const ColonyInspectorModal: React.FC<ColonyInspectorModalProps> = ({
           {/* Welfare Quick Inspection Tags */}
           <View style={styles.sectionCard}>
             <View style={styles.sectionHeaderRow}>
-              <Text style={styles.sectionTitle}>Quick Welfare Assessment</Text>
-              <Text style={styles.quickTagsSubtitle}>Tap to log indicators</Text>
+              <Text style={styles.sectionTitle}>
+                {t('ui_colonyInspectorModal.quick_welfare_assessment')}
+              </Text>
+              <Text style={styles.quickTagsSubtitle}>
+                {t('ui_colonyInspectorModal.tap_to_log_indicators')}
+              </Text>
             </View>
 
             <View style={styles.quickTagsGrid}>
@@ -288,12 +339,7 @@ export const ColonyInspectorModal: React.FC<ColonyInspectorModalProps> = ({
                       size={12}
                       color={isSelected ? '#0F172A' : '#64748B'}
                     />
-                    <Text
-                      style={[
-                        styles.quickTagText,
-                        isSelected && styles.quickTagTextActive,
-                      ]}
-                    >
+                    <Text style={[styles.quickTagText, isSelected && styles.quickTagTextActive]}>
                       {tag}
                     </Text>
                   </TouchableOpacity>
@@ -305,10 +351,12 @@ export const ColonyInspectorModal: React.FC<ColonyInspectorModalProps> = ({
           {/* Inspection Action Form */}
           {isLoggingInspection ? (
             <View style={styles.inspectionFormCard}>
-              <Text style={styles.inspectionFormTitle}>Log Welfare Inspection Notes</Text>
+              <Text style={styles.inspectionFormTitle}>
+                {t('ui_colonyInspectorModal.log_welfare_inspection_notes')}
+              </Text>
               <TextInput
                 style={styles.inspectionInput}
-                placeholder="Optional field notes (e.g. food refilled, 2 new kittens observed, water clean)"
+                placeholder={t('ui_colonyInspectorModal.optional_field_notes_e_g_food')}
                 placeholderTextColor={IOSColors.tertiaryLabel}
                 value={inspectionNotes}
                 onChangeText={setInspectionNotes}
@@ -324,12 +372,8 @@ export const ColonyInspectorModal: React.FC<ColonyInspectorModalProps> = ({
                     setSelectedQuickTags([]);
                   }}
                 >
-                  <Text
-                    style={styles.cancelFormBtnText}
-                    numberOfLines={1}
-                    ellipsizeMode="tail"
-                  >
-                    Cancel
+                  <Text style={styles.cancelFormBtnText} numberOfLines={1} ellipsizeMode="tail">
+                    {t('ui_colonyInspectorModal.cancel')}
                   </Text>
                 </TouchableOpacity>
 
@@ -343,7 +387,7 @@ export const ColonyInspectorModal: React.FC<ColonyInspectorModalProps> = ({
                     numberOfLines={1}
                     ellipsizeMode="tail"
                   >
-                    Save (+10 XP)
+                    {t('ui_colonyInspectorModal.save_10_xp')}
                   </Text>
                 </TouchableOpacity>
               </View>
@@ -358,9 +402,11 @@ export const ColonyInspectorModal: React.FC<ColonyInspectorModalProps> = ({
               activeOpacity={0.8}
             >
               <IOSIcon name="shield" size={18} color="#FFFFFF" />
-              <Text style={styles.actionBtnText}>Log Inspection</Text>
+              <Text style={styles.actionBtnText}>
+                {t('ui_colonyInspectorModal.log_inspection')}
+              </Text>
               <View style={styles.xpPillBadge}>
-                <Text style={styles.xpPillBadgeText}>+10 XP</Text>
+                <Text style={styles.xpPillBadgeText}>{t('ui_colonyInspectorModal.10_xp')}</Text>
               </View>
             </TouchableOpacity>
           )}

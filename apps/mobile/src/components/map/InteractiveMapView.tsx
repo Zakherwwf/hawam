@@ -1,3 +1,4 @@
+import { useTranslation } from 'react-i18next';
 import React, { useRef, useEffect, useState } from 'react';
 import { View, StyleSheet, TouchableOpacity, Text, DimensionValue } from 'react-native';
 import { WebView } from 'react-native-webview';
@@ -63,8 +64,10 @@ async function loadSavedCamera(): Promise<SavedCamera | null> {
     if (!raw) return null;
     const c = JSON.parse(raw);
     if (
-      Number.isFinite(c?.latitude) && Math.abs(c.latitude) <= 90 &&
-      Number.isFinite(c?.longitude) && Math.abs(c.longitude) <= 180 &&
+      Number.isFinite(c?.latitude) &&
+      Math.abs(c.latitude) <= 90 &&
+      Number.isFinite(c?.longitude) &&
+      Math.abs(c.longitude) <= 180 &&
       Number.isFinite(c?.zoom)
     ) {
       return { latitude: c.latitude, longitude: c.longitude, zoom: c.zoom };
@@ -106,11 +109,16 @@ export const InteractiveMapView: React.FC<InteractiveMapViewProps> = ({
   onTransectPress,
   height = '100%',
 }) => {
+  const { t } = useTranslation();
   const webViewRef = useRef<WebView>(null);
   const [mapLoaded, setMapLoaded] = useState(false);
   const [currentLayer, setCurrentLayer] = useState<'streets' | 'satellite' | 'outdoors'>('streets');
   const [showColoniesLayer, setShowColoniesLayer] = useState(true);
-  const [userLocation, setUserLocation] = useState<{ lat: number; lon: number; acc: number } | null>(null);
+  const [userLocation, setUserLocation] = useState<{
+    lat: number;
+    lon: number;
+    acc: number;
+  } | null>(null);
 
   // Without an explicit centre the viewport resolves in order: last camera
   // position, then the device location, then the world view the map opens on.
@@ -176,7 +184,17 @@ export const InteractiveMapView: React.FC<InteractiveMapViewProps> = ({
 
     const js = `if (window.updateMapboxData) { window.updateMapboxData(${dataPayload}); } true;`;
     webViewRef.current.injectJavaScript(js);
-  }, [markers, colonyMarkers, transectMarkers, showColoniesLayer, trackCoordinates, routeCorridorCoordinates, userLocation, mapLoaded, showUserLocation]);
+  }, [
+    markers,
+    colonyMarkers,
+    transectMarkers,
+    showColoniesLayer,
+    trackCoordinates,
+    routeCorridorCoordinates,
+    userLocation,
+    mapLoaded,
+    showUserLocation,
+  ]);
 
   // Smooth camera auto-centering effect on target coordinate
   useEffect(() => {
@@ -205,7 +223,14 @@ export const InteractiveMapView: React.FC<InteractiveMapViewProps> = ({
   }, [mapLoaded]);
 
   useEffect(() => {
-    if (!mapLoaded || !savedCameraChecked || viewportResolved.current || !userLocation || !webViewRef.current) return;
+    if (
+      !mapLoaded ||
+      !savedCameraChecked ||
+      viewportResolved.current ||
+      !userLocation ||
+      !webViewRef.current
+    )
+      return;
     viewportResolved.current = true;
     webViewRef.current.injectJavaScript(
       `if (window.centerOnUser) { window.centerOnUser(${userLocation.lat}, ${userLocation.lon}, ${USER_LOCATION_ZOOM}); } true;`
@@ -220,13 +245,17 @@ export const InteractiveMapView: React.FC<InteractiveMapViewProps> = ({
 
     setCurrentLayer(next);
     if (webViewRef.current) {
-      webViewRef.current.injectJavaScript(`if (window.switchMapboxStyle) { window.switchMapboxStyle("${next}"); } true;`);
+      webViewRef.current.injectJavaScript(
+        `if (window.switchMapboxStyle) { window.switchMapboxStyle("${next}"); } true;`
+      );
     }
   };
 
   const centerOnUser = () => {
     if (webViewRef.current && userLocation) {
-      webViewRef.current.injectJavaScript(`if (window.centerOnUser) { window.centerOnUser(${userLocation.lat}, ${userLocation.lon}); } true;`);
+      webViewRef.current.injectJavaScript(
+        `if (window.centerOnUser) { window.centerOnUser(${userLocation.lat}, ${userLocation.lon}); } true;`
+      );
     }
   };
 
@@ -804,18 +833,14 @@ export const InteractiveMapView: React.FC<InteractiveMapViewProps> = ({
 
       {/* Floating Modern Map Controls (Airy Apple/Tactile Style) */}
       <View style={styles.floatingControls}>
-        <TouchableOpacity
-          style={styles.controlPill}
-          onPress={toggleLayer}
-          activeOpacity={0.7}
-        >
+        <TouchableOpacity style={styles.controlPill} onPress={toggleLayer} activeOpacity={0.7}>
           <IOSIcon name="map" size={15} color={IOSColors.label} />
           <Text style={styles.controlPillText}>
             {currentLayer === 'streets'
-              ? 'Satellite'
+              ? t('ui_interactiveMapView.satellite')
               : currentLayer === 'satellite'
-              ? 'Outdoors'
-              : 'Streets'}
+                ? t('ui_interactiveMapView.outdoors')
+                : t('ui_interactiveMapView.streets')}
           </Text>
         </TouchableOpacity>
 
@@ -825,27 +850,16 @@ export const InteractiveMapView: React.FC<InteractiveMapViewProps> = ({
             onPress={() => setShowColoniesLayer(!showColoniesLayer)}
             activeOpacity={0.7}
           >
-            <IOSIcon
-              name="shield"
-              size={13}
-              color={showColoniesLayer ? '#FFFFFF' : '#7C3AED'}
-            />
+            <IOSIcon name="shield" size={13} color={showColoniesLayer ? '#FFFFFF' : '#7C3AED'} />
             <Text
-              style={[
-                styles.controlPillText,
-                showColoniesLayer && styles.controlPillTextActive,
-              ]}
+              style={[styles.controlPillText, showColoniesLayer && styles.controlPillTextActive]}
             >
-              Colonies {showColoniesLayer ? 'ON' : 'OFF'}
+              {t('ui_interactiveMapView.colonies', { v1: showColoniesLayer ? 'ON' : 'OFF' })}
             </Text>
           </TouchableOpacity>
         )}
 
-        <TouchableOpacity
-          style={styles.controlCircle}
-          onPress={centerOnUser}
-          activeOpacity={0.7}
-        >
+        <TouchableOpacity style={styles.controlCircle} onPress={centerOnUser} activeOpacity={0.7}>
           <IOSIcon name="location" size={18} color={IOSColors.systemTeal} />
         </TouchableOpacity>
       </View>
@@ -855,7 +869,7 @@ export const InteractiveMapView: React.FC<InteractiveMapViewProps> = ({
         <View style={styles.accuracyTag}>
           <View style={styles.pulseDot} />
           <Text style={styles.accuracyText}>
-            GPS ±{userLocation.acc.toFixed(1)}m · Live
+            {t('ui_interactiveMapView.gps_m_live', { v1: userLocation.acc.toFixed(1) })}
           </Text>
         </View>
       ) : null}

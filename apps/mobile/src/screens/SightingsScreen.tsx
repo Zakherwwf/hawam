@@ -16,12 +16,7 @@ import { useTranslation } from 'react-i18next';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Species } from '@tunisia-survey/shared';
 import { IOSColors, IOSTypography, IOSLayout } from '../theme/ios';
-import {
-  IOSNavigationBar,
-  IOSSegmentedControl,
-  IOSButton,
-  IOSIcon,
-} from '../components/ios';
+import { IOSNavigationBar, IOSSegmentedControl, IOSButton, IOSIcon } from '../components/ios';
 import { useSyncStore } from '../features/sync/syncStore';
 import { Icon } from '../components/design-system/Icon';
 import {
@@ -87,7 +82,11 @@ export const SightingsScreen: React.FC<SightingsScreenProps> = ({
     if (filterOnlyPhotos && (!s.photos || s.photos.length === 0)) {
       return false;
     }
-    if (filterTnrOnly && !s.notes?.toLowerCase().includes('ear') && !s.notes?.toLowerCase().includes('tnr')) {
+    if (
+      filterTnrOnly &&
+      !s.notes?.toLowerCase().includes('ear') &&
+      !s.notes?.toLowerCase().includes('tnr')
+    ) {
       return false;
     }
     if (searchQuery.trim().length > 0) {
@@ -104,7 +103,9 @@ export const SightingsScreen: React.FC<SightingsScreenProps> = ({
   const catCount = sightings.filter((s) => s.species === 'cat').length;
   const dogCount = sightings.filter((s) => s.species === 'dog').length;
   const photosCount = sightings.filter((s) => s.photos && s.photos.length > 0).length;
-  const tnrCount = sightings.filter((s) => s.notes?.toLowerCase().includes('ear') || s.notes?.toLowerCase().includes('tnr')).length;
+  const tnrCount = sightings.filter(
+    (s) => s.notes?.toLowerCase().includes('ear') || s.notes?.toLowerCase().includes('tnr')
+  ).length;
 
   const handleStartEdit = (item: SightingItem) => {
     hapticButtonPress();
@@ -137,18 +138,14 @@ export const SightingsScreen: React.FC<SightingsScreenProps> = ({
   };
 
   const confirmDelete = (item: SightingItem) => {
-    Alert.alert(
-      t('sightings.delete_title'),
-      t('sightings.delete_prompt'),
-      [
-        { text: t('common.cancel'), style: 'cancel' },
-        {
-          text: t('common.delete'),
-          style: 'destructive',
-          onPress: () => onDeleteSighting(item.id),
-        },
-      ]
-    );
+    Alert.alert(t('sightings.delete_title'), t('sightings.delete_prompt'), [
+      { text: t('common.cancel'), style: 'cancel' },
+      {
+        text: t('common.delete'),
+        style: 'destructive',
+        onPress: () => onDeleteSighting(item.id),
+      },
+    ]);
   };
 
   const formatTime = (isoString: string) => {
@@ -178,7 +175,10 @@ export const SightingsScreen: React.FC<SightingsScreenProps> = ({
           <IOSNavigationBar
             title={t('sightings.title')}
             rightAction={
-              <TouchableOpacity onPress={onAddNew} hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}>
+              <TouchableOpacity
+                onPress={onAddNew}
+                hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+              >
                 <IOSIcon name="plus" size={22} color={IOSColors.systemTeal} />
               </TouchableOpacity>
             }
@@ -195,7 +195,11 @@ export const SightingsScreen: React.FC<SightingsScreenProps> = ({
             <View style={styles.offlineBannerLeft}>
               <Icon name="cloud-offline" size={16} color="#E65100" />
               <Text style={styles.offlineBannerText}>
-                {pendingCount} {pendingCount === 1 ? 'survey observation' : 'survey observations'} saved on device · {isSyncing ? 'Syncing...' : 'Pending sync (tap to retry)'}
+                {t('ui_sightings.saved_on_device', {
+                  pendingCount,
+                  v3: pendingCount === 1 ? 'survey observation' : 'survey observations',
+                  v5: isSyncing ? 'Syncing...' : 'Pending sync (tap to retry)',
+                })}
               </Text>
             </View>
             {isSyncing && <ActivityIndicator size="small" color="#E65100" />}
@@ -230,7 +234,10 @@ export const SightingsScreen: React.FC<SightingsScreenProps> = ({
               <TouchableOpacity
                 style={[
                   styles.filterPill,
-                  filterSpecies === 'all' && !filterOnlyPhotos && !filterTnrOnly && styles.filterPillActive,
+                  filterSpecies === 'all' &&
+                    !filterOnlyPhotos &&
+                    !filterTnrOnly &&
+                    styles.filterPillActive,
                 ]}
                 onPress={() => {
                   hapticTabSwitch();
@@ -243,7 +250,10 @@ export const SightingsScreen: React.FC<SightingsScreenProps> = ({
                 <Text
                   style={[
                     styles.filterPillText,
-                    filterSpecies === 'all' && !filterOnlyPhotos && !filterTnrOnly && styles.filterPillTextActive,
+                    filterSpecies === 'all' &&
+                      !filterOnlyPhotos &&
+                      !filterTnrOnly &&
+                      styles.filterPillTextActive,
                   ]}
                 >
                   {t('sightings.all')} ({sightings.length})
@@ -266,7 +276,12 @@ export const SightingsScreen: React.FC<SightingsScreenProps> = ({
                   }
                   style={{ width: 14, height: 14, resizeMode: 'contain' }}
                 />
-                <Text style={[styles.filterPillText, filterSpecies === 'cat' && styles.filterPillTextActive]}>
+                <Text
+                  style={[
+                    styles.filterPillText,
+                    filterSpecies === 'cat' && styles.filterPillTextActive,
+                  ]}
+                >
                   {t('animal.cat')} ({catCount})
                 </Text>
               </TouchableOpacity>
@@ -287,7 +302,12 @@ export const SightingsScreen: React.FC<SightingsScreenProps> = ({
                   }
                   style={{ width: 14, height: 14, resizeMode: 'contain' }}
                 />
-                <Text style={[styles.filterPillText, filterSpecies === 'dog' && styles.filterPillTextActive]}>
+                <Text
+                  style={[
+                    styles.filterPillText,
+                    filterSpecies === 'dog' && styles.filterPillTextActive,
+                  ]}
+                >
                   {t('animal.dog')} ({dogCount})
                 </Text>
               </TouchableOpacity>
@@ -300,13 +320,11 @@ export const SightingsScreen: React.FC<SightingsScreenProps> = ({
                 }}
                 activeOpacity={0.8}
               >
-                <IOSIcon
-                  name="camera"
-                  size={13}
-                  color={filterOnlyPhotos ? '#FFFFFF' : '#475569'}
-                />
-                <Text style={[styles.filterPillText, filterOnlyPhotos && styles.filterPillTextActive]}>
-                  Photos ({photosCount})
+                <IOSIcon name="camera" size={13} color={filterOnlyPhotos ? '#FFFFFF' : '#475569'} />
+                <Text
+                  style={[styles.filterPillText, filterOnlyPhotos && styles.filterPillTextActive]}
+                >
+                  {t('ui_sightings.photos', { photosCount })}
                 </Text>
               </TouchableOpacity>
 
@@ -318,13 +336,9 @@ export const SightingsScreen: React.FC<SightingsScreenProps> = ({
                 }}
                 activeOpacity={0.8}
               >
-                <IOSIcon
-                  name="shield"
-                  size={13}
-                  color={filterTnrOnly ? '#FFFFFF' : '#475569'}
-                />
+                <IOSIcon name="shield" size={13} color={filterTnrOnly ? '#FFFFFF' : '#475569'} />
                 <Text style={[styles.filterPillText, filterTnrOnly && styles.filterPillTextActive]}>
-                  Ear-Tipped ({tnrCount})
+                  {t('ui_sightings.ear_tipped', { tnrCount })}
                 </Text>
               </TouchableOpacity>
             </ScrollView>
@@ -347,267 +361,287 @@ export const SightingsScreen: React.FC<SightingsScreenProps> = ({
           </View>
         </View>
 
-      <ScrollView contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
-        {filtered.length === 0 ? (
-          <View style={styles.emptyContainer}>
-            <Image
-              source={
-                filterSpecies === 'cat'
-                  ? require('../../assets/empty_cat_hills.jpg')
-                  : require('../../assets/empty_dog_radar.jpg')
-              }
-              style={styles.emptyIllustration}
-            />
-            <Text style={styles.emptyTitle}>
-              {searchQuery ? 'No Matches Found' : t('sightings.empty_title')}
-            </Text>
-            <Text style={styles.emptySubtitle}>
-              {searchQuery
-                ? `No sightings matching "${searchQuery}". Clear search or adjust filter.`
-                : t('sightings.empty_subtitle')}
-            </Text>
-            <View style={{ marginTop: 20 }}>
-              {searchQuery ? (
-                <IOSButton title="Clear Search" variant="secondary" onPress={() => setSearchQuery('')} />
-              ) : (
-                <IOSButton title={t('sightings.record_new')} onPress={onAddNew} />
-              )}
+        <ScrollView
+          contentContainerStyle={styles.scrollContent}
+          showsVerticalScrollIndicator={false}
+        >
+          {filtered.length === 0 ? (
+            <View style={styles.emptyContainer}>
+              <Image
+                source={
+                  filterSpecies === 'cat'
+                    ? require('../../assets/empty_cat_hills.jpg')
+                    : require('../../assets/empty_dog_radar.jpg')
+                }
+                style={styles.emptyIllustration}
+              />
+              <Text style={styles.emptyTitle}>
+                {searchQuery ? t('ui_sightings.no_matches_found') : t('sightings.empty_title')}
+              </Text>
+              <Text style={styles.emptySubtitle}>
+                {searchQuery
+                  ? t('ui_sightings.no_sightings_matching_clear_search_or', { searchQuery })
+                  : t('sightings.empty_subtitle')}
+              </Text>
+              <View style={{ marginTop: 20 }}>
+                {searchQuery ? (
+                  <IOSButton
+                    title={t('ui_sightings.clear_search')}
+                    variant="secondary"
+                    onPress={() => setSearchQuery('')}
+                  />
+                ) : (
+                  <IOSButton title={t('sightings.record_new')} onPress={onAddNew} />
+                )}
+              </View>
             </View>
-          </View>
-        ) : (
-          filtered.map((item, index) => {
-            const isCat = item.species === 'cat';
-            const scientificCode = item.identifier || generateScientificObservationCode(item.species, index + 1);
-            return (
-              <View key={item.id} style={styles.card}>
-                <View style={styles.cardHeader}>
-                  <View style={styles.speciesBadgeRow}>
-                    <View
-                      style={[
-                        styles.speciesIconBadge,
-                        { backgroundColor: isCat ? '#E0F2FE' : '#FEF3C7' },
-                      ]}
-                    >
-                      <Image
-                        source={
-                          isCat
-                            ? require('../../assets/icon_cat_primary.png')
-                            : require('../../assets/icon_dog_amber.png')
-                        }
-                        style={{ width: 18, height: 18, resizeMode: 'contain' }}
-                      />
-                    </View>
-                    <View>
-                      <Text style={styles.speciesTitle}>
-                        {scientificCode}
-                        {item.group_size > 1 ? ` (${item.group_size})` : ''}
-                      </Text>
-                      <Text style={styles.timestampText}>
-                        {isCat ? 'Cat' : 'Dog'} • {item.observer_name ? `${item.observer_name} • ` : ''}
-                        {formatTime(item.observed_at)}
-                      </Text>
-                    </View>
-                  </View>
-
-                  {/* Actions: Edit & Delete buttons */}
-                  <View style={styles.cardActionRow}>
-                    <TouchableOpacity
-                      onPress={() => handleStartEdit(item)}
-                      style={styles.actionIconButton}
-                      hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
-                      activeOpacity={0.6}
-                    >
-                      <IOSIcon name="pencil" size={16} color={IOSColors.systemTeal} />
-                    </TouchableOpacity>
-                    <TouchableOpacity
-                      onPress={() => confirmDelete(item)}
-                      style={styles.actionIconButton}
-                      hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
-                      activeOpacity={0.6}
-                    >
-                      <IOSIcon name="trash" size={16} color={IOSColors.systemRed} />
-                    </TouchableOpacity>
-                  </View>
-                </View>
-
-                {/* Georeference Coordinate Tag */}
-                <View style={styles.geoTag}>
-                  <IOSIcon name="location" size={13} color={IOSColors.systemTeal} />
-                  <Text style={styles.geoCoords}>
-                    {item.latitude.toFixed(6)}° N, {item.longitude.toFixed(6)}° E
-                  </Text>
-                  <Text style={styles.utmBadge}>UTM 32N</Text>
-                </View>
-
-                {/* Sighting Details Grid */}
-                <View style={styles.detailsGrid}>
-                  {item.distance_from_path_m !== undefined ? (
-                    <View style={styles.detailPill}>
-                      <Text style={styles.detailPillLabel}>{t('sightings.distance_label')}</Text>
-                      <Text style={styles.detailPillValue}>{item.distance_from_path_m.toFixed(1)} m</Text>
-                    </View>
-                  ) : null}
-
-                  {item.body_condition_score ? (
-                    <View style={styles.detailPill}>
-                      <Text style={styles.detailPillLabel}>{t('sightings.bcs_label')}</Text>
-                      <Text style={styles.detailPillValue}>BCS {item.body_condition_score}/5</Text>
-                    </View>
-                  ) : null}
-
-                  <View style={styles.detailPill}>
-                    <Text style={styles.detailPillLabel}>Protocol</Text>
-                    <Text style={styles.detailPillValue}>
-                      {item.protocol === 'transect'
-                        ? 'Transect'
-                        : item.protocol === 'stationary_point'
-                        ? 'Stationary'
-                        : 'Incidental'}
-                    </Text>
-                  </View>
-
-                  {item.photos && item.photos.length > 0 ? (
-                    <View style={[styles.detailPill, { backgroundColor: 'rgba(48, 176, 199, 0.12)' }]}>
-                      <IOSIcon name="camera" size={12} color={IOSColors.systemTeal} />
-                      <Text style={[styles.detailPillValue, { color: IOSColors.systemTeal }]}>
-                        {item.photos.length} Photo{item.photos.length > 1 ? 's' : ''}
-                      </Text>
-                    </View>
-                  ) : null}
-                </View>
-
-                {/* Inline Horizontal Photo Thumbnail Strip */}
-                {item.photos && item.photos.length > 0 ? (
-                  <ScrollView
-                    horizontal
-                    showsHorizontalScrollIndicator={false}
-                    contentContainerStyle={styles.cardPhotosStrip}
-                  >
-                    {item.photos.map((photoUri, pIdx) => (
-                      <View key={pIdx} style={styles.cardPhotoWrapper}>
-                        <Image source={{ uri: photoUri }} style={styles.cardPhotoThumb} />
-                        <View style={styles.photoIndexBadge}>
-                          <Text style={styles.photoIndexText}>{pIdx + 1}</Text>
-                        </View>
+          ) : (
+            filtered.map((item, index) => {
+              const isCat = item.species === 'cat';
+              const scientificCode =
+                item.identifier || generateScientificObservationCode(item.species, index + 1);
+              return (
+                <View key={item.id} style={styles.card}>
+                  <View style={styles.cardHeader}>
+                    <View style={styles.speciesBadgeRow}>
+                      <View
+                        style={[
+                          styles.speciesIconBadge,
+                          { backgroundColor: isCat ? '#E0F2FE' : '#FEF3C7' },
+                        ]}
+                      >
+                        <Image
+                          source={
+                            isCat
+                              ? require('../../assets/icon_cat_primary.png')
+                              : require('../../assets/icon_dog_amber.png')
+                          }
+                          style={{ width: 18, height: 18, resizeMode: 'contain' }}
+                        />
                       </View>
-                    ))}
-                  </ScrollView>
-                ) : null}
+                      <View>
+                        <Text style={styles.speciesTitle}>
+                          {scientificCode}
+                          {item.group_size > 1 ? ` (${item.group_size})` : ''}
+                        </Text>
+                        <Text style={styles.timestampText}>
+                          {isCat ? t('ui_sightings.cat') : t('ui_sightings.dog')} •{' '}
+                          {item.observer_name ? `${item.observer_name} • ` : ''}
+                          {formatTime(item.observed_at)}
+                        </Text>
+                      </View>
+                    </View>
 
-                {item.notes ? (
-                  <Text style={styles.notesText} numberOfLines={2}>
-                    "{item.notes}"
-                  </Text>
-                ) : null}
-              </View>
-            );
-          })
-        )}
-      </ScrollView>
+                    {/* Actions: Edit & Delete buttons */}
+                    <View style={styles.cardActionRow}>
+                      <TouchableOpacity
+                        onPress={() => handleStartEdit(item)}
+                        style={styles.actionIconButton}
+                        hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+                        activeOpacity={0.6}
+                      >
+                        <IOSIcon name="pencil" size={16} color={IOSColors.systemTeal} />
+                      </TouchableOpacity>
+                      <TouchableOpacity
+                        onPress={() => confirmDelete(item)}
+                        style={styles.actionIconButton}
+                        hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+                        activeOpacity={0.6}
+                      >
+                        <IOSIcon name="trash" size={16} color={IOSColors.systemRed} />
+                      </TouchableOpacity>
+                    </View>
+                  </View>
 
-      {/* Edit Sighting Modal Sheet */}
-      <Modal
-        visible={!!editingItem}
-        transparent
-        animationType="slide"
-        onRequestClose={handleCloseEdit}
-      >
-        <View style={styles.sheetOverlay}>
-          <View style={styles.sheetContainer}>
-            <View style={IOSLayout.sheetHandle} />
-            <Text style={styles.sheetTitle}>{t('survey.edit_detection')}</Text>
-            <View style={{ marginBottom: 14 }}>
-              <Text style={styles.sheetLabel}>Identifier / Field Tag</Text>
-              <TextInput
-                style={styles.sheetInput}
-                value={editIdentifier}
-                onChangeText={setEditIdentifier}
-                placeholder="e.g. Rex, White-Flanked Tabby, Ear-Tag #12"
-              />
-            </View>
+                  {/* Georeference Coordinate Tag */}
+                  <View style={styles.geoTag}>
+                    <IOSIcon name="location" size={13} color={IOSColors.systemTeal} />
+                    <Text style={styles.geoCoords}>
+                      {item.latitude.toFixed(6)}° N, {item.longitude.toFixed(6)}° E
+                    </Text>
+                    <Text style={styles.utmBadge}>{t('ui_sightings.utm_32n')}</Text>
+                  </View>
 
-            <View style={{ marginBottom: 16 }}>
-              <Text style={styles.sheetLabel}>{t('animal.species')}</Text>
-              <IOSSegmentedControl<Species>
-                selectedValue={editSpecies}
-                onValueChange={(val) => {
-                  hapticTabSwitch();
-                  setEditSpecies(val);
-                }}
-                values={[
-                  { label: t('animal.cat'), value: 'cat' },
-                  { label: t('animal.dog'), value: 'dog' },
-                ]}
-              />
-            </View>
+                  {/* Sighting Details Grid */}
+                  <View style={styles.detailsGrid}>
+                    {item.distance_from_path_m !== undefined ? (
+                      <View style={styles.detailPill}>
+                        <Text style={styles.detailPillLabel}>{t('sightings.distance_label')}</Text>
+                        <Text style={styles.detailPillValue}>
+                          {item.distance_from_path_m.toFixed(1)} m
+                        </Text>
+                      </View>
+                    ) : null}
 
-            <View style={styles.sheetRow}>
-              <View style={{ flex: 1 }}>
-                <Text style={styles.sheetLabel}>{t('animal.group_size')}</Text>
-                <View style={styles.stepperBox}>
-                  <TouchableOpacity
-                    onPress={() => {
-                      hapticTabSwitch();
-                      setEditGroupSize(Math.max(1, editGroupSize - 1));
-                    }}
-                    style={styles.stepBtn}
-                  >
-                    <IOSIcon name="minus" size={14} color={IOSColors.systemTeal} />
-                  </TouchableOpacity>
-                  <Text style={styles.stepVal}>{editGroupSize}</Text>
-                  <TouchableOpacity
-                    onPress={() => {
-                      hapticTabSwitch();
-                      setEditGroupSize(editGroupSize + 1);
-                    }}
-                    style={styles.stepBtn}
-                  >
-                    <IOSIcon name="plus" size={14} color={IOSColors.systemTeal} />
-                  </TouchableOpacity>
+                    {item.body_condition_score ? (
+                      <View style={styles.detailPill}>
+                        <Text style={styles.detailPillLabel}>{t('sightings.bcs_label')}</Text>
+                        <Text style={styles.detailPillValue}>
+                          {t('ui_sightings.bcs_5', {
+                            body_condition_score: item.body_condition_score,
+                          })}
+                        </Text>
+                      </View>
+                    ) : null}
+
+                    <View style={styles.detailPill}>
+                      <Text style={styles.detailPillLabel}>{t('ui_sightings.protocol')}</Text>
+                      <Text style={styles.detailPillValue}>
+                        {item.protocol === 'transect'
+                          ? t('ui_sightings.transect')
+                          : item.protocol === 'stationary_point'
+                            ? t('ui_sightings.stationary')
+                            : t('ui_sightings.incidental')}
+                      </Text>
+                    </View>
+
+                    {item.photos && item.photos.length > 0 ? (
+                      <View
+                        style={[styles.detailPill, { backgroundColor: 'rgba(48, 176, 199, 0.12)' }]}
+                      >
+                        <IOSIcon name="camera" size={12} color={IOSColors.systemTeal} />
+                        <Text style={[styles.detailPillValue, { color: IOSColors.systemTeal }]}>
+                          {t('ui_sightings.photo', {
+                            length: item.photos.length,
+                            v3: item.photos.length > 1 ? 's' : '',
+                          })}
+                        </Text>
+                      </View>
+                    ) : null}
+                  </View>
+
+                  {/* Inline Horizontal Photo Thumbnail Strip */}
+                  {item.photos && item.photos.length > 0 ? (
+                    <ScrollView
+                      horizontal
+                      showsHorizontalScrollIndicator={false}
+                      contentContainerStyle={styles.cardPhotosStrip}
+                    >
+                      {item.photos.map((photoUri, pIdx) => (
+                        <View key={pIdx} style={styles.cardPhotoWrapper}>
+                          <Image source={{ uri: photoUri }} style={styles.cardPhotoThumb} />
+                          <View style={styles.photoIndexBadge}>
+                            <Text style={styles.photoIndexText}>{pIdx + 1}</Text>
+                          </View>
+                        </View>
+                      ))}
+                    </ScrollView>
+                  ) : null}
+
+                  {item.notes ? (
+                    <Text style={styles.notesText} numberOfLines={2}>
+                      "{item.notes}"
+                    </Text>
+                  ) : null}
                 </View>
-              </View>
+              );
+            })
+          )}
+        </ScrollView>
 
-              <View style={{ flex: 1, marginLeft: 16 }}>
-                <Text style={styles.sheetLabel}>Distance (m)</Text>
+        {/* Edit Sighting Modal Sheet */}
+        <Modal
+          visible={!!editingItem}
+          transparent
+          animationType="slide"
+          onRequestClose={handleCloseEdit}
+        >
+          <View style={styles.sheetOverlay}>
+            <View style={styles.sheetContainer}>
+              <View style={IOSLayout.sheetHandle} />
+              <Text style={styles.sheetTitle}>{t('survey.edit_detection')}</Text>
+              <View style={{ marginBottom: 14 }}>
+                <Text style={styles.sheetLabel}>{t('ui_sightings.identifier_field_tag')}</Text>
                 <TextInput
                   style={styles.sheetInput}
-                  keyboardType="numeric"
-                  value={editDistance}
-                  onChangeText={setEditDistance}
-                  placeholder="5.0"
+                  value={editIdentifier}
+                  onChangeText={setEditIdentifier}
+                  placeholder={t('ui_sightings.e_g_rex_white_flanked_tabby')}
                 />
               </View>
-            </View>
 
-            <View style={{ marginTop: 14 }}>
-              <Text style={styles.sheetLabel}>{t('animal.notes')}</Text>
-              <TextInput
-                style={[styles.sheetInput, { height: 60, textAlignVertical: 'top' }]}
-                value={editNotes}
-                onChangeText={setEditNotes}
-                placeholder="Field observations..."
-                multiline
-              />
-            </View>
-
-            <View style={styles.sheetBtnRow}>
-              <View style={{ flex: 1 }}>
-                <IOSButton
-                  title={t('common.cancel')}
-                  variant="secondary"
-                  onPress={handleCloseEdit}
+              <View style={{ marginBottom: 16 }}>
+                <Text style={styles.sheetLabel}>{t('animal.species')}</Text>
+                <IOSSegmentedControl<Species>
+                  selectedValue={editSpecies}
+                  onValueChange={(val) => {
+                    hapticTabSwitch();
+                    setEditSpecies(val);
+                  }}
+                  values={[
+                    { label: t('animal.cat'), value: 'cat' },
+                    { label: t('animal.dog'), value: 'dog' },
+                  ]}
                 />
               </View>
-              <View style={{ flex: 1 }}>
-                <IOSButton title={t('common.save')} onPress={handleSaveEdit} />
+
+              <View style={styles.sheetRow}>
+                <View style={{ flex: 1 }}>
+                  <Text style={styles.sheetLabel}>{t('animal.group_size')}</Text>
+                  <View style={styles.stepperBox}>
+                    <TouchableOpacity
+                      onPress={() => {
+                        hapticTabSwitch();
+                        setEditGroupSize(Math.max(1, editGroupSize - 1));
+                      }}
+                      style={styles.stepBtn}
+                    >
+                      <IOSIcon name="minus" size={14} color={IOSColors.systemTeal} />
+                    </TouchableOpacity>
+                    <Text style={styles.stepVal}>{editGroupSize}</Text>
+                    <TouchableOpacity
+                      onPress={() => {
+                        hapticTabSwitch();
+                        setEditGroupSize(editGroupSize + 1);
+                      }}
+                      style={styles.stepBtn}
+                    >
+                      <IOSIcon name="plus" size={14} color={IOSColors.systemTeal} />
+                    </TouchableOpacity>
+                  </View>
+                </View>
+
+                <View style={{ flex: 1, marginLeft: 16 }}>
+                  <Text style={styles.sheetLabel}>{t('ui_sightings.distance_m')}</Text>
+                  <TextInput
+                    style={styles.sheetInput}
+                    keyboardType="numeric"
+                    value={editDistance}
+                    onChangeText={setEditDistance}
+                    placeholder="5.0"
+                  />
+                </View>
+              </View>
+
+              <View style={{ marginTop: 14 }}>
+                <Text style={styles.sheetLabel}>{t('animal.notes')}</Text>
+                <TextInput
+                  style={[styles.sheetInput, { height: 60, textAlignVertical: 'top' }]}
+                  value={editNotes}
+                  onChangeText={setEditNotes}
+                  placeholder={t('ui_sightings.field_observations')}
+                  multiline
+                />
+              </View>
+
+              <View style={styles.sheetBtnRow}>
+                <View style={{ flex: 1 }}>
+                  <IOSButton
+                    title={t('common.cancel')}
+                    variant="secondary"
+                    onPress={handleCloseEdit}
+                  />
+                </View>
+                <View style={{ flex: 1 }}>
+                  <IOSButton title={t('common.save')} onPress={handleSaveEdit} />
+                </View>
               </View>
             </View>
           </View>
-        </View>
-      </Modal>
-    </ContainerComponent>
-  </View>
-);
+        </Modal>
+      </ContainerComponent>
+    </View>
+  );
 };
 
 const styles = StyleSheet.create({

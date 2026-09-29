@@ -2,7 +2,18 @@ import './src/polyfills';
 import React, { useState, useEffect } from 'react';
 import { registerRootComponent } from 'expo';
 import { StatusBar } from 'expo-status-bar';
-import { StyleSheet, View, Text, TouchableOpacity, Platform, ActivityIndicator, Linking, Image, Alert, Modal } from 'react-native';
+import {
+  StyleSheet,
+  View,
+  Text,
+  TouchableOpacity,
+  Platform,
+  ActivityIndicator,
+  Linking,
+  Image,
+  Alert,
+  Modal,
+} from 'react-native';
 import { SafeAreaProvider, SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useTranslation } from 'react-i18next';
 import AsyncStorage from '@react-native-async-storage/async-storage';
@@ -38,7 +49,10 @@ import { handleAuthUrl } from './src/services/deepLinkAuth';
 import { QueryClientProvider } from '@tanstack/react-query';
 import { queryClient } from './src/services/queries/useSurveyQueries';
 import { startOutboxWorker } from './src/services/sync/outboxWorker';
-import { startBackgroundLocationTracking, stopBackgroundLocationTracking } from './src/services/location/backgroundLocation';
+import {
+  startBackgroundLocationTracking,
+  stopBackgroundLocationTracking,
+} from './src/services/location/backgroundLocation';
 import { generateUUID } from './src/utils/uuid';
 import {
   hapticTabSwitch,
@@ -49,7 +63,6 @@ import {
 
 export type TabType = 'explore' | 'animals' | 'activity' | 'me';
 export type ModalType = 'none' | 'opportunistic' | 'guided_photo' | 'training' | 'settings';
-
 
 function AppContent() {
   const insets = useSafeAreaInsets();
@@ -81,7 +94,10 @@ function AppContent() {
   // Outbox worker and survey crash recovery on cold start
   useEffect(() => {
     const stopWorker = startOutboxWorker(() => useSyncStore.getState().wifiOnly);
-    useSurveyStore.getState().restoreDraft().catch(() => {});
+    useSurveyStore
+      .getState()
+      .restoreDraft()
+      .catch(() => {});
     return () => {
       stopWorker();
     };
@@ -119,12 +135,16 @@ function AppContent() {
     const loadLocalData = async () => {
       try {
         // Inspect live Supabase cloud session
-        const { data: { session } } = await supabase.auth.getSession();
+        const {
+          data: { session },
+        } = await supabase.auth.getSession();
         if (session?.user) {
           const userMeta = session.user.user_metadata || {};
           let savedLocal: Partial<UserAccount> | null = null;
           try {
-            const raw = (await AsyncStorage.getItem(`hawem_account_${session.user.id}`)) || (await AsyncStorage.getItem('hawem_account_v1'));
+            const raw =
+              (await AsyncStorage.getItem(`hawem_account_${session.user.id}`)) ||
+              (await AsyncStorage.getItem('hawem_account_v1'));
             if (raw) savedLocal = JSON.parse(raw);
           } catch {}
 
@@ -133,15 +153,18 @@ function AppContent() {
             userMeta.surveyor_id ||
             `TUN-OBS-${session.user.id.slice(0, 6).toUpperCase()}`;
 
-          const effectiveAvatar =
-            savedLocal?.avatarUri ||
-            userMeta.avatar_url ||
-            undefined;
+          const effectiveAvatar = savedLocal?.avatarUri || userMeta.avatar_url || undefined;
 
           const cloudAccount: UserAccount = {
-            name: savedLocal?.name || userMeta.full_name || userMeta.name || session.user.email?.split('@')[0] || 'Surveyor',
+            name:
+              savedLocal?.name ||
+              userMeta.full_name ||
+              userMeta.name ||
+              session.user.email?.split('@')[0] ||
+              'Surveyor',
             email: session.user.email || '',
-            organization: savedLocal?.organization || userMeta.organization || 'Tunisia Fauna Observatory',
+            organization:
+              savedLocal?.organization || userMeta.organization || 'Tunisia Fauna Observatory',
             role: (savedLocal?.role as any) || userMeta.role || 'surveyor',
             governorate: savedLocal?.governorate || userMeta.governorate || 'Tunis',
             surveyorId: effectiveId,
@@ -161,7 +184,9 @@ function AppContent() {
             useGamificationStore.getState().loadGamification(session.user.id);
 
             // Load user-specific sightings (scoped per account so new accounts start clean)
-            const storedSightings = await AsyncStorage.getItem(`hawem_sightings_${session.user.id}`);
+            const storedSightings = await AsyncStorage.getItem(
+              `hawem_sightings_${session.user.id}`
+            );
             if (storedSightings) {
               const parsed = JSON.parse(storedSightings);
               if (Array.isArray(parsed)) {
@@ -204,23 +229,36 @@ function AppContent() {
     loadLocalData();
 
     // Listen to real-time sign-in / sign-out events from Supabase Cloud
-    const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
+    const {
+      data: { subscription },
+    } = supabase.auth.onAuthStateChange(async (event, session) => {
       if (session?.user) {
         ensureUserConsentAccepted().catch(() => {});
         const userMeta = session.user.user_metadata || {};
         let savedLocal: Partial<UserAccount> | null = null;
         try {
-          const raw = (await AsyncStorage.getItem(`hawem_account_${session.user.id}`)) || (await AsyncStorage.getItem('hawem_account_v1'));
+          const raw =
+            (await AsyncStorage.getItem(`hawem_account_${session.user.id}`)) ||
+            (await AsyncStorage.getItem('hawem_account_v1'));
           if (raw) savedLocal = JSON.parse(raw);
         } catch {}
 
         const cloudAccount: UserAccount = {
-          name: savedLocal?.name || userMeta.full_name || userMeta.name || session.user.email?.split('@')[0] || 'Surveyor',
+          name:
+            savedLocal?.name ||
+            userMeta.full_name ||
+            userMeta.name ||
+            session.user.email?.split('@')[0] ||
+            'Surveyor',
           email: session.user.email || '',
-          organization: savedLocal?.organization || userMeta.organization || 'Tunisia Fauna Observatory',
+          organization:
+            savedLocal?.organization || userMeta.organization || 'Tunisia Fauna Observatory',
           role: (savedLocal?.role as any) || userMeta.role || 'surveyor',
           governorate: savedLocal?.governorate || userMeta.governorate || 'Tunis',
-          surveyorId: savedLocal?.surveyorId || userMeta.surveyor_id || `TUN-OBS-${session.user.id.slice(0, 6).toUpperCase()}`,
+          surveyorId:
+            savedLocal?.surveyorId ||
+            userMeta.surveyor_id ||
+            `TUN-OBS-${session.user.id.slice(0, 6).toUpperCase()}`,
           avatarUri: savedLocal?.avatarUri || userMeta.avatar_url || undefined,
           createdAt: savedLocal?.createdAt || session.user.created_at || new Date().toISOString(),
         };
@@ -235,7 +273,9 @@ function AppContent() {
               setStats({ sessionsCompleted: 0, kmWalked: 0, animalsRecorded: 0 });
             }
             useGamificationStore.getState().loadGamification(session.user.id);
-            const storedSightings = await AsyncStorage.getItem(`hawem_sightings_${session.user.id}`);
+            const storedSightings = await AsyncStorage.getItem(
+              `hawem_sightings_${session.user.id}`
+            );
             if (storedSightings) {
               const parsed = JSON.parse(storedSightings);
               if (Array.isArray(parsed)) setSightings(parsed);
@@ -247,7 +287,10 @@ function AppContent() {
             setSightings([]);
           }
         }
-        AsyncStorage.setItem(`hawem_account_${session.user.id}`, JSON.stringify(cloudAccount)).catch(() => {});
+        AsyncStorage.setItem(
+          `hawem_account_${session.user.id}`,
+          JSON.stringify(cloudAccount)
+        ).catch(() => {});
         AsyncStorage.setItem('hawem_account_v1', JSON.stringify(cloudAccount)).catch(() => {});
       } else if (event === 'SIGNED_OUT') {
         if (isMounted) {
@@ -284,7 +327,9 @@ function AppContent() {
     try {
       await AsyncStorage.setItem('hawem_consent_version', version);
       await AsyncStorage.setItem('hawem_consent_accepted_at', new Date().toISOString());
-      const { data: { session } } = await supabase.auth.getSession();
+      const {
+        data: { session },
+      } = await supabase.auth.getSession();
       if (session?.user?.id) {
         await supabase
           .from('users')
@@ -308,21 +353,25 @@ function AppContent() {
     setUserAccount(account);
     try {
       await AsyncStorage.setItem('hawem_account_v1', JSON.stringify(account));
-      const { data: { session } } = await supabase.auth.getSession();
+      const {
+        data: { session },
+      } = await supabase.auth.getSession();
       if (session?.user?.id) {
         await AsyncStorage.setItem(`hawem_account_${session.user.id}`, JSON.stringify(account));
         // Update user metadata in Supabase Cloud
-        supabase.auth.updateUser({
-          data: {
-            full_name: account.name,
-            name: account.name,
-            organization: account.organization,
-            role: account.role,
-            governorate: account.governorate,
-            surveyor_id: account.surveyorId,
-            avatar_url: account.avatarUri,
-          },
-        }).catch(() => {});
+        supabase.auth
+          .updateUser({
+            data: {
+              full_name: account.name,
+              name: account.name,
+              organization: account.organization,
+              role: account.role,
+              governorate: account.governorate,
+              surveyor_id: account.surveyorId,
+              avatar_url: account.avatarUri,
+            },
+          })
+          .catch(() => {});
 
         const storedStats = await AsyncStorage.getItem(`hawem_stats_${session.user.id}`);
         if (storedStats) {
@@ -353,8 +402,12 @@ function AppContent() {
   const persistSightings = async (newList: SightingItem[]) => {
     setSightings(newList);
     try {
-      const { data: { session } } = await supabase.auth.getSession();
-      const storageKey = session?.user?.id ? `hawem_sightings_${session.user.id}` : 'hawem_sightings_guest';
+      const {
+        data: { session },
+      } = await supabase.auth.getSession();
+      const storageKey = session?.user?.id
+        ? `hawem_sightings_${session.user.id}`
+        : 'hawem_sightings_guest';
       await AsyncStorage.setItem(storageKey, JSON.stringify(newList));
     } catch (err) {
       console.warn('Error saving sightings:', err);
@@ -463,7 +516,12 @@ function AppContent() {
       body_condition_score: 3,
       protocol: animal.protocol || 'transect',
       notes: animal.notes,
-      photos: animal.photoUris && animal.photoUris.length > 0 ? animal.photoUris : (animal.photoUri ? [animal.photoUri] : []),
+      photos:
+        animal.photoUris && animal.photoUris.length > 0
+          ? animal.photoUris
+          : animal.photoUri
+            ? [animal.photoUri]
+            : [],
     };
 
     const updated = [newItem, ...sightings];
@@ -475,7 +533,10 @@ function AppContent() {
       };
       supabase.auth.getSession().then(({ data: { session } }) => {
         if (session?.user?.id) {
-          AsyncStorage.setItem(`hawem_stats_${session.user.id}`, JSON.stringify(updatedStats)).catch(() => {});
+          AsyncStorage.setItem(
+            `hawem_stats_${session.user.id}`,
+            JSON.stringify(updatedStats)
+          ).catch(() => {});
         }
       });
       return updatedStats;
@@ -499,7 +560,10 @@ function AppContent() {
       };
       supabase.auth.getSession().then(({ data: { session } }) => {
         if (session?.user?.id) {
-          AsyncStorage.setItem(`hawem_stats_${session.user.id}`, JSON.stringify(updatedStats)).catch(() => {});
+          AsyncStorage.setItem(
+            `hawem_stats_${session.user.id}`,
+            JSON.stringify(updatedStats)
+          ).catch(() => {});
         }
       });
       return updatedStats;
@@ -515,7 +579,10 @@ function AppContent() {
       };
       supabase.auth.getSession().then(({ data: { session } }) => {
         if (session?.user?.id) {
-          AsyncStorage.setItem(`hawem_stats_${session.user.id}`, JSON.stringify(updatedStats)).catch(() => {});
+          AsyncStorage.setItem(
+            `hawem_stats_${session.user.id}`,
+            JSON.stringify(updatedStats)
+          ).catch(() => {});
         }
       });
       return updatedStats;
@@ -553,17 +620,17 @@ function AppContent() {
     return (
       <SafeAreaView style={styles.modalRoot} edges={['top', 'left', 'right']}>
         <StatusBar style="dark" />
-        <ConsentScreen
-          onAccept={handleAcceptConsent}
-          onLanguageChange={handleLanguageChange}
-        />
+        <ConsentScreen onAccept={handleAcceptConsent} onLanguageChange={handleLanguageChange} />
       </SafeAreaView>
     );
   }
 
   if (activeModal === 'opportunistic') {
     return (
-      <SafeAreaView style={[styles.modalRoot, { backgroundColor: colors.screenBg }]} edges={['top', 'left', 'right']}>
+      <SafeAreaView
+        style={[styles.modalRoot, { backgroundColor: colors.screenBg }]}
+        edges={['top', 'left', 'right']}
+      >
         <StatusBar style={colors.statusBarStyle} />
         <OpportunisticScreen
           onBack={handleCloseModal}
@@ -579,7 +646,10 @@ function AppContent() {
 
   if (activeModal === 'guided_photo') {
     return (
-      <SafeAreaView style={[styles.modalRoot, { backgroundColor: '#000000' }]} edges={['top', 'left', 'right']}>
+      <SafeAreaView
+        style={[styles.modalRoot, { backgroundColor: '#000000' }]}
+        edges={['top', 'left', 'right']}
+      >
         <StatusBar style="light" />
         <GuidedPhotoScreen
           onBack={() => {
@@ -597,7 +667,10 @@ function AppContent() {
 
   if (activeModal === 'training') {
     return (
-      <SafeAreaView style={[styles.modalRoot, { backgroundColor: colors.screenBg }]} edges={['top', 'left', 'right']}>
+      <SafeAreaView
+        style={[styles.modalRoot, { backgroundColor: colors.screenBg }]}
+        edges={['top', 'left', 'right']}
+      >
         <StatusBar style={colors.statusBarStyle} />
         <TrainingScreen onBack={handleCloseModal} />
       </SafeAreaView>
@@ -606,7 +679,10 @@ function AppContent() {
 
   if (activeModal === 'settings') {
     return (
-      <SafeAreaView style={[styles.modalRoot, { backgroundColor: colors.screenBg }]} edges={['top', 'left', 'right']}>
+      <SafeAreaView
+        style={[styles.modalRoot, { backgroundColor: colors.screenBg }]}
+        edges={['top', 'left', 'right']}
+      >
         <StatusBar style={colors.statusBarStyle} />
         <SettingsScreen
           onBack={handleCloseModal}
@@ -633,286 +709,261 @@ function AppContent() {
       <SafeAreaView style={styles.safeContainer} edges={['top', 'left', 'right']}>
         <StatusBar style={colors.statusBarStyle} />
 
-      {/* Main Tab Content */}
-      <View style={styles.screenContent}>
-        {activeTab === 'explore' ? (
-          primaryViewMode === 'dashboard' ? (
-            <HomeScreen
-              onStartSurvey={() => {
-                setSelectedRouteForSurvey(null);
-                useSurveyStore.getState().startSurvey('transect');
-              }}
-              onQuickSighting={() => {
+        {/* Main Tab Content */}
+        <View style={styles.screenContent}>
+          {activeTab === 'explore' ? (
+            primaryViewMode === 'dashboard' ? (
+              <HomeScreen
+                onStartSurvey={() => {
+                  setSelectedRouteForSurvey(null);
+                  useSurveyStore.getState().startSurvey('transect');
+                }}
+                onQuickSighting={() => {
+                  hapticQuickLog();
+                  setActiveModal('opportunistic');
+                }}
+                onOpenTraining={() => {
+                  hapticButtonPress();
+                  setActiveModal('training');
+                }}
+                onOpenSettings={() => {
+                  hapticButtonPress();
+                  setActiveModal('settings');
+                }}
+                onToggleMap={() => setPrimaryViewMode('map')}
+                stats={stats}
+                userAccount={userAccount}
+              />
+            ) : (
+              <MapOverviewScreen
+                sightings={sightings}
+                onQuickSighting={() => {
+                  hapticQuickLog();
+                  setActiveModal('opportunistic');
+                }}
+                onOpenAccount={() => handleTabPress('me')}
+                onToggleDashboard={() => setPrimaryViewMode('dashboard')}
+                onStartSurvey={(routeId) => {
+                  setSelectedRouteForSurvey(routeId);
+                  useSurveyStore.getState().startSurvey('transect', routeId);
+                }}
+              />
+            )
+          ) : activeTab === 'animals' ? (
+            <AnimalsScreen
+              sightings={sightings}
+              onAddNewSighting={() => {
                 hapticQuickLog();
                 setActiveModal('opportunistic');
               }}
-              onOpenTraining={() => {
-                hapticButtonPress();
-                setActiveModal('training');
-              }}
-              onOpenSettings={() => {
-                hapticButtonPress();
-                setActiveModal('settings');
-              }}
-              onToggleMap={() => setPrimaryViewMode('map')}
-              stats={stats}
-              userAccount={userAccount}
+              onUpdateSighting={handleUpdateSighting}
+              onDeleteSighting={handleDeleteSighting}
             />
-          ) : (
-            <MapOverviewScreen
+          ) : activeTab === 'activity' ? (
+            <SightingsScreen
               sightings={sightings}
-              onQuickSighting={() => {
+              onAddNew={() => {
                 hapticQuickLog();
                 setActiveModal('opportunistic');
               }}
-              onOpenAccount={() => handleTabPress('me')}
-              onToggleDashboard={() => setPrimaryViewMode('dashboard')}
-              onStartSurvey={(routeId) => {
-                setSelectedRouteForSurvey(routeId);
-                useSurveyStore.getState().startSurvey('transect', routeId);
-              }}
+              onUpdateSighting={handleUpdateSighting}
+              onDeleteSighting={handleDeleteSighting}
             />
-          )
-        ) : activeTab === 'animals' ? (
-          <AnimalsScreen
-            sightings={sightings}
-            onAddNewSighting={() => {
-              hapticQuickLog();
-              setActiveModal('opportunistic');
-            }}
-            onUpdateSighting={handleUpdateSighting}
-            onDeleteSighting={handleDeleteSighting}
-          />
-        ) : activeTab === 'activity' ? (
-          <SightingsScreen
-            sightings={sightings}
-            onAddNew={() => {
-              hapticQuickLog();
-              setActiveModal('opportunistic');
-            }}
-            onUpdateSighting={handleUpdateSighting}
-            onDeleteSighting={handleDeleteSighting}
-          />
-        ) : activeTab === 'me' ? (
-          meSubView === 'leaderboard' ? (
-            <ProgressScreen
-              userAccount={userAccount}
-              stats={stats}
-            />
-          ) : (
-            <AccountScreen
-              userAccount={userAccount}
-              onSaveAccount={handleSaveAccount}
-              onSignOut={handleSignOut}
-              onOpenTraining={() => {
-                hapticButtonPress();
-                setActiveModal('training');
-              }}
-              onOpenSettings={() => {
-                hapticButtonPress();
-                setActiveModal('settings');
-              }}
-              sightings={sightings}
-              stats={stats}
-            />
-          )
-        ) : null}
-      </View>
-
-      {/* Paused Survey Banner (if survey is paused in background) */}
-      {surveyStatus === 'paused' && (
-        <View style={styles.pausedBannerContainer}>
-          <TouchableOpacity
-            style={styles.pausedBanner}
-            onPress={() => useSurveyStore.getState().resumeSurvey()}
-            activeOpacity={0.8}
-          >
-            <View style={styles.pausedIndicator} />
-            <Text style={styles.pausedBannerText}>Survey Paused — Tap to Resume</Text>
-            <Icon name="play" size={16} color="#FFFFFF" />
-          </TouchableOpacity>
+          ) : activeTab === 'me' ? (
+            meSubView === 'leaderboard' ? (
+              <ProgressScreen userAccount={userAccount} stats={stats} />
+            ) : (
+              <AccountScreen
+                userAccount={userAccount}
+                onSaveAccount={handleSaveAccount}
+                onSignOut={handleSignOut}
+                onOpenTraining={() => {
+                  hapticButtonPress();
+                  setActiveModal('training');
+                }}
+                onOpenSettings={() => {
+                  hapticButtonPress();
+                  setActiveModal('settings');
+                }}
+                sightings={sightings}
+                stats={stats}
+              />
+            )
+          ) : null}
         </View>
-      )}
 
-      {/* Full-Screen Survey Modal (Tab Bar Unreachable While Active) */}
-      {isSurveyActive && (
-        <Modal
-          visible={true}
-          animationType="slide"
-          presentationStyle="fullScreen"
-          onRequestClose={() => {
-            Alert.alert(
-              'Survey in Progress',
-              'Do you want to pause your survey session?',
-              [
-                { text: 'Keep Surveying', style: 'cancel' },
+        {/* Paused Survey Banner (if survey is paused in background) */}
+        {surveyStatus === 'paused' && (
+          <View style={styles.pausedBannerContainer}>
+            <TouchableOpacity
+              style={styles.pausedBanner}
+              onPress={() => useSurveyStore.getState().resumeSurvey()}
+              activeOpacity={0.8}
+            >
+              <View style={styles.pausedIndicator} />
+              <Text style={styles.pausedBannerText}>{t('ui_app.survey_paused_tap_to_resume')}</Text>
+              <Icon name="play" size={16} color="#FFFFFF" />
+            </TouchableOpacity>
+          </View>
+        )}
+
+        {/* Full-Screen Survey Modal (Tab Bar Unreachable While Active) */}
+        {isSurveyActive && (
+          <Modal
+            visible={true}
+            animationType="slide"
+            presentationStyle="fullScreen"
+            onRequestClose={() => {
+              Alert.alert(t('ui_app.survey_in_progress'), t('ui_app.do_you_want_to_pause_your'), [
+                { text: t('ui_app.keep_surveying'), style: 'cancel' },
                 {
-                  text: 'Pause Survey',
+                  text: t('ui_app.pause_survey'),
                   onPress: () => {
                     useSurveyStore.getState().pauseSurvey();
                   },
                 },
-              ]
-            );
-          }}
-        >
-          <SafeAreaView style={styles.modalRoot} edges={['top', 'left', 'right', 'bottom']}>
-            <StructuredSurveyScreen
-              onBack={() => {
-                useSurveyStore.getState().pauseSurvey();
-              }}
-              onFinishSurvey={(summary) => {
-                handleFinishStructuredSurvey(summary);
-                setActiveTab('activity');
-              }}
-              onLogAnimal={handleLogAnimalInSurvey}
-              loggedAnimalsCount={stats.animalsRecorded}
-              initialRouteId={selectedRouteForSurvey}
-            />
-          </SafeAreaView>
-        </Modal>
-      )}
-
-      {/* Record Action Sheet Modal */}
-      <RecordActionSheet
-        visible={isRecordSheetVisible}
-        onClose={() => setIsRecordSheetVisible(false)}
-        onSelectTransect={() => {
-          setSelectedRouteForSurvey(null);
-          useSurveyStore.getState().startSurvey('transect');
-        }}
-        onSelectStationary={() => {
-          setSelectedRouteForSurvey(null);
-          useSurveyStore.getState().startSurvey('stationary_point');
-        }}
-        onSelectQuickSighting={() => {
-          hapticQuickLog();
-          setActiveModal('opportunistic');
-        }}
-      />
-
-      {/* Floating 4-Tab + 1-Record Navigation Bar */}
-      {!isSurveyActive && (
-        <View
-          style={[
-            styles.floatingTabBarContainer,
-            { bottom: Math.max(insets.bottom + 8, 16) },
-          ]}
-          pointerEvents="box-none"
-        >
-          <View
-            style={[
-              styles.floatingTabBar,
-              {
-                backgroundColor: themeMode === 'night' ? 'rgba(15, 23, 42, 0.94)' : 'rgba(15, 23, 42, 0.95)',
-                borderColor: themeMode === 'night' ? 'rgba(255, 255, 255, 0.12)' : 'rgba(255, 255, 255, 0.15)',
-              },
-            ]}
+              ]);
+            }}
           >
-            {/* Tab 1: Explore */}
-            <TouchableOpacity
-              style={[
-                styles.tabPill,
-                activeTab === 'explore' && styles.tabPillActive,
-              ]}
-              onPress={() => handleTabPress('explore')}
-              activeOpacity={0.75}
-              accessibilityRole="tab"
-              accessibilityLabel="Explore Map"
-              accessibilityState={{ selected: activeTab === 'explore' }}
-            >
-              <Icon
-                name="map"
-                size={20}
-                color={activeTab === 'explore' ? '#0F172A' : '#94A3B8'}
+            <SafeAreaView style={styles.modalRoot} edges={['top', 'left', 'right', 'bottom']}>
+              <StructuredSurveyScreen
+                onBack={() => {
+                  useSurveyStore.getState().pauseSurvey();
+                }}
+                onFinishSurvey={(summary) => {
+                  handleFinishStructuredSurvey(summary);
+                  setActiveTab('activity');
+                }}
+                onLogAnimal={handleLogAnimalInSurvey}
+                loggedAnimalsCount={stats.animalsRecorded}
+                initialRouteId={selectedRouteForSurvey}
               />
-            </TouchableOpacity>
+            </SafeAreaView>
+          </Modal>
+        )}
 
-            {/* Tab 2: Animals */}
-            <TouchableOpacity
+        {/* Record Action Sheet Modal */}
+        <RecordActionSheet
+          visible={isRecordSheetVisible}
+          onClose={() => setIsRecordSheetVisible(false)}
+          onSelectTransect={() => {
+            setSelectedRouteForSurvey(null);
+            useSurveyStore.getState().startSurvey('transect');
+          }}
+          onSelectStationary={() => {
+            setSelectedRouteForSurvey(null);
+            useSurveyStore.getState().startSurvey('stationary_point');
+          }}
+          onSelectQuickSighting={() => {
+            hapticQuickLog();
+            setActiveModal('opportunistic');
+          }}
+        />
+
+        {/* Floating 4-Tab + 1-Record Navigation Bar */}
+        {!isSurveyActive && (
+          <View
+            style={[styles.floatingTabBarContainer, { bottom: Math.max(insets.bottom + 8, 16) }]}
+            pointerEvents="box-none"
+          >
+            <View
               style={[
-                styles.tabPill,
-                activeTab === 'animals' && styles.tabPillActive,
+                styles.floatingTabBar,
+                {
+                  backgroundColor:
+                    themeMode === 'night' ? 'rgba(15, 23, 42, 0.94)' : 'rgba(15, 23, 42, 0.95)',
+                  borderColor:
+                    themeMode === 'night'
+                      ? 'rgba(255, 255, 255, 0.12)'
+                      : 'rgba(255, 255, 255, 0.15)',
+                },
               ]}
-              onPress={() => handleTabPress('animals')}
-              activeOpacity={0.75}
-              accessibilityRole="tab"
-              accessibilityLabel="Animals"
-              accessibilityState={{ selected: activeTab === 'animals' }}
             >
-              <Icon
-                name="animals"
-                size={20}
-                color={activeTab === 'animals' ? '#0F172A' : '#94A3B8'}
-              />
-            </TouchableOpacity>
-
-            {/* Center Quick Action: (+) Record */}
-            <TouchableOpacity
-              style={styles.recordActionPill}
-              onPress={() => {
-                hapticQuickLog();
-                setIsRecordSheetVisible(true);
-              }}
-              activeOpacity={0.8}
-              accessibilityRole="button"
-              accessibilityLabel="Record Survey or Sighting"
-            >
-              <LinearGradient
-                colors={['#0284C7', '#0369A1']}
-                style={styles.recordActionGradient}
+              {/* Tab 1: Explore */}
+              <TouchableOpacity
+                style={[styles.tabPill, activeTab === 'explore' && styles.tabPillActive]}
+                onPress={() => handleTabPress('explore')}
+                activeOpacity={0.75}
+                accessibilityRole="tab"
+                accessibilityLabel={t('ui_app.explore_map')}
+                accessibilityState={{ selected: activeTab === 'explore' }}
               >
-                <Icon name="record" size={24} color="#FFFFFF" />
-              </LinearGradient>
-            </TouchableOpacity>
+                <Icon
+                  name="map"
+                  size={20}
+                  color={activeTab === 'explore' ? '#0F172A' : '#94A3B8'}
+                />
+              </TouchableOpacity>
 
-            {/* Tab 3: Activity */}
-            <TouchableOpacity
-              style={[
-                styles.tabPill,
-                activeTab === 'activity' && styles.tabPillActive,
-              ]}
-              onPress={() => handleTabPress('activity')}
-              activeOpacity={0.75}
-              accessibilityRole="tab"
-              accessibilityLabel="Activity"
-              accessibilityState={{ selected: activeTab === 'activity' }}
-            >
-              <Icon
-                name="activity"
-                size={20}
-                color={activeTab === 'activity' ? '#0F172A' : '#94A3B8'}
-              />
-              {pendingSyncCount > 0 && (
-                <View style={styles.syncBadge}>
-                  <Text style={styles.syncBadgeText}>{pendingSyncCount}</Text>
-                </View>
-              )}
-            </TouchableOpacity>
+              {/* Tab 2: Animals */}
+              <TouchableOpacity
+                style={[styles.tabPill, activeTab === 'animals' && styles.tabPillActive]}
+                onPress={() => handleTabPress('animals')}
+                activeOpacity={0.75}
+                accessibilityRole="tab"
+                accessibilityLabel={t('ui_app.animals')}
+                accessibilityState={{ selected: activeTab === 'animals' }}
+              >
+                <Icon
+                  name="animals"
+                  size={20}
+                  color={activeTab === 'animals' ? '#0F172A' : '#94A3B8'}
+                />
+              </TouchableOpacity>
 
-            {/* Tab 4: Me */}
-            <TouchableOpacity
-              style={[
-                styles.tabPill,
-                activeTab === 'me' && styles.tabPillActive,
-              ]}
-              onPress={() => handleTabPress('me')}
-              activeOpacity={0.75}
-              accessibilityRole="tab"
-              accessibilityLabel="Profile and Progress"
-              accessibilityState={{ selected: activeTab === 'me' }}
-            >
-              <Icon
-                name="profile"
-                size={20}
-                color={activeTab === 'me' ? '#0F172A' : '#94A3B8'}
-              />
-            </TouchableOpacity>
+              {/* Center Quick Action: (+) Record */}
+              <TouchableOpacity
+                style={styles.recordActionPill}
+                onPress={() => {
+                  hapticQuickLog();
+                  setIsRecordSheetVisible(true);
+                }}
+                activeOpacity={0.8}
+                accessibilityRole="button"
+                accessibilityLabel={t('ui_app.record_survey_or_sighting')}
+              >
+                <LinearGradient colors={['#0284C7', '#0369A1']} style={styles.recordActionGradient}>
+                  <Icon name="record" size={24} color="#FFFFFF" />
+                </LinearGradient>
+              </TouchableOpacity>
+
+              {/* Tab 3: Activity */}
+              <TouchableOpacity
+                style={[styles.tabPill, activeTab === 'activity' && styles.tabPillActive]}
+                onPress={() => handleTabPress('activity')}
+                activeOpacity={0.75}
+                accessibilityRole="tab"
+                accessibilityLabel={t('ui_app.activity')}
+                accessibilityState={{ selected: activeTab === 'activity' }}
+              >
+                <Icon
+                  name="activity"
+                  size={20}
+                  color={activeTab === 'activity' ? '#0F172A' : '#94A3B8'}
+                />
+                {pendingSyncCount > 0 && (
+                  <View style={styles.syncBadge}>
+                    <Text style={styles.syncBadgeText}>{pendingSyncCount}</Text>
+                  </View>
+                )}
+              </TouchableOpacity>
+
+              {/* Tab 4: Me */}
+              <TouchableOpacity
+                style={[styles.tabPill, activeTab === 'me' && styles.tabPillActive]}
+                onPress={() => handleTabPress('me')}
+                activeOpacity={0.75}
+                accessibilityRole="tab"
+                accessibilityLabel={t('ui_app.profile_and_progress')}
+                accessibilityState={{ selected: activeTab === 'me' }}
+              >
+                <Icon name="profile" size={20} color={activeTab === 'me' ? '#0F172A' : '#94A3B8'} />
+              </TouchableOpacity>
+            </View>
           </View>
-        </View>
-      )}
-    </SafeAreaView>
-  </View>
+        )}
+      </SafeAreaView>
+    </View>
   );
 }
 

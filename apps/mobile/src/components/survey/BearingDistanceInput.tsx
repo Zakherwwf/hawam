@@ -1,4 +1,5 @@
-import React, { useState, useEffect, useRef } from 'react';
+import { useTranslation } from 'react-i18next';
+import React, { useState, useEffect, useRef, useMemo } from 'react';
 import {
   View,
   Text,
@@ -22,9 +23,15 @@ import Svg, {
 import * as Location from 'expo-location';
 import { DesignTokens } from '../../design-system/tokens';
 import { IOSIcon } from '../ios';
-import { hapticTabSwitch, hapticButtonPress, hapticSuccess, hapticWarning } from '../../utils/haptics';
+import {
+  hapticTabSwitch,
+  hapticButtonPress,
+  hapticSuccess,
+  hapticWarning,
+} from '../../utils/haptics';
 import { getBearingMetadata, normalizeBearing } from '../../services/georef/geoUtils';
 import { Species } from '@tunisia-survey/shared';
+import { formatDistance, measurementSystemForLocale } from '../../utils/units';
 
 interface BearingDistanceInputProps {
   distanceMeters: number;
@@ -36,36 +43,69 @@ interface BearingDistanceInputProps {
   transectHeading?: number;
 }
 
+// Values are metres; labels are rendered in the volunteer's unit
 const DISTANCE_PRESETS = [
-  { label: '1m', sublabel: 'Direct', value: 1 },
-  { label: '3m', sublabel: 'Pavement', value: 3 },
-  { label: '6m', sublabel: 'Car', value: 6 },
-  { label: '10m', sublabel: 'Lane', value: 10 },
-  { label: '15m', sublabel: 'Street', value: 15 },
-  { label: '25m', sublabel: 'Courtyard', value: 25 },
-  { label: '50m+', sublabel: 'Far Field', value: 50 },
+  { sublabel: 'ui_bearingDistanceInput.direct', value: 1 },
+  { sublabel: 'ui_bearingDistanceInput.pavement', value: 3 },
+  { sublabel: 'ui_bearingDistanceInput.car', value: 6 },
+  { sublabel: 'ui_bearingDistanceInput.lane', value: 10 },
+  { sublabel: 'ui_bearingDistanceInput.street', value: 15 },
+  { sublabel: 'ui_bearingDistanceInput.courtyard', value: 25 },
+  { sublabel: 'ui_bearingDistanceInput.far_field', value: 50 },
 ];
 
 const RELATIVE_PRESETS = [
-  { label: '0° Ahead', sublabel: 'Path Heading', deg: 0 },
-  { label: '+45° Right', sublabel: 'Front-Right', deg: 45 },
-  { label: '+90° Right', sublabel: 'Perpendicular', deg: 90 },
-  { label: '+135° Back', sublabel: 'Rear-Right', deg: 135 },
-  { label: '180° Behind', sublabel: 'Reverse Path', deg: 180 },
-  { label: '225° Back', sublabel: 'Rear-Left', deg: 225 },
-  { label: '-90° Left', sublabel: 'Perpendicular', deg: 270 },
-  { label: '-45° Left', sublabel: 'Front-Left', deg: 315 },
+  {
+    label: 'ui_bearingDistanceInput.0_ahead',
+    sublabel: 'ui_bearingDistanceInput.path_heading',
+    deg: 0,
+  },
+  {
+    label: 'ui_bearingDistanceInput.45_right',
+    sublabel: 'ui_bearingDistanceInput.front_right',
+    deg: 45,
+  },
+  {
+    label: 'ui_bearingDistanceInput.90_right',
+    sublabel: 'ui_bearingDistanceInput.perpendicular',
+    deg: 90,
+  },
+  {
+    label: 'ui_bearingDistanceInput.135_back',
+    sublabel: 'ui_bearingDistanceInput.rear_right',
+    deg: 135,
+  },
+  {
+    label: 'ui_bearingDistanceInput.180_behind',
+    sublabel: 'ui_bearingDistanceInput.reverse_path',
+    deg: 180,
+  },
+  {
+    label: 'ui_bearingDistanceInput.225_back',
+    sublabel: 'ui_bearingDistanceInput.rear_left',
+    deg: 225,
+  },
+  {
+    label: 'ui_bearingDistanceInput.90_left',
+    sublabel: 'ui_bearingDistanceInput.perpendicular',
+    deg: 270,
+  },
+  {
+    label: 'ui_bearingDistanceInput.45_left',
+    sublabel: 'ui_bearingDistanceInput.front_left',
+    deg: 315,
+  },
 ];
 
 const CARDINAL_TICKS = [
   { label: 'N', deg: 0, isMajor: true },
-  { label: 'NE', deg: 45, isMajor: false },
+  { label: 'ui_bearingDistanceInput.ne', deg: 45, isMajor: false },
   { label: 'E', deg: 90, isMajor: true },
-  { label: 'SE', deg: 135, isMajor: false },
+  { label: 'ui_bearingDistanceInput.se', deg: 135, isMajor: false },
   { label: 'S', deg: 180, isMajor: true },
-  { label: 'SW', deg: 225, isMajor: false },
+  { label: 'ui_bearingDistanceInput.sw', deg: 225, isMajor: false },
   { label: 'W', deg: 270, isMajor: true },
-  { label: 'NW', deg: 315, isMajor: false },
+  { label: 'ui_bearingDistanceInput.nw', deg: 315, isMajor: false },
 ];
 
 export const BearingDistanceInput: React.FC<BearingDistanceInputProps> = ({
@@ -76,6 +116,8 @@ export const BearingDistanceInput: React.FC<BearingDistanceInputProps> = ({
   perpendicularDistanceM,
   species = 'cat',
 }) => {
+  const { t } = useTranslation();
+  const units = useMemo(() => measurementSystemForLocale(), []);
   const [showGuide, setShowGuide] = useState<boolean>(false);
   const [isLiveSensorActive, setIsLiveSensorActive] = useState<boolean>(false);
   const headingSubscriptionRef = useRef<Location.LocationSubscription | null>(null);
@@ -211,13 +253,15 @@ export const BearingDistanceInput: React.FC<BearingDistanceInputProps> = ({
       <View style={styles.sectionHeaderRow}>
         <View style={styles.headerTitleRow}>
           <IOSIcon name="ruler" size={16} color={DesignTokens.colors.tint} />
-          <Text style={styles.sectionTitle}>Sighting Distance r (Meters)</Text>
+          <Text style={styles.sectionTitle}>
+            {t('ui_bearingDistanceInput.sighting_distance_r_meters')}
+          </Text>
         </View>
-        <Text style={styles.currentValText}>{distanceMeters.toFixed(1)} m</Text>
+        <Text style={styles.currentValText}>{formatDistance(distanceMeters, units)}</Text>
       </View>
 
       <Text style={styles.helperText}>
-        Direct radial distance from your observation point to the spotted animal:
+        {t('ui_bearingDistanceInput.direct_radial_distance_from_your_observation')}
       </Text>
 
       {/* Preset Distance Scrolling Chips */}
@@ -239,10 +283,11 @@ export const BearingDistanceInput: React.FC<BearingDistanceInputProps> = ({
               activeOpacity={0.7}
             >
               <Text style={[styles.presetText, isSelected && styles.presetTextActive]}>
-                {p.label}
+                {formatDistance(p.value, units, 0)}
+                {p.value >= 50 ? '+' : ''}
               </Text>
               <Text style={[styles.presetSubText, isSelected && styles.presetSubTextActive]}>
-                {p.sublabel}
+                {t(p.sublabel)}
               </Text>
             </TouchableOpacity>
           );
@@ -259,7 +304,7 @@ export const BearingDistanceInput: React.FC<BearingDistanceInputProps> = ({
           <IOSIcon name="minus" size={16} color={DesignTokens.colors.label} />
         </TouchableOpacity>
 
-        <Text style={styles.stepperDisplay}>{distanceMeters.toFixed(1)} m</Text>
+        <Text style={styles.stepperDisplay}>{formatDistance(distanceMeters, units)}</Text>
 
         <TouchableOpacity
           style={styles.stepBtn}
@@ -274,7 +319,9 @@ export const BearingDistanceInput: React.FC<BearingDistanceInputProps> = ({
       <View style={[styles.sectionHeaderRow, { marginTop: DesignTokens.spacing.lg }]}>
         <View style={styles.headerTitleRow}>
           <IOSIcon name="compass" size={16} color={DesignTokens.colors.tint} />
-          <Text style={styles.sectionTitle}>Sighting Angle / Bearing θ</Text>
+          <Text style={styles.sectionTitle}>
+            {t('ui_bearingDistanceInput.sighting_angle_bearing')}
+          </Text>
         </View>
         <View style={styles.bearingDisplayPill}>
           <Text style={styles.bearingDegreeValue}>{Math.round(normalizedBearing)}°</Text>
@@ -290,7 +337,9 @@ export const BearingDistanceInput: React.FC<BearingDistanceInputProps> = ({
         {isLiveSensorActive && (
           <View style={styles.liveSensorActiveBadge}>
             <View style={styles.livePulseDot} />
-            <Text style={styles.liveSensorActiveText}>LIVE SENSOR</Text>
+            <Text style={styles.liveSensorActiveText}>
+              {t('ui_bearingDistanceInput.live_sensor')}
+            </Text>
           </View>
         )}
       </View>
@@ -306,7 +355,9 @@ export const BearingDistanceInput: React.FC<BearingDistanceInputProps> = ({
       >
         <IOSIcon name="info" size={14} color="#0284C7" />
         <Text style={styles.guideToggleText}>
-          {showGuide ? 'Hide Sighting Angle Guide' : 'How to Measure Sighting Angles (Guide)'}
+          {showGuide
+            ? t('ui_bearingDistanceInput.hide_sighting_angle_guide')
+            : t('ui_bearingDistanceInput.how_to_measure_sighting_angles_guide')}
         </Text>
         <IOSIcon
           name={showGuide ? 'chevronUp' : 'chevronDown'}
@@ -318,7 +369,9 @@ export const BearingDistanceInput: React.FC<BearingDistanceInputProps> = ({
       {/* Collapsible Illustrated Visual Field Guide Card */}
       {showGuide && (
         <View style={styles.visualGuideCard}>
-          <Text style={styles.guideCardTitle}>FIELD PROTOCOL: SIGHTING ANGLE θ</Text>
+          <Text style={styles.guideCardTitle}>
+            {t('ui_bearingDistanceInput.field_protocol_sighting_angle')}
+          </Text>
 
           {/* SVG Scientific Infographic Diagram */}
           <View style={styles.guideSvgWrapper}>
@@ -336,38 +389,49 @@ export const BearingDistanceInput: React.FC<BearingDistanceInputProps> = ({
               {/* Path Arrow */}
               <Polygon points="60,6 56,14 64,14" fill="#0284C7" />
               <SvgText x="50" y="20" fontSize="10" fontWeight="700" fill="#0284C7" textAnchor="end">
-                Path Ahead (0°)
+                {t('ui_bearingDistanceInput.path_ahead_0')}
               </SvgText>
 
               {/* Surveyor Node */}
               <Circle cx="60" cy="95" r="9" fill="#0F172A" />
               <Circle cx="60" cy="95" r="5" fill="#38BDF8" />
-              <SvgText x="60" y="114" fontSize="10" fontWeight="700" fill="#0F172A" textAnchor="middle">
-                You (Observer)
+              <SvgText
+                x="60"
+                y="114"
+                fontSize="10"
+                fontWeight="700"
+                fill="#0F172A"
+                textAnchor="middle"
+              >
+                {t('ui_bearingDistanceInput.you_observer')}
               </SvgText>
 
               {/* Line of Sight Ray (Hypotenuse r) */}
               <Line x1="60" y1="95" x2="210" y2="40" stroke="#DD4B34" strokeWidth="2.5" />
               <SvgText x="130" y="60" fontSize="10" fontWeight="700" fill="#DD4B34">
-                Radial Distance r
+                {t('ui_bearingDistanceInput.radial_distance_r')}
               </SvgText>
 
               {/* Sighting Angle Arc θ */}
-              <Path
-                d="M 60 65 A 30 30 0 0 1 82 74"
-                fill="none"
-                stroke="#F59E0B"
-                strokeWidth="2"
-              />
+              <Path d="M 60 65 A 30 30 0 0 1 82 74" fill="none" stroke="#F59E0B" strokeWidth="2" />
               <SvgText x="78" y="65" fontSize="11" fontWeight="800" fill="#F59E0B">
-                θ Angle
+                {t('ui_bearingDistanceInput.angle')}
               </SvgText>
 
               {/* Animal Target Reticle */}
               <Circle cx="210" cy="40" r="12" fill={species === 'dog' ? '#EA580C' : '#0284C7'} />
               <Circle cx="210" cy="40" r="5" fill="#FFFFFF" />
-              <SvgText x="210" y="20" fontSize="10" fontWeight="700" fill={species === 'dog' ? '#EA580C' : '#0284C7'} textAnchor="middle">
-                {species === 'dog' ? 'Dog' : 'Cat'}
+              <SvgText
+                x="210"
+                y="20"
+                fontSize="10"
+                fontWeight="700"
+                fill={species === 'dog' ? '#EA580C' : '#0284C7'}
+                textAnchor="middle"
+              >
+                {species === 'dog'
+                  ? t('ui_bearingDistanceInput.dog')
+                  : t('ui_bearingDistanceInput.cat')}
               </SvgText>
 
               {/* Perpendicular Distance Line g(x) */}
@@ -380,8 +444,15 @@ export const BearingDistanceInput: React.FC<BearingDistanceInputProps> = ({
                 strokeWidth="2"
                 strokeDasharray="4 3"
               />
-              <SvgText x="135" y="34" fontSize="9.5" fontWeight="700" fill="#059669" textAnchor="middle">
-                Perpendicular g(x) = r · sin(θ)
+              <SvgText
+                x="135"
+                y="34"
+                fontSize="9.5"
+                fontWeight="700"
+                fill="#059669"
+                textAnchor="middle"
+              >
+                {t('ui_bearingDistanceInput.perpendicular_g_x_r_sin')}
               </SvgText>
 
               {/* Right Angle Indicator */}
@@ -395,7 +466,10 @@ export const BearingDistanceInput: React.FC<BearingDistanceInputProps> = ({
               <Text style={styles.stepNumberText}>1</Text>
             </View>
             <Text style={styles.stepInstructionText}>
-              <Text style={styles.stepBold}>Face forward along your transect path</Text> (this represents 0° Ahead).
+              <Text style={styles.stepBold}>
+                {t('ui_bearingDistanceInput.face_forward_along_your_transect_path')}
+              </Text>{' '}
+              {t('ui_bearingDistanceInput.this_represents_0_ahead')}
             </Text>
           </View>
 
@@ -404,7 +478,8 @@ export const BearingDistanceInput: React.FC<BearingDistanceInputProps> = ({
               <Text style={styles.stepNumberText}>2</Text>
             </View>
             <Text style={styles.stepInstructionText}>
-              <Text style={styles.stepBold}>Point top of phone</Text> or drag the compass dial directly toward the spotted animal.
+              <Text style={styles.stepBold}>{t('ui_bearingDistanceInput.point_top_of_phone')}</Text>{' '}
+              {t('ui_bearingDistanceInput.or_drag_the_compass_dial_directly')}
             </Text>
           </View>
 
@@ -413,7 +488,8 @@ export const BearingDistanceInput: React.FC<BearingDistanceInputProps> = ({
               <Text style={styles.stepNumberText}>3</Text>
             </View>
             <Text style={styles.stepInstructionText}>
-              <Text style={styles.stepBold}>Distance Sampling</Text> automatically converts radial distance and angle into unbiased perpendicular distance for population density analysis.
+              <Text style={styles.stepBold}>{t('ui_bearingDistanceInput.distance_sampling')}</Text>{' '}
+              {t('ui_bearingDistanceInput.automatically_converts_radial_distance_and_angle')}
             </Text>
           </View>
         </View>
@@ -424,8 +500,8 @@ export const BearingDistanceInput: React.FC<BearingDistanceInputProps> = ({
         <View
           style={styles.radarTouchArea}
           {...panResponder.panHandlers}
-          accessibilityLabel="Interactive Sighting Compass Dial"
-          accessibilityHint="Drag or tap around the dial to set sighting angle"
+          accessibilityLabel={t('ui_bearingDistanceInput.interactive_sighting_compass_dial')}
+          accessibilityHint={t('ui_bearingDistanceInput.drag_or_tap_around_the_dial')}
         >
           <Svg width={dialCenter * 2} height={dialCenter * 2}>
             {/* Outer Circular Boundary */}
@@ -485,9 +561,9 @@ export const BearingDistanceInput: React.FC<BearingDistanceInputProps> = ({
             />
 
             {/* 8-Point Compass Tick Marks & Labels */}
-            {CARDINAL_TICKS.map((t) => {
-              const rad = (t.deg * Math.PI) / 180;
-              const innerTickR = t.isMajor ? outerRadius - 8 : outerRadius - 4;
+            {CARDINAL_TICKS.map((tick) => {
+              const rad = (tick.deg * Math.PI) / 180;
+              const innerTickR = tick.isMajor ? outerRadius - 8 : outerRadius - 4;
               const x1 = dialCenter + outerRadius * Math.sin(rad);
               const y1 = dialCenter - outerRadius * Math.cos(rad);
               const x2 = dialCenter + innerTickR * Math.sin(rad);
@@ -498,24 +574,24 @@ export const BearingDistanceInput: React.FC<BearingDistanceInputProps> = ({
               const ly = dialCenter - labelR * Math.cos(rad) + 3;
 
               return (
-                <G key={t.deg}>
+                <G key={tick.deg}>
                   <Line
                     x1={x1}
                     y1={y1}
                     x2={x2}
                     y2={y2}
-                    stroke={t.isMajor ? '#0F172A' : '#94A3B8'}
-                    strokeWidth={t.isMajor ? 1.5 : 1}
+                    stroke={tick.isMajor ? '#0F172A' : '#94A3B8'}
+                    strokeWidth={tick.isMajor ? 1.5 : 1}
                   />
                   <SvgText
                     x={lx}
                     y={ly}
-                    fontSize={t.isMajor ? 9 : 7.5}
-                    fontWeight={t.isMajor ? '800' : '600'}
-                    fill={t.deg === 0 ? '#0284C7' : t.isMajor ? '#0F172A' : '#64748B'}
+                    fontSize={tick.isMajor ? 9 : 7.5}
+                    fontWeight={tick.isMajor ? '800' : '600'}
+                    fill={tick.deg === 0 ? '#0284C7' : tick.isMajor ? '#0F172A' : '#64748B'}
                     textAnchor="middle"
                   >
-                    {t.label}
+                    {t(tick.label)}
                   </SvgText>
                 </G>
               );
@@ -574,7 +650,9 @@ export const BearingDistanceInput: React.FC<BearingDistanceInputProps> = ({
 
         {/* Center Digital Readout Overlay */}
         <View style={styles.radarLegendRow}>
-          <Text style={styles.radarLegendHint}>Tap or drag around dial to set angle</Text>
+          <Text style={styles.radarLegendHint}>
+            {t('ui_bearingDistanceInput.tap_or_drag_around_dial_to')}
+          </Text>
         </View>
       </View>
 
@@ -619,7 +697,9 @@ export const BearingDistanceInput: React.FC<BearingDistanceInputProps> = ({
       </View>
 
       {/* ----------------- QUICK PRESET CHIPS ----------------- */}
-      <Text style={styles.presetsLabel}>Quick Orientation Presets:</Text>
+      <Text style={styles.presetsLabel}>
+        {t('ui_bearingDistanceInput.quick_orientation_presets')}
+      </Text>
       <ScrollView
         horizontal
         showsHorizontalScrollIndicator={false}
@@ -638,10 +718,10 @@ export const BearingDistanceInput: React.FC<BearingDistanceInputProps> = ({
               activeOpacity={0.7}
             >
               <Text style={[styles.presetText, isSelected && styles.presetTextActive]}>
-                {p.label}
+                {t(p.label)}
               </Text>
               <Text style={[styles.presetSubText, isSelected && styles.presetSubTextActive]}>
-                {p.sublabel}
+                {t(p.sublabel)}
               </Text>
             </TouchableOpacity>
           );
@@ -658,18 +738,17 @@ export const BearingDistanceInput: React.FC<BearingDistanceInputProps> = ({
           {isLiveSensorActive ? (
             <View style={styles.livePulseDotWhite} />
           ) : (
-            <IOSIcon
-              name="compass"
-              size={15}
-              color={DesignTokens.colors.label}
-            />
+            <IOSIcon name="compass" size={15} color={DesignTokens.colors.label} />
           )}
           <Text
-            style={[styles.liveSensorButtonText, isLiveSensorActive && styles.liveSensorButtonTextActive]}
+            style={[
+              styles.liveSensorButtonText,
+              isLiveSensorActive && styles.liveSensorButtonTextActive,
+            ]}
           >
             {isLiveSensorActive
-              ? 'Aiming... Point Top of Phone at Animal [Tap to Lock]'
-              : 'Point Phone to Aim (Live Compass)'}
+              ? t('ui_bearingDistanceInput.aiming_point_top_of_phone_at')
+              : t('ui_bearingDistanceInput.point_phone_to_aim_live_compass')}
           </Text>
         </View>
       </TouchableOpacity>
@@ -679,7 +758,9 @@ export const BearingDistanceInput: React.FC<BearingDistanceInputProps> = ({
         <View style={styles.secrCalculatedBox}>
           <IOSIcon name="ruler" size={14} color={DesignTokens.colors.tintDark} />
           <Text style={styles.secrCalculatedText}>
-            Calculated Perpendicular Distance from Transect: {perpendicularDistanceM.toFixed(1)}m
+            {t('ui_bearingDistanceInput.calculated_perpendicular_distance_from_transect_', {
+              v1: perpendicularDistanceM.toFixed(1),
+            })}
           </Text>
         </View>
       ) : null}

@@ -1,3 +1,4 @@
+import { useTranslation } from 'react-i18next';
 import React, { useState, useMemo } from 'react';
 import {
   View,
@@ -15,7 +16,13 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { IOSColors, IOSTypography } from '../theme/ios';
 import { LinearGradient } from 'expo-linear-gradient';
 import { IOSIcon } from '../components/ios';
-import { InteractiveMapView, MapMarker, ColonyMarker, TransectMarker, FocusCoordinate } from '../components/map/InteractiveMapView';
+import {
+  InteractiveMapView,
+  MapMarker,
+  ColonyMarker,
+  TransectMarker,
+  FocusCoordinate,
+} from '../components/map/InteractiveMapView';
 import { SightingItem } from './SightingsScreen';
 import { generateScientificObservationCode } from '../utils/scientificCodes';
 import { useColoniesStore, CatColony } from '../features/colonies/coloniesStore';
@@ -46,11 +53,11 @@ const GOV_COORDINATES: Record<string, FocusCoordinate> = {
   Tunis: { latitude: 36.8065, longitude: 10.1815, zoom: 13 },
   Ariana: { latitude: 36.8665, longitude: 10.1956, zoom: 13 },
   'Ben Arous': { latitude: 36.7533, longitude: 10.2222, zoom: 13 },
-  Manouba: { latitude: 36.8080, longitude: 10.0972, zoom: 13 },
+  Manouba: { latitude: 36.808, longitude: 10.0972, zoom: 13 },
   Nabeul: { latitude: 36.4561, longitude: 10.7376, zoom: 13 },
   Bizerte: { latitude: 37.2746, longitude: 9.8739, zoom: 13 },
   Sousse: { latitude: 35.8256, longitude: 10.6369, zoom: 13 },
-  Monastir: { latitude: 35.7780, longitude: 10.8262, zoom: 13 },
+  Monastir: { latitude: 35.778, longitude: 10.8262, zoom: 13 },
   Sfax: { latitude: 34.7406, longitude: 10.7603, zoom: 13 },
 };
 
@@ -73,6 +80,7 @@ export const MapOverviewScreen: React.FC<MapOverviewScreenProps> = ({
   onToggleDashboard,
   onStartSurvey,
 }) => {
+  const { t } = useTranslation();
   const [selectedGovernorate, setSelectedGovernorate] = useState<string>('Tunis');
   const [showGovPicker, setShowGovPicker] = useState<boolean>(false);
   const [searchQuery, setSearchQuery] = useState<string>('');
@@ -84,7 +92,9 @@ export const MapOverviewScreen: React.FC<MapOverviewScreenProps> = ({
   const [showFilterModal, setShowFilterModal] = useState<boolean>(false);
   const [filterBcs, setFilterBcs] = useState<number | 'all'>('all');
   const [filterOnlyWithPhotos, setFilterOnlyWithPhotos] = useState<boolean>(false);
-  const [filterProtocol, setFilterProtocol] = useState<'all' | 'transect' | 'stationary_point' | 'incidental'>('all');
+  const [filterProtocol, setFilterProtocol] = useState<
+    'all' | 'transect' | 'stationary_point' | 'incidental'
+  >('all');
 
   // Notifications Modal State
   const [showNotificationsModal, setShowNotificationsModal] = useState<boolean>(false);
@@ -165,7 +175,8 @@ export const MapOverviewScreen: React.FC<MapOverviewScreenProps> = ({
 
   // Filter colonies
   const displayColonies = useMemo(() => {
-    if (activeFilter === 'cats' || activeFilter === 'dogs' || activeFilter === 'transects') return [];
+    if (activeFilter === 'cats' || activeFilter === 'dogs' || activeFilter === 'transects')
+      return [];
     return colonies;
   }, [colonies, activeFilter]);
 
@@ -263,7 +274,7 @@ export const MapOverviewScreen: React.FC<MapOverviewScreenProps> = ({
               }}
               activeOpacity={0.7}
             >
-              <Text style={styles.locationSubLabel}>LOCATION</Text>
+              <Text style={styles.locationSubLabel}>{t('ui_mapOverview.location')}</Text>
               <View style={styles.locationTitleRow}>
                 <Text style={styles.locationTitleText}>{selectedGovernorate}</Text>
                 <IOSIcon name="chevronDown" size={16} color="#0F172A" />
@@ -282,7 +293,7 @@ export const MapOverviewScreen: React.FC<MapOverviewScreenProps> = ({
                   }}
                 >
                   <IOSIcon name="chart" size={15} color="#0F172A" />
-                  <Text style={styles.dashboardCapsuleText}>Dashboard</Text>
+                  <Text style={styles.dashboardCapsuleText}>{t('ui_mapOverview.dashboard')}</Text>
                 </TouchableOpacity>
               )}
 
@@ -321,7 +332,7 @@ export const MapOverviewScreen: React.FC<MapOverviewScreenProps> = ({
             <IOSIcon name="search" size={18} color="#94A3B8" />
             <TextInput
               style={styles.searchInput}
-              placeholder="Search transects, zones, animals..."
+              placeholder={t('ui_mapOverview.search_transects_zones_animals')}
               placeholderTextColor="#94A3B8"
               value={searchQuery}
               onChangeText={setSearchQuery}
@@ -374,16 +385,9 @@ export const MapOverviewScreen: React.FC<MapOverviewScreenProps> = ({
                     }}
                     activeOpacity={0.75}
                   >
-                    <IOSIcon
-                      name="location"
-                      size={10}
-                      color={isSelected ? '#0F172A' : '#64748B'}
-                    />
+                    <IOSIcon name="location" size={10} color={isSelected ? '#0F172A' : '#64748B'} />
                     <Text
-                      style={[
-                        styles.govCapsuleText,
-                        isSelected && styles.govCapsuleTextActive,
-                      ]}
+                      style={[styles.govCapsuleText, isSelected && styles.govCapsuleTextActive]}
                     >
                       {gov}
                     </Text>
@@ -415,10 +419,7 @@ export const MapOverviewScreen: React.FC<MapOverviewScreenProps> = ({
               contentContainerStyle={styles.filterPillsScroll}
             >
               <TouchableOpacity
-                style={[
-                  styles.filterPill,
-                  activeFilter === 'all' && styles.filterPillActive,
-                ]}
+                style={[styles.filterPill, activeFilter === 'all' && styles.filterPillActive]}
                 onPress={() => {
                   hapticTabSwitch();
                   setActiveFilter('all');
@@ -431,15 +432,12 @@ export const MapOverviewScreen: React.FC<MapOverviewScreenProps> = ({
                     activeFilter === 'all' && styles.filterPillTextActive,
                   ]}
                 >
-                  All ({sightings.length})
+                  {t('ui_mapOverview.all', { length: sightings.length })}
                 </Text>
               </TouchableOpacity>
 
               <TouchableOpacity
-                style={[
-                  styles.filterPill,
-                  activeFilter === 'transects' && styles.filterPillActive,
-                ]}
+                style={[styles.filterPill, activeFilter === 'transects' && styles.filterPillActive]}
                 onPress={() => {
                   hapticTabSwitch();
                   setActiveFilter('transects');
@@ -457,15 +455,12 @@ export const MapOverviewScreen: React.FC<MapOverviewScreenProps> = ({
                     activeFilter === 'transects' && styles.filterPillTextActive,
                   ]}
                 >
-                  Transects
+                  {t('ui_mapOverview.transects')}
                 </Text>
               </TouchableOpacity>
 
               <TouchableOpacity
-                style={[
-                  styles.filterPill,
-                  activeFilter === 'colonies' && styles.filterPillActive,
-                ]}
+                style={[styles.filterPill, activeFilter === 'colonies' && styles.filterPillActive]}
                 onPress={() => {
                   hapticTabSwitch();
                   setActiveFilter('colonies');
@@ -483,7 +478,7 @@ export const MapOverviewScreen: React.FC<MapOverviewScreenProps> = ({
                     activeFilter === 'colonies' && styles.filterPillTextActive,
                   ]}
                 >
-                  Colonies & Packs ({colonies.length})
+                  {t('ui_mapOverview.colonies_packs', { length: colonies.length })}
                 </Text>
               </TouchableOpacity>
 
@@ -497,14 +492,13 @@ export const MapOverviewScreen: React.FC<MapOverviewScreenProps> = ({
                 activeOpacity={0.8}
               >
                 <IOSIcon name="plus" size={12} color="#7C3AED" />
-                <Text style={styles.registerColonyPillText}>+ Register Group</Text>
+                <Text style={styles.registerColonyPillText}>
+                  {t('ui_mapOverview.register_group')}
+                </Text>
               </TouchableOpacity>
 
               <TouchableOpacity
-                style={[
-                  styles.filterPill,
-                  activeFilter === 'cats' && styles.filterPillActive,
-                ]}
+                style={[styles.filterPill, activeFilter === 'cats' && styles.filterPillActive]}
                 onPress={() => {
                   hapticTabSwitch();
                   setActiveFilter('cats');
@@ -525,15 +519,12 @@ export const MapOverviewScreen: React.FC<MapOverviewScreenProps> = ({
                     activeFilter === 'cats' && styles.filterPillTextActive,
                   ]}
                 >
-                  Cats ({catCount})
+                  {t('ui_mapOverview.cats', { catCount })}
                 </Text>
               </TouchableOpacity>
 
               <TouchableOpacity
-                style={[
-                  styles.filterPill,
-                  activeFilter === 'dogs' && styles.filterPillActive,
-                ]}
+                style={[styles.filterPill, activeFilter === 'dogs' && styles.filterPillActive]}
                 onPress={() => {
                   hapticTabSwitch();
                   setActiveFilter('dogs');
@@ -554,7 +545,7 @@ export const MapOverviewScreen: React.FC<MapOverviewScreenProps> = ({
                     activeFilter === 'dogs' && styles.filterPillTextActive,
                   ]}
                 >
-                  Dogs ({dogCount})
+                  {t('ui_mapOverview.dogs', { dogCount })}
                 </Text>
               </TouchableOpacity>
             </ScrollView>
@@ -587,10 +578,7 @@ export const MapOverviewScreen: React.FC<MapOverviewScreenProps> = ({
                   return (
                     <TouchableOpacity
                       key={route.id}
-                      style={[
-                        styles.transectCard,
-                        isSelected && styles.transectCardSelected,
-                      ]}
+                      style={[styles.transectCard, isSelected && styles.transectCardSelected]}
                       onPress={() => handleSelectTransect(route.id)}
                       activeOpacity={0.8}
                     >
@@ -621,16 +609,22 @@ export const MapOverviewScreen: React.FC<MapOverviewScreenProps> = ({
                       <View style={styles.transectMetricsRow}>
                         <View style={styles.transectMetricPill}>
                           <IOSIcon name="ruler" size={11} color="#0284C7" />
-                          <Text style={styles.transectMetricText}>{route.distanceKm} km</Text>
+                          <Text style={styles.transectMetricText}>
+                            {t('ui_mapOverview.km', { distanceKm: route.distanceKm })}
+                          </Text>
                         </View>
                         <View style={styles.transectMetricPill}>
                           <IOSIcon name="clock" size={11} color="#64748B" />
-                          <Text style={styles.transectMetricText}>{route.targetPaceKmH} km/h</Text>
+                          <Text style={styles.transectMetricText}>
+                            {t('ui_mapOverview.km_h', { targetPaceKmH: route.targetPaceKmH })}
+                          </Text>
                         </View>
                         {route.isAdopted && (
                           <View style={styles.adoptedGuardianTag}>
                             <IOSIcon name="star" size={10} color="#CA8A04" />
-                            <Text style={styles.adoptedGuardianTagText}>Adopted</Text>
+                            <Text style={styles.adoptedGuardianTagText}>
+                              {t('ui_mapOverview.adopted')}
+                            </Text>
                           </View>
                         )}
                       </View>
@@ -703,9 +697,9 @@ export const MapOverviewScreen: React.FC<MapOverviewScreenProps> = ({
           {/* Reference 1: Weather & Survey Condition Pill */}
           <View style={styles.weatherConditionChip}>
             <IOSIcon name="sun" size={14} color="#D97706" />
-            <Text style={styles.weatherConditionText}>26°C Clear</Text>
+            <Text style={styles.weatherConditionText}>{t('ui_mapOverview.26_c_clear')}</Text>
             <View style={styles.weatherDivider} />
-            <Text style={styles.conditionTierText}>Tier 1 Visibility</Text>
+            <Text style={styles.conditionTierText}>{t('ui_mapOverview.tier_1_visibility')}</Text>
           </View>
 
           {/* Empty state guide capsule when 0 sightings */}
@@ -713,7 +707,7 @@ export const MapOverviewScreen: React.FC<MapOverviewScreenProps> = ({
             <View style={styles.cleanStartGuideBox}>
               <IOSIcon name="location" size={14} color="#0284C7" />
               <Text style={styles.cleanStartGuideText}>
-                No local sightings yet. Tap below to log your first field observation!
+                {t('ui_mapOverview.no_local_sightings_yet_tap_below')}
               </Text>
             </View>
           )}
@@ -738,7 +732,9 @@ export const MapOverviewScreen: React.FC<MapOverviewScreenProps> = ({
             >
               <IOSIcon name="plus" size={16} color="#FFFFFF" />
               <Text style={styles.floatingActionText}>
-                {activeFilter === 'colonies' ? 'Register Colony / Pack' : 'Record Observation'}
+                {activeFilter === 'colonies'
+                  ? t('ui_mapOverview.register_colony_pack')
+                  : t('ui_mapOverview.record_observation')}
               </Text>
             </TouchableOpacity>
           )}
@@ -757,10 +753,7 @@ export const MapOverviewScreen: React.FC<MapOverviewScreenProps> = ({
                     style={[
                       styles.speciesIconPill,
                       {
-                        backgroundColor:
-                          selectedSighting.species === 'cat'
-                            ? '#E0F2FE'
-                            : '#FEF3C7',
+                        backgroundColor: selectedSighting.species === 'cat' ? '#E0F2FE' : '#FEF3C7',
                       },
                     ]}
                   >
@@ -776,47 +769,52 @@ export const MapOverviewScreen: React.FC<MapOverviewScreenProps> = ({
                       style={[
                         styles.speciesPillText,
                         {
-                          color:
-                            selectedSighting.species === 'cat'
-                              ? '#0284C7'
-                              : '#D97706',
+                          color: selectedSighting.species === 'cat' ? '#0284C7' : '#D97706',
                         },
                       ]}
                     >
-                      {selectedSighting.species === 'cat' ? 'Cat' : 'Dog'}
+                      {selectedSighting.species === 'cat'
+                        ? t('ui_mapOverview.cat')
+                        : t('ui_mapOverview.dog')}
                     </Text>
                   </View>
 
                   {selectedSighting.body_condition_score ? (
                     <View style={styles.bcsChip}>
                       <Text style={styles.bcsChipText}>
-                        BCS {selectedSighting.body_condition_score}/5
+                        {t('ui_mapOverview.bcs_5', {
+                          body_condition_score: selectedSighting.body_condition_score,
+                        })}
                       </Text>
                     </View>
                   ) : null}
                 </View>
 
-                <TouchableOpacity
-                  onPress={handleCloseSightingCard}
-                  style={styles.closeCardBtn}
-                >
+                <TouchableOpacity onPress={handleCloseSightingCard} style={styles.closeCardBtn}>
                   <IOSIcon name="xmark" size={14} color="#64748B" />
                 </TouchableOpacity>
               </View>
 
               {/* Sighting Identifier Headline */}
               <Text style={styles.sightingIdentifierHeadline}>
-                {selectedSighting.identifier || `${selectedSighting.species === 'cat' ? 'Cat' : 'Dog'} (${selectedSighting.group_size || 1})`}
+                {selectedSighting.identifier ||
+                  `${selectedSighting.species === 'cat' ? 'Cat' : 'Dog'} (${selectedSighting.group_size || 1})`}
               </Text>
 
               {/* Observer Attribution */}
               <Text style={styles.sightingObserverText}>
-                Logged by {selectedSighting.observer_name || 'You'} • {new Date(selectedSighting.observed_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                {t('ui_mapOverview.logged_by', {
+                  v1: selectedSighting.observer_name || 'You',
+                  v3: new Date(selectedSighting.observed_at).toLocaleTimeString([], {
+                    hour: '2-digit',
+                    minute: '2-digit',
+                  }),
+                })}
               </Text>
 
               <Text style={styles.sightingCoords}>
-                {selectedSighting.latitude.toFixed(5)}° N,{' '}
-                {selectedSighting.longitude.toFixed(5)}° E
+                {selectedSighting.latitude.toFixed(5)}° N, {selectedSighting.longitude.toFixed(5)}°
+                E
               </Text>
 
               {selectedSighting.notes ? (
@@ -827,11 +825,13 @@ export const MapOverviewScreen: React.FC<MapOverviewScreenProps> = ({
 
               <View style={styles.sightingFooter}>
                 <Text style={styles.sightingMeta}>
-                  Distance:{' '}
-                  {selectedSighting.distance_from_path_m !== undefined
-                    ? `${selectedSighting.distance_from_path_m.toFixed(1)}m`
-                    : 'N/A'}{' '}
-                  • Protocol: {selectedSighting.protocol}
+                  {t('ui_mapOverview.distance_protocol', {
+                    v3:
+                      selectedSighting.distance_from_path_m !== undefined
+                        ? `${selectedSighting.distance_from_path_m.toFixed(1)}m`
+                        : 'N/A',
+                    protocol: selectedSighting.protocol,
+                  })}
                 </Text>
               </View>
             </View>
@@ -849,27 +849,26 @@ export const MapOverviewScreen: React.FC<MapOverviewScreenProps> = ({
                 <View style={styles.sightingSpeciesRow}>
                   <View style={styles.transectBadgePill}>
                     <IOSIcon name="compass" size={13} color="#0284C7" />
-                    <Text style={styles.transectBadgePillText}>STANDARDIZED TRANSECT</Text>
+                    <Text style={styles.transectBadgePillText}>
+                      {t('ui_mapOverview.standardized_transect')}
+                    </Text>
                   </View>
                   <View style={styles.densityPill}>
                     <Text style={styles.densityPillText}>
-                      {selectedRoute.densityClassification.toUpperCase()} DENSITY
+                      {t('ui_mapOverview.density', {
+                        v1: selectedRoute.densityClassification.toUpperCase(),
+                      })}
                     </Text>
                   </View>
                 </View>
 
-                <TouchableOpacity
-                  onPress={handleCloseTransectCard}
-                  style={styles.closeCardBtn}
-                >
+                <TouchableOpacity onPress={handleCloseTransectCard} style={styles.closeCardBtn}>
                   <IOSIcon name="xmark" size={14} color="#64748B" />
                 </TouchableOpacity>
               </View>
 
               {/* Transect Title Headline */}
-              <Text style={styles.sightingIdentifierHeadline}>
-                {selectedRoute.name}
-              </Text>
+              <Text style={styles.sightingIdentifierHeadline}>{selectedRoute.name}</Text>
 
               <Text style={styles.transectDescriptionText} numberOfLines={2}>
                 {selectedRoute.description}
@@ -878,22 +877,26 @@ export const MapOverviewScreen: React.FC<MapOverviewScreenProps> = ({
               {/* Transect Telemetry Metrics Bento */}
               <View style={styles.transectBentoRow}>
                 <View style={styles.transectBentoItem}>
-                  <Text style={styles.transectBentoValue}>{selectedRoute.distanceKm} km</Text>
-                  <Text style={styles.transectBentoLabel}>Length</Text>
+                  <Text style={styles.transectBentoValue}>
+                    {t('ui_mapOverview.km', { distanceKm: selectedRoute.distanceKm })}
+                  </Text>
+                  <Text style={styles.transectBentoLabel}>{t('ui_mapOverview.length')}</Text>
                 </View>
                 <View style={styles.transectBentoItem}>
-                  <Text style={styles.transectBentoValue}>{selectedRoute.targetPaceKmH} km/h</Text>
-                  <Text style={styles.transectBentoLabel}>Target Pace</Text>
+                  <Text style={styles.transectBentoValue}>
+                    {t('ui_mapOverview.km_h', { targetPaceKmH: selectedRoute.targetPaceKmH })}
+                  </Text>
+                  <Text style={styles.transectBentoLabel}>{t('ui_mapOverview.target_pace')}</Text>
                 </View>
                 <View style={styles.transectBentoItem}>
                   <Text style={styles.transectBentoValue}>{selectedRoute.timesSurveyed}</Text>
-                  <Text style={styles.transectBentoLabel}>Surveys Done</Text>
+                  <Text style={styles.transectBentoLabel}>{t('ui_mapOverview.surveys_done')}</Text>
                 </View>
                 <View style={styles.transectBentoItem}>
                   <Text style={[styles.transectBentoValue, { color: '#059669' }]}>
-                    +{selectedRoute.bonusXp || 15} XP
+                    {t('ui_mapOverview.xp', { v1: selectedRoute.bonusXp || 15 })}
                   </Text>
-                  <Text style={styles.transectBentoLabel}>Survey Bonus</Text>
+                  <Text style={styles.transectBentoLabel}>{t('ui_mapOverview.survey_bonus')}</Text>
                 </View>
               </View>
 
@@ -918,7 +921,9 @@ export const MapOverviewScreen: React.FC<MapOverviewScreenProps> = ({
                       selectedRoute.isAdopted && styles.starAdoptBtnTextActive,
                     ]}
                   >
-                    {selectedRoute.isAdopted ? 'Adopted Guardian' : 'Adopt Route'}
+                    {selectedRoute.isAdopted
+                      ? t('ui_mapOverview.adopted_guardian')
+                      : t('ui_mapOverview.adopt_route')}
                   </Text>
                 </TouchableOpacity>
 
@@ -933,7 +938,7 @@ export const MapOverviewScreen: React.FC<MapOverviewScreenProps> = ({
                   >
                     <IOSIcon name="play" size={15} color="#FFFFFF" />
                     <Text style={styles.startSurveyOnTransectBtnText}>
-                      Start Survey
+                      {t('ui_mapOverview.start_survey')}
                     </Text>
                   </TouchableOpacity>
                 )}
@@ -956,7 +961,9 @@ export const MapOverviewScreen: React.FC<MapOverviewScreenProps> = ({
           >
             <View style={styles.modalSheet}>
               <View style={styles.modalHeader}>
-                <Text style={styles.modalTitle}>Select Survey Governorate</Text>
+                <Text style={styles.modalTitle}>
+                  {t('ui_mapOverview.select_survey_governorate')}
+                </Text>
                 <TouchableOpacity onPress={handleCloseGovPicker}>
                   <IOSIcon name="xmark" size={20} color="#0F172A" />
                 </TouchableOpacity>
@@ -1013,7 +1020,7 @@ export const MapOverviewScreen: React.FC<MapOverviewScreenProps> = ({
               <View style={styles.modalHeader}>
                 <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
                   <IOSIcon name="sliders" size={18} color="#0F172A" />
-                  <Text style={styles.modalTitle}>Filter Observations</Text>
+                  <Text style={styles.modalTitle}>{t('ui_mapOverview.filter_observations')}</Text>
                 </View>
                 <TouchableOpacity onPress={handleCloseFilterModal}>
                   <IOSIcon name="xmark" size={20} color="#0F172A" />
@@ -1022,7 +1029,9 @@ export const MapOverviewScreen: React.FC<MapOverviewScreenProps> = ({
 
               <ScrollView showsVerticalScrollIndicator={false}>
                 {/* BCS Filter Section */}
-                <Text style={styles.filterSectionTitle}>Body Condition Score (ICAM BCS 1–5)</Text>
+                <Text style={styles.filterSectionTitle}>
+                  {t('ui_mapOverview.body_condition_score_icam_bcs_1')}
+                </Text>
                 <View style={styles.filterChipRow}>
                   {(['all', 1, 2, 3, 4, 5] as const).map((score) => (
                     <TouchableOpacity
@@ -1042,14 +1051,18 @@ export const MapOverviewScreen: React.FC<MapOverviewScreenProps> = ({
                           filterBcs === score && styles.filterModalChipTextActive,
                         ]}
                       >
-                        {score === 'all' ? 'Any BCS' : `BCS ${score}`}
+                        {score === 'all'
+                          ? t('ui_mapOverview.any_bcs')
+                          : t('ui_mapOverview.bcs', { score })}
                       </Text>
                     </TouchableOpacity>
                   ))}
                 </View>
 
                 {/* Protocol Filter Section */}
-                <Text style={styles.filterSectionTitle}>Sampling Protocol</Text>
+                <Text style={styles.filterSectionTitle}>
+                  {t('ui_mapOverview.sampling_protocol')}
+                </Text>
                 <View style={styles.filterChipRow}>
                   {[
                     { label: 'All Protocols', value: 'all' },
@@ -1090,9 +1103,11 @@ export const MapOverviewScreen: React.FC<MapOverviewScreenProps> = ({
                   activeOpacity={0.8}
                 >
                   <View style={{ flex: 1 }}>
-                    <Text style={styles.filterToggleTitle}>Photos Attached Only</Text>
+                    <Text style={styles.filterToggleTitle}>
+                      {t('ui_mapOverview.photos_attached_only')}
+                    </Text>
                     <Text style={styles.filterToggleSub}>
-                      Show only sightings with photographic identification
+                      {t('ui_mapOverview.show_only_sightings_with_photographic_identifica')}
                     </Text>
                   </View>
                   <View
@@ -1122,14 +1137,11 @@ export const MapOverviewScreen: React.FC<MapOverviewScreenProps> = ({
                     setFilterOnlyWithPhotos(false);
                   }}
                 >
-                  <Text style={styles.filterResetBtnText}>Reset All</Text>
+                  <Text style={styles.filterResetBtnText}>{t('ui_mapOverview.reset_all')}</Text>
                 </TouchableOpacity>
 
-                <TouchableOpacity
-                  style={styles.filterApplyBtn}
-                  onPress={handleCloseFilterModal}
-                >
-                  <Text style={styles.filterApplyBtnText}>Apply Filters</Text>
+                <TouchableOpacity style={styles.filterApplyBtn} onPress={handleCloseFilterModal}>
+                  <Text style={styles.filterApplyBtnText}>{t('ui_mapOverview.apply_filters')}</Text>
                 </TouchableOpacity>
               </View>
             </View>
@@ -1152,7 +1164,7 @@ export const MapOverviewScreen: React.FC<MapOverviewScreenProps> = ({
               <View style={styles.modalHeader}>
                 <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
                   <IOSIcon name="bell" size={18} color="#0F172A" />
-                  <Text style={styles.modalTitle}>Observatory Bulletins</Text>
+                  <Text style={styles.modalTitle}>{t('ui_mapOverview.observatory_bulletins')}</Text>
                 </View>
                 <TouchableOpacity onPress={handleCloseNotifications}>
                   <IOSIcon name="xmark" size={20} color="#0F172A" />
@@ -1164,11 +1176,13 @@ export const MapOverviewScreen: React.FC<MapOverviewScreenProps> = ({
                   <View style={[styles.bulletinDot, { backgroundColor: '#10B981' }]} />
                   <View style={styles.bulletinContent}>
                     <View style={styles.bulletinTopRow}>
-                      <Text style={styles.bulletinTitle}>Research Cloud Connected</Text>
-                      <Text style={styles.bulletinTime}>Live</Text>
+                      <Text style={styles.bulletinTitle}>
+                        {t('ui_mapOverview.research_cloud_connected')}
+                      </Text>
+                      <Text style={styles.bulletinTime}>{t('ui_mapOverview.live')}</Text>
                     </View>
                     <Text style={styles.bulletinBody}>
-                      Real-time synchronization active with Supabase PostGIS spatial cluster. Observations and tracks persist securely.
+                      {t('ui_mapOverview.real_time_synchronization_active_with_supabase')}
                     </Text>
                   </View>
                 </View>
@@ -1177,11 +1191,13 @@ export const MapOverviewScreen: React.FC<MapOverviewScreenProps> = ({
                   <View style={[styles.bulletinDot, { backgroundColor: '#0284C7' }]} />
                   <View style={styles.bulletinContent}>
                     <View style={styles.bulletinTopRow}>
-                      <Text style={styles.bulletinTitle}>Geospatial Telemetry Engine</Text>
-                      <Text style={styles.bulletinTime}>Active</Text>
+                      <Text style={styles.bulletinTitle}>
+                        {t('ui_mapOverview.geospatial_telemetry_engine')}
+                      </Text>
+                      <Text style={styles.bulletinTime}>{t('ui_mapOverview.active')}</Text>
                     </View>
                     <Text style={styles.bulletinBody}>
-                      High-precision WGS84 GPS positioning and H3 resolution-9 spatial indexing enabled for standardized transects.
+                      {t('ui_mapOverview.high_precision_wgs84_gps_positioning_and')}
                     </Text>
                   </View>
                 </View>
@@ -1190,11 +1206,13 @@ export const MapOverviewScreen: React.FC<MapOverviewScreenProps> = ({
                   <View style={[styles.bulletinDot, { backgroundColor: '#64748B' }]} />
                   <View style={styles.bulletinContent}>
                     <View style={styles.bulletinTopRow}>
-                      <Text style={styles.bulletinTitle}>Field Advisories</Text>
-                      <Text style={styles.bulletinTime}>Normal</Text>
+                      <Text style={styles.bulletinTitle}>
+                        {t('ui_mapOverview.field_advisories')}
+                      </Text>
+                      <Text style={styles.bulletinTime}>{t('ui_mapOverview.normal')}</Text>
                     </View>
                     <Text style={styles.bulletinBody}>
-                      No active emergency alerts or bio-safety bulletins recorded. System ready for field survey patrol.
+                      {t('ui_mapOverview.no_active_emergency_alerts_or_bio')}
                     </Text>
                   </View>
                 </View>
@@ -1208,7 +1226,7 @@ export const MapOverviewScreen: React.FC<MapOverviewScreenProps> = ({
                   setShowNotificationsModal(false);
                 }}
               >
-                <Text style={styles.modalActionBtnText}>Dismiss & Clear</Text>
+                <Text style={styles.modalActionBtnText}>{t('ui_mapOverview.dismiss_clear')}</Text>
               </TouchableOpacity>
             </View>
           </TouchableOpacity>

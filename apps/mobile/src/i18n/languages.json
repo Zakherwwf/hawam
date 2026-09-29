@@ -1,0 +1,5 @@
+{
+  "enabled": ["en"],
+  "draft": ["fr", "ar"],
+  "default": "en"
+}

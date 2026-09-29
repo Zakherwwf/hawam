@@ -90,6 +90,7 @@ export const ProgressScreen: React.FC<ProgressScreenProps> = ({ userAccount, sta
     consumeStreakFreeze,
     claimQuestReward,
   } = useGamificationStore();
+  const rankLabel = t(`ui_gamificationStore.rank_${level}`, { defaultValue: rankTitle });
 
   const [leaderboardTab, setLeaderboardTab] = useState<'km' | 'surveys'>('km');
   const [selectedGov, setSelectedGov] = useState<string>('all');
@@ -148,26 +149,26 @@ export const ProgressScreen: React.FC<ProgressScreenProps> = ({ userAccount, sta
   const handleUseFreeze = () => {
     if (freezesAvailable <= 0) {
       Alert.alert(
-        'No Freezes Available',
-        'You receive 1 complimentary streak freeze every 30 days. You have used all available freezes for this cycle.'
+        t('ui_progress.no_freezes_available'),
+        t('ui_progress.you_receive_1_complimentary_streak_freeze')
       );
       return;
     }
 
     Alert.alert(
-      'Activate Monthly Streak Freeze?',
-      `You currently hold a ${currentStreakWeeks}-week active survey streak. Activating a freeze protects your streak from resetting if you miss a field survey this week.`,
+      t('ui_progress.activate_monthly_streak_freeze'),
+      t('ui_progress.you_currently_hold_a_week_active', { currentStreakWeeks }),
       [
-        { text: 'Cancel', style: 'cancel' },
+        { text: t('ui_progress.cancel'), style: 'cancel' },
         {
-          text: 'Activate Freeze',
+          text: t('ui_progress.activate_freeze'),
           onPress: () => {
             hapticButtonPress();
             const success = consumeStreakFreeze();
             if (success) {
               Alert.alert(
-                'Streak Shielded',
-                'Your survey streak is now protected for this week. Keep up the high-rigor field work!'
+                t('ui_progress.streak_shielded'),
+                t('ui_progress.your_survey_streak_is_now_protected')
               );
             }
           },
@@ -193,7 +194,7 @@ export const ProgressScreen: React.FC<ProgressScreenProps> = ({ userAccount, sta
         style={StyleSheet.absoluteFill}
       />
       <SafeAreaView style={styles.safeArea} edges={['top', 'left', 'right']}>
-        <IOSNavigationBar title="Scientific Progress" />
+        <IOSNavigationBar title={t('ui_progress.scientific_progress')} />
 
         <ScrollView
           contentContainerStyle={styles.scrollContent}
@@ -208,13 +209,13 @@ export const ProgressScreen: React.FC<ProgressScreenProps> = ({ userAccount, sta
                   style={{ width: 36, height: 36, resizeMode: 'contain' }}
                 />
                 <View>
-                  <Text style={styles.levelNumber}>LEVEL {level}</Text>
-                  <Text style={styles.rankTitle}>{rankTitle}</Text>
+                  <Text style={styles.levelNumber}>{t('ui_progress.level', { level })}</Text>
+                  <Text style={styles.rankTitle}>{rankLabel}</Text>
                 </View>
               </View>
               <View style={styles.xpBadge}>
                 <IOSIcon name="chart" size={14} color={DesignTokens.colors.tint} />
-                <Text style={styles.xpBadgeText}>{xpTotal} XP</Text>
+                <Text style={styles.xpBadgeText}>{t('ui_progress.xp', { xpTotal })}</Text>
               </View>
             </View>
 
@@ -227,7 +228,7 @@ export const ProgressScreen: React.FC<ProgressScreenProps> = ({ userAccount, sta
 
             <View style={styles.progressSubRow}>
               <Text style={styles.progressSubText}>
-                {xpTotal} / {nextLevelXp} XP to Level {level + 1}
+                {t('ui_progress.xp_to_level', { xpTotal, nextLevelXp, v5: level + 1 })}
               </Text>
               <Text style={styles.progressSubText}>{Math.round(levelProgress * 100)}%</Text>
             </View>
@@ -242,7 +243,7 @@ export const ProgressScreen: React.FC<ProgressScreenProps> = ({ userAccount, sta
                   {isStreakShielded && (
                     <View style={styles.streakShieldGlowBadge}>
                       <IOSIcon name="shield" size={10} color="#0F172A" />
-                      <Text style={styles.streakShieldGlowText}>SHIELDED</Text>
+                      <Text style={styles.streakShieldGlowText}>{t('ui_progress.shielded')}</Text>
                     </View>
                   )}
                   <View
@@ -258,9 +259,13 @@ export const ProgressScreen: React.FC<ProgressScreenProps> = ({ userAccount, sta
                     />
                   </View>
                   <View>
-                    <Text style={styles.streakNumber}>{currentStreakWeeks} WEEKS</Text>
+                    <Text style={styles.streakNumber}>
+                      {t('ui_progress.weeks', { currentStreakWeeks })}
+                    </Text>
                     <Text style={styles.streakLabel}>
-                      {isStreakShielded ? 'SHIELD PROTECTED' : 'SURVEY STREAK'}
+                      {isStreakShielded
+                        ? t('ui_progress.shield_protected')
+                        : t('ui_progress.survey_streak')}
                     </Text>
                   </View>
                 </View>
@@ -279,8 +284,10 @@ export const ProgressScreen: React.FC<ProgressScreenProps> = ({ userAccount, sta
                     <IOSIcon name="shield" size={18} color={DesignTokens.colors.tint} />
                   </View>
                   <View>
-                    <Text style={styles.streakNumber}>{freezesAvailable} AVAILABLE</Text>
-                    <Text style={styles.streakLabel}>MONTHLY FREEZE</Text>
+                    <Text style={styles.streakNumber}>
+                      {t('ui_progress.available', { freezesAvailable })}
+                    </Text>
+                    <Text style={styles.streakLabel}>{t('ui_progress.monthly_freeze')}</Text>
                   </View>
                 </TouchableOpacity>
               </View>
@@ -290,8 +297,8 @@ export const ProgressScreen: React.FC<ProgressScreenProps> = ({ userAccount, sta
           {/* Rotating Weekly Quests */}
           <View style={styles.sectionContainer}>
             <View style={styles.sectionHeaderRow}>
-              <Text style={styles.sectionTitle}>Weekly Research Quests</Text>
-              <Text style={styles.sectionBadge}>3 ACTIVE</Text>
+              <Text style={styles.sectionTitle}>{t('ui_progress.weekly_research_quests')}</Text>
+              <Text style={styles.sectionBadge}>{t('ui_progress.3_active')}</Text>
             </View>
 
             {quests.map((quest) => {
@@ -314,15 +321,17 @@ export const ProgressScreen: React.FC<ProgressScreenProps> = ({ userAccount, sta
                           (quest.completed || isClaimed) && styles.questTitleDone,
                         ]}
                       >
-                        {quest.title}
+                        {t(quest.title)}
                       </Text>
                     </View>
                     <View style={styles.questRewardPill}>
-                      <Text style={styles.questRewardText}>+{quest.xpReward} XP</Text>
+                      <Text style={styles.questRewardText}>
+                        {t('ui_progress.xp_2', { xpReward: quest.xpReward })}
+                      </Text>
                     </View>
                   </View>
 
-                  <Text style={styles.questDesc}>{quest.description}</Text>
+                  <Text style={styles.questDesc}>{t(quest.description)}</Text>
 
                   {/* Quest Progress bar */}
                   <View style={styles.questBarTrack}>
@@ -344,7 +353,10 @@ export const ProgressScreen: React.FC<ProgressScreenProps> = ({ userAccount, sta
 
                   <View style={styles.questBottomRow}>
                     <Text style={styles.questProgressText}>
-                      {quest.progress} / {quest.target} completed
+                      {t('ui_progress.completed', {
+                        progress: quest.progress,
+                        target: quest.target,
+                      })}
                     </Text>
                     {isClaimable ? (
                       <TouchableOpacity
@@ -354,20 +366,22 @@ export const ProgressScreen: React.FC<ProgressScreenProps> = ({ userAccount, sta
                           hapticSuccess();
                           claimQuestReward(quest.id);
                           Alert.alert(
-                            'XP Claimed!',
-                            `You received +${quest.xpReward} XP for advancing public health research.`
+                            t('ui_progress.xp_claimed'),
+                            t('ui_progress.you_received_xp_for_advancing_public', {
+                              v0: quest.xpReward,
+                            })
                           );
                         }}
                       >
                         <IOSIcon name="star" size={13} color="#0F172A" />
                         <Text style={styles.claimXpBtnText} numberOfLines={1}>
-                          +{quest.xpReward} XP CLAIM
+                          {t('ui_progress.xp_claim', { xpReward: quest.xpReward })}
                         </Text>
                       </TouchableOpacity>
                     ) : isClaimed ? (
                       <View style={styles.claimedPill}>
                         <IOSIcon name="check" size={11} color="#166534" />
-                        <Text style={styles.claimedPillText}>CLAIMED</Text>
+                        <Text style={styles.claimedPillText}>{t('ui_progress.claimed')}</Text>
                       </View>
                     ) : null}
                   </View>
@@ -379,9 +393,12 @@ export const ProgressScreen: React.FC<ProgressScreenProps> = ({ userAccount, sta
           {/* Scientific Badges Showcase */}
           <View style={styles.sectionContainer}>
             <View style={styles.sectionHeaderRow}>
-              <Text style={styles.sectionTitle}>Surveyor Badges</Text>
+              <Text style={styles.sectionTitle}>{t('ui_progress.surveyor_badges')}</Text>
               <Text style={styles.sectionBadge}>
-                {badges.filter((b) => b.unlockedAt).length} / {badges.length} UNLOCKED
+                {t('ui_progress.unlocked', {
+                  length: badges.filter((b) => b.unlockedAt).length,
+                  v3: badges.length,
+                })}
               </Text>
             </View>
 
@@ -433,7 +450,7 @@ export const ProgressScreen: React.FC<ProgressScreenProps> = ({ userAccount, sta
                       style={[styles.badgeName, !isUnlocked && styles.badgeTextLocked]}
                       numberOfLines={1}
                     >
-                      {badge.name}
+                      {t(badge.name)}
                     </Text>
                     <Text style={styles.badgeTier}>{badge.tier.toUpperCase()}</Text>
                   </TouchableOpacity>
@@ -445,8 +462,10 @@ export const ProgressScreen: React.FC<ProgressScreenProps> = ({ userAccount, sta
           {/* Effort-Based Leaderboard (Ranked by KM / Complete Surveys) */}
           <View style={styles.sectionContainer}>
             <View style={styles.sectionHeaderRow}>
-              <Text style={styles.sectionTitle}>Effort Leaderboard</Text>
-              <Text style={styles.sectionSubtitle}>Ranked strictly by survey effort</Text>
+              <Text style={styles.sectionTitle}>{t('ui_progress.effort_leaderboard')}</Text>
+              <Text style={styles.sectionSubtitle}>
+                {t('ui_progress.ranked_strictly_by_survey_effort')}
+              </Text>
             </View>
 
             <View style={{ marginBottom: 10 }}>
@@ -527,8 +546,8 @@ export const ProgressScreen: React.FC<ProgressScreenProps> = ({ userAccount, sta
                   surveysCount: actualSurveys,
                   kmCount: actualKm,
                   role: userAccount?.role
-                    ? `${userAccount.role.toUpperCase()} • ${rankTitle}`
-                    : rankTitle,
+                    ? `${userAccount.role.toUpperCase()} • ${rankLabel}`
+                    : rankLabel,
                   avatar: userAccount?.avatarUri
                     ? { uri: userAccount.avatarUri }
                     : require('../../assets/icon_cat_primary.png'),
@@ -558,7 +577,7 @@ export const ProgressScreen: React.FC<ProgressScreenProps> = ({ userAccount, sta
                     <View style={styles.emptyGovLeaderboard}>
                       <IOSIcon name="location" size={24} color="#94A3B8" />
                       <Text style={styles.emptyGovText}>
-                        No registered surveyors in this governorate yet
+                        {t('ui_progress.no_registered_surveyors_in_this_governorate')}
                       </Text>
                     </View>
                   );
@@ -677,13 +696,13 @@ export const ProgressScreen: React.FC<ProgressScreenProps> = ({ userAccount, sta
                         },
                       ]}
                     >
-                      {selectedBadge.tier.toUpperCase()} TIER
+                      {t('ui_progress.tier', { v1: selectedBadge.tier.toUpperCase() })}
                     </Text>
                   </View>
 
-                  <Text style={styles.modalBadgeTitle}>{selectedBadge.name}</Text>
+                  <Text style={styles.modalBadgeTitle}>{t(selectedBadge.name)}</Text>
 
-                  <Text style={styles.modalBadgeDesc}>{selectedBadge.description}</Text>
+                  <Text style={styles.modalBadgeDesc}>{t(selectedBadge.description)}</Text>
 
                   <View
                     style={[
@@ -711,8 +730,10 @@ export const ProgressScreen: React.FC<ProgressScreenProps> = ({ userAccount, sta
                       ]}
                     >
                       {selectedBadge.unlockedAt
-                        ? `Unlocked ${new Date(selectedBadge.unlockedAt).toLocaleDateString()}`
-                        : 'Locked • Complete scientific field requirement'}
+                        ? t('ui_progress.unlocked_2', {
+                            v0: new Date(selectedBadge.unlockedAt).toLocaleDateString(),
+                          })
+                        : t('ui_progress.locked_complete_scientific_field_requirement')}
                     </Text>
                   </View>
 
@@ -721,7 +742,7 @@ export const ProgressScreen: React.FC<ProgressScreenProps> = ({ userAccount, sta
                     onPress={handleCloseBadge}
                     activeOpacity={0.8}
                   >
-                    <Text style={styles.modalDismissText}>Done</Text>
+                    <Text style={styles.modalDismissText}>{t('ui_progress.done')}</Text>
                   </TouchableOpacity>
                 </>
               ) : null}
@@ -766,22 +787,24 @@ export const ProgressScreen: React.FC<ProgressScreenProps> = ({ userAccount, sta
                   <View style={styles.surveyorMetricsGrid}>
                     <View style={styles.surveyorMetricTile}>
                       <Text style={styles.surveyorMetricVal}>{selectedSurveyor.badgesEarned}</Text>
-                      <Text style={styles.surveyorMetricLabel}>BADGES</Text>
+                      <Text style={styles.surveyorMetricLabel}>{t('ui_progress.badges')}</Text>
                     </View>
                     <View style={styles.surveyorMetricTile}>
-                      <Text style={styles.surveyorMetricVal}>{selectedSurveyor.kmCount} km</Text>
-                      <Text style={styles.surveyorMetricLabel}>DISTANCE</Text>
+                      <Text style={styles.surveyorMetricVal}>
+                        {t('ui_progress.km', { kmCount: selectedSurveyor.kmCount })}
+                      </Text>
+                      <Text style={styles.surveyorMetricLabel}>{t('ui_progress.distance')}</Text>
                     </View>
                     <View style={styles.surveyorMetricTile}>
                       <Text style={styles.surveyorMetricVal}>{selectedSurveyor.surveysCount}</Text>
-                      <Text style={styles.surveyorMetricLabel}>SURVEYS</Text>
+                      <Text style={styles.surveyorMetricLabel}>{t('ui_progress.surveys')}</Text>
                     </View>
                   </View>
 
                   <View style={styles.surveyorAssuranceBox}>
                     <IOSIcon name="shield" size={14} color="#166534" />
                     <Text style={styles.surveyorAssuranceText}>
-                      eBird / Darwin Core Verified Field Observer
+                      {t('ui_progress.ebird_darwin_core_verified_field_observer')}
                     </Text>
                   </View>
 
@@ -790,7 +813,7 @@ export const ProgressScreen: React.FC<ProgressScreenProps> = ({ userAccount, sta
                     onPress={handleCloseSurveyor}
                     activeOpacity={0.8}
                   >
-                    <Text style={styles.modalDismissText}>Close Profile</Text>
+                    <Text style={styles.modalDismissText}>{t('ui_progress.close_profile')}</Text>
                   </TouchableOpacity>
                 </>
               ) : null}
