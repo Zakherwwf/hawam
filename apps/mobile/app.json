@@ -33,7 +33,7 @@
         "CAMERA"
       ]
     },
-    "plugins": ["expo-sqlite", "expo-router"],
+    "plugins": ["expo-sqlite", "expo-router", "@maplibre/maplibre-react-native"],
     "extra": {
       "eas": {
         "projectId": "62f0a9dc-b739-4aea-acd4-1bb1589ec134"

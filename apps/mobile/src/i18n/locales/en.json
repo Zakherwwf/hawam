@@ -361,7 +361,8 @@
     "outdoors": "Outdoors",
     "streets": "Streets",
     "colonies": "Colonies {{v1}}",
-    "gps_m_live": "GPS ±{{v1}}m · Live"
+    "gps_m_live": "GPS ±{{v1}}m · Live",
+    "center_on_me": "Center map on my location"
   },
   "ui_routePickerModal": {
     "done": "Done",

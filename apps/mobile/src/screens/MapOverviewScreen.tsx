@@ -17,12 +17,12 @@ import { IOSColors, IOSTypography } from '../theme/ios';
 import { LinearGradient } from 'expo-linear-gradient';
 import { IOSIcon } from '../components/ios';
 import {
-  InteractiveMapView,
+  InteractiveMap,
   MapMarker,
   ColonyMarker,
   TransectMarker,
   FocusCoordinate,
-} from '../components/map/InteractiveMapView';
+} from '../components/map/InteractiveMap';
 import { SightingItem } from './SightingsScreen';
 import { generateScientificObservationCode } from '../utils/scientificCodes';
 import { useColoniesStore, CatColony } from '../features/colonies/coloniesStore';
@@ -652,7 +652,7 @@ export const MapOverviewScreen: React.FC<MapOverviewScreenProps> = ({
 
         {/* Main Interactive Map Canvas */}
         <View style={styles.mapWrapper}>
-          <InteractiveMapView
+          <InteractiveMap
             focusCoordinate={focusCoordinate}
             markers={mapMarkers}
             colonyMarkers={displayColonies.map((c) => ({

@@ -1,97 +1,26 @@
 import { useTranslation } from 'react-i18next';
 import React, { useRef, useEffect, useState } from 'react';
-import { View, StyleSheet, TouchableOpacity, Text, DimensionValue } from 'react-native';
+import { View, StyleSheet, TouchableOpacity, Text } from 'react-native';
 import { WebView } from 'react-native-webview';
 import * as Location from 'expo-location';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { IOSColors, IOSTypography } from '../../theme/ios';
 import { IOSIcon } from '../ios';
 import { MAPBOX_CONFIG } from '../../config/mapbox';
+import {
+  CAMERA_STORAGE_KEY,
+  USER_LOCATION_ZOOM,
+  loadSavedCamera,
+  type InteractiveMapViewProps,
+} from './mapTypes';
 
-export interface MapMarker {
-  id: string;
-  latitude: number;
-  longitude: number;
-  species: 'cat' | 'dog' | 'unknown';
-  title?: string;
-  subtitle?: string;
-  identifier?: string;
-  label?: string;
-  distance_from_path_m?: number;
-}
-
-export interface ColonyMarker {
-  id: string;
-  name: string;
-  species?: 'cat' | 'dog' | 'mixed';
-  latitude: number;
-  longitude: number;
-  estimatedPopulation: number;
-  tnrPercent: number;
-  hasWaterStation?: boolean;
-  hasShelter?: boolean;
-}
-
-export interface FocusCoordinate {
-  latitude: number;
-  longitude: number;
-  zoom?: number;
-}
-
-export interface TransectMarker {
-  id: string;
-  name: string;
-  nameAr?: string;
-  latitude: number;
-  longitude: number;
-  distanceKm: number;
-  isAdopted: boolean;
-  isSelected?: boolean;
-}
-
-const CAMERA_STORAGE_KEY = 'hawem_map_camera_v1';
-const USER_LOCATION_ZOOM = 15;
-
-interface SavedCamera {
-  latitude: number;
-  longitude: number;
-  zoom: number;
-}
-
-async function loadSavedCamera(): Promise<SavedCamera | null> {
-  try {
-    const raw = await AsyncStorage.getItem(CAMERA_STORAGE_KEY);
-    if (!raw) return null;
-    const c = JSON.parse(raw);
-    if (
-      Number.isFinite(c?.latitude) &&
-      Math.abs(c.latitude) <= 90 &&
-      Number.isFinite(c?.longitude) &&
-      Math.abs(c.longitude) <= 180 &&
-      Number.isFinite(c?.zoom)
-    ) {
-      return { latitude: c.latitude, longitude: c.longitude, zoom: c.zoom };
-    }
-  } catch {}
-  return null;
-}
-
-interface InteractiveMapViewProps {
-  initialLat?: number;
-  initialLon?: number;
-  initialZoom?: number;
-  focusCoordinate?: FocusCoordinate | null;
-  markers?: MapMarker[];
-  colonyMarkers?: ColonyMarker[];
-  transectMarkers?: TransectMarker[];
-  trackCoordinates?: [number, number][]; // [lat, lon]
-  routeCorridorCoordinates?: [number, number][]; // Planned transect corridor [lat, lon]
-  showUserLocation?: boolean;
-  onMarkerPress?: (markerId: string) => void;
-  onColonyPress?: (colonyId: string) => void;
-  onTransectPress?: (transectId: string) => void;
-  height?: DimensionValue;
-}
+export type {
+  MapMarker,
+  ColonyMarker,
+  FocusCoordinate,
+  TransectMarker,
+  InteractiveMapViewProps,
+} from './mapTypes';
 
 export const InteractiveMapView: React.FC<InteractiveMapViewProps> = ({
   initialLat,

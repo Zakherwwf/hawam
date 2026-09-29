@@ -32,7 +32,7 @@ import {
   IOSButton,
   IOSIcon,
 } from '../components/ios';
-import { InteractiveMapView } from '../components/map/InteractiveMapView';
+import { InteractiveMap } from '../components/map/InteractiveMap';
 import { WorkoutHUD } from '../components/survey/WorkoutHUD';
 import { BearingDistanceInput } from '../components/survey/BearingDistanceInput';
 import { AnimalMatcherModal } from '../components/animals/AnimalMatcherModal';
@@ -1187,7 +1187,7 @@ export const StructuredSurveyScreen: React.FC<StructuredSurveyScreenProps> = ({
 
             {/* Live Interactive Map with Real GPS Track & Plotted Pins */}
             <View style={styles.interactiveMapCard}>
-              <InteractiveMapView
+              <InteractiveMap
                 initialLat={currentLat}
                 initialLon={currentLon}
                 initialZoom={16}
