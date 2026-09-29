@@ -25,7 +25,6 @@ import {
   hapticTabSwitch,
   hapticQuickLog,
 } from '../utils/haptics';
-import { generateScientificObservationCode } from '../utils/scientificCodes';
 
 export interface SightingItem {
   id: string;
@@ -40,8 +39,10 @@ export interface SightingItem {
   health_issues?: string[];
   photos?: string[];
   notes?: string;
-  identifier?: string;
+  identifier?: string; // the observer's own tag, editable
   observer_name?: string;
+  publicCode?: string; // permanent code assigned by the database (CAT-000123)
+  syncPending?: boolean; // saved on this phone, not yet on the server
 }
 
 interface SightingsScreenProps {
@@ -398,8 +399,7 @@ export const SightingsScreen: React.FC<SightingsScreenProps> = ({
           ) : (
             filtered.map((item, index) => {
               const isCat = item.species === 'cat';
-              const scientificCode =
-                item.identifier || generateScientificObservationCode(item.species, index + 1);
+              const scientificCode = item.publicCode || t('ui_common.code_pending');
               return (
                 <View key={item.id} style={styles.card}>
                   <View style={styles.cardHeader}>

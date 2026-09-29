@@ -22,6 +22,13 @@ EXCEPTION WHEN duplicate_object THEN NULL; END $$;
 GRANT USAGE ON SCHEMA extensions TO anon, authenticated, service_role;
 GRANT USAGE ON SCHEMA public TO anon, authenticated, service_role;
 
+-- Hosted Supabase grants every new object in public to the API roles by
+-- default; migrations must revoke explicitly. Without this the replica would
+-- be stricter than production and hide missing revokes.
+ALTER DEFAULT PRIVILEGES IN SCHEMA public GRANT ALL ON TABLES TO anon, authenticated, service_role;
+ALTER DEFAULT PRIVILEGES IN SCHEMA public GRANT ALL ON FUNCTIONS TO anon, authenticated, service_role;
+ALTER DEFAULT PRIVILEGES IN SCHEMA public GRANT ALL ON SEQUENCES TO anon, authenticated, service_role;
+
 CREATE SCHEMA auth;
 CREATE TABLE auth.users (
   id UUID PRIMARY KEY,

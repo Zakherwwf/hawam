@@ -24,7 +24,6 @@ import {
   FocusCoordinate,
 } from '../components/map/InteractiveMap';
 import { SightingItem } from './SightingsScreen';
-import { generateScientificObservationCode } from '../utils/scientificCodes';
 import { useColoniesStore, CatColony } from '../features/colonies/coloniesStore';
 import { useRoutesStore, FixedRoute } from '../features/routes/routesStore';
 import { ColonyInspectorModal } from '../components/colonies/ColonyInspectorModal';
@@ -158,8 +157,8 @@ export const MapOverviewScreen: React.FC<MapOverviewScreenProps> = ({
   // Convert filtered sightings to map markers
   const mapMarkers: MapMarker[] = useMemo(() => {
     if (activeFilter === 'colonies' || activeFilter === 'transects') return [];
-    return filteredSightings.map((s, idx) => {
-      const code = s.identifier || generateScientificObservationCode(s.species, idx + 1);
+    return filteredSightings.map((s) => {
+      const code = s.publicCode || t('ui_common.code_pending');
       return {
         id: s.id,
         latitude: s.latitude,
@@ -797,8 +796,7 @@ export const MapOverviewScreen: React.FC<MapOverviewScreenProps> = ({
 
               {/* Sighting Identifier Headline */}
               <Text style={styles.sightingIdentifierHeadline}>
-                {selectedSighting.identifier ||
-                  `${selectedSighting.species === 'cat' ? 'Cat' : 'Dog'} (${selectedSighting.group_size || 1})`}
+                {selectedSighting.publicCode || t('ui_common.code_pending')}
               </Text>
 
               {/* Observer Attribution */}

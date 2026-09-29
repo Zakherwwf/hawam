@@ -133,5 +133,8 @@
   "opportunistic": {
     "no_gps_title": "Position indisponible",
     "no_gps_body": "Hawem a besoin d'un signal GPS pour enregistrer l'endroit où l'animal a été vu. Placez-vous à découvert ou autorisez la localisation, puis réessayez."
+  },
+  "ui_common": {
+    "code_pending": "En attente de synchro"
   }
 }

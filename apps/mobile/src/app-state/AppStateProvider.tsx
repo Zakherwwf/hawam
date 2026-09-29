@@ -4,7 +4,7 @@
  * this lived in App.tsx and was passed down as props; Expo Router routes read
  * it with useAppState().
  */
-import React, { createContext, useContext, useEffect, useState } from 'react';
+import React, { createContext, useCallback, useContext, useEffect, useMemo, useState } from 'react';
 import { Linking } from 'react-native';
 import { router } from 'expo-router';
 import AsyncStorage from '@react-native-async-storage/async-storage';
@@ -16,7 +16,14 @@ import type { UserAccount } from '../screens/AccountScreen';
 import { useSyncStore } from '../features/sync/syncStore';
 import { useSurveyStore } from '../features/survey/surveyStore';
 import { useGamificationStore } from '../features/gamification/gamificationStore';
-import { supabase, SurveyBundlePayload, ensureUserConsentAccepted } from '../services/supabase';
+import {
+  supabase,
+  SurveyBundlePayload,
+  ensureUserConsentAccepted,
+  pullMapObservations,
+  type MapObservationRow,
+} from '../services/supabase';
+import { labelOwnSightings, mergeForMap } from './mergeSightings';
 import { handleAuthUrl } from '../services/deepLinkAuth';
 import { startOutboxWorker } from '../services/sync/outboxWorker';
 import {
@@ -38,7 +45,11 @@ interface AppState {
   isAuthChecking: boolean;
   consentAccepted: boolean;
   userAccount: UserAccount | null;
+  /** This phone's sightings, labelled with their server code once synced */
   sightings: SightingItem[];
+  /** Everyone's observations plus this phone's unsynced ones */
+  mapSightings: SightingItem[];
+  refreshMapObservations: () => Promise<void>;
   capturedPhotos: any[];
   stats: SurveyStats;
   primaryViewMode: 'map' | 'dashboard';
@@ -120,6 +131,28 @@ export function AppStateProvider({ children }: { children: React.ReactNode }) {
   const [stats, setStats] = useState<SurveyStats>(EMPTY_STATS);
   const [primaryViewMode, setPrimaryViewMode] = useState<'map' | 'dashboard'>('map');
   const [selectedRouteForSurvey, setSelectedRouteForSurvey] = useState<string | null>(null);
+  const [remoteObservations, setRemoteObservations] = useState<MapObservationRow[]>([]);
+  const lastSyncedAt = useSyncStore((s) => s.lastSyncedAt);
+
+  const refreshMapObservations = useCallback(async () => {
+    const rows = await pullMapObservations();
+    if (rows) setRemoteObservations(rows);
+  }, []);
+
+  // Everyone's observations: on sign-in and after each sync
+  useEffect(() => {
+    if (userAccount) refreshMapObservations();
+    else setRemoteObservations([]);
+  }, [userAccount?.email, lastSyncedAt, refreshMapObservations]);
+
+  const ownSightings = useMemo(
+    () => labelOwnSightings(sightings, remoteObservations),
+    [sightings, remoteObservations]
+  );
+  const mapSightings = useMemo(
+    () => mergeForMap(sightings, remoteObservations),
+    [sightings, remoteObservations]
+  );
 
   const surveyStatus = useSurveyStore((s) => s.status);
   const isSurveyActive = surveyStatus === 'recording' || surveyStatus === 'acquiring_fix';
@@ -465,7 +498,9 @@ export function AppStateProvider({ children }: { children: React.ReactNode }) {
     isAuthChecking,
     consentAccepted,
     userAccount,
-    sightings,
+    sightings: ownSightings,
+    mapSightings,
+    refreshMapObservations,
     capturedPhotos,
     stats,
     primaryViewMode,

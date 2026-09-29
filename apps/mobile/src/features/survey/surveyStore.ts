@@ -10,6 +10,7 @@
  */
 
 import { create } from 'zustand';
+import { generateUUID } from '../../utils/uuid.ts';
 import { storage } from '../../services/storageAdapter.ts';
 import { localDb } from '../../db/localDb.ts';
 import type { SurveyProtocol, Species } from '@tunisia-survey/shared';
@@ -17,13 +18,7 @@ import { computeAnimalLocation, simplifyGpsTrack } from '../../services/georef/g
 import { generateScientificObservationCode } from '../../utils/scientificCodes.ts';
 
 export type SurveyStatus =
-  | 'idle'
-  | 'acquiring_fix'
-  | 'recording'
-  | 'paused'
-  | 'finishing'
-  | 'finished'
-  | 'recovered';
+  'idle' | 'acquiring_fix' | 'recording' | 'paused' | 'finishing' | 'finished' | 'recovered';
 
 export interface InSurveyDetection {
   id: string;
@@ -82,7 +77,13 @@ interface SurveyState {
   pauseSurvey: () => void;
   resumeSurvey: () => void;
   updateLocation: (lat: number, lon: number, accuracy: number, heading?: number) => void;
-  addTrackPoint: (lat: number, lon: number, accuracy?: number, speed?: number, mocked?: boolean) => void;
+  addTrackPoint: (
+    lat: number,
+    lon: number,
+    accuracy?: number,
+    speed?: number,
+    mocked?: boolean
+  ) => void;
   tickTimer: () => void;
   logDetection: (params: {
     species: Species;
@@ -151,22 +152,29 @@ export const useSurveyStore = create<SurveyState>((set, get) => ({
       detections: [],
       completeChecklist: true,
     });
-    storage.setItem('hawem_survey_draft', JSON.stringify({
-      sessionId,
-      protocol,
-      selectedRouteId: routeId,
-      startedAt,
-    })).catch(() => {});
+    storage
+      .setItem(
+        'hawem_survey_draft',
+        JSON.stringify({
+          sessionId,
+          protocol,
+          selectedRouteId: routeId,
+          startedAt,
+        })
+      )
+      .catch(() => {});
 
-    localDb.insertSession({
-      id: sessionId,
-      protocol,
-      routeId,
-      startedAt,
-      createdAt: startedAt,
-      status: 'active',
-      completeChecklist: true,
-    }).catch(() => {});
+    localDb
+      .insertSession({
+        id: sessionId,
+        protocol,
+        routeId,
+        startedAt,
+        createdAt: startedAt,
+        status: 'active',
+        completeChecklist: true,
+      })
+      .catch(() => {});
   },
 
   setFixAcquired: () => {
@@ -221,17 +229,19 @@ export const useSurveyStore = create<SurveyState>((set, get) => ({
     const rejectedReason = !isSpeedAcceptable ? 'speed_exceeded_15kmh' : undefined;
 
     if (sessionId) {
-      localDb.insertTrackPoint({
-        id: `tp-${Date.now()}-${Math.random().toString(36).substring(2, 7)}`,
-        sessionId,
-        latitude: lat,
-        longitude: lon,
-        accuracyM: accuracy,
-        speedMps: speed,
-        mocked: Boolean(mocked),
-        rejectedReason,
-        recordedAt: newRawPoint.recorded_at,
-      }).catch(() => {});
+      localDb
+        .insertTrackPoint({
+          id: `tp-${Date.now()}-${Math.random().toString(36).substring(2, 7)}`,
+          sessionId,
+          latitude: lat,
+          longitude: lon,
+          accuracyM: accuracy,
+          speedMps: speed,
+          mocked: Boolean(mocked),
+          rejectedReason,
+          recordedAt: newRawPoint.recorded_at,
+        })
+        .catch(() => {});
     }
 
     if (activeTrack.length === 0) {
@@ -326,20 +336,14 @@ export const useSurveyStore = create<SurveyState>((set, get) => ({
     const bearing = bearing_deg ?? (currentLocation?.heading || 0);
 
     const distEst = distance_estimate_m ?? 5.0;
-    const geoResult = computeAnimalLocation(
-      obsLat,
-      obsLon,
-      distEst,
-      bearing,
-      activeTrack
-    );
+    const geoResult = computeAnimalLocation(obsLat, obsLon, distEst, bearing, activeTrack);
 
-    const effectivePhotos = photoUris.length > 0 ? photoUris : (photoUri ? [photoUri] : []);
+    const effectivePhotos = photoUris.length > 0 ? photoUris : photoUri ? [photoUri] : [];
     const effectiveIdentifier =
       identifier || generateScientificObservationCode(species, detections.length + 1);
 
     const newDetection: InSurveyDetection = {
-      id: `det-${Date.now()}-${Math.floor(Math.random() * 1000)}`,
+      id: generateUUID(),
       identifier: effectiveIdentifier,
       species,
       group_size,
@@ -364,26 +368,28 @@ export const useSurveyStore = create<SurveyState>((set, get) => ({
     set({ detections: updatedDetections });
 
     if (sessionId) {
-      localDb.insertObservation({
-        id: newDetection.id,
-        sessionId,
-        observedAt: newDetection.observed_at,
-        observerLat: obsLat,
-        observerLon: obsLon,
-        animalLat: geoResult.animalLat,
-        animalLon: geoResult.animalLon,
-        gpsAccuracyM: gps_accuracy_m,
-        bearingDeg: bearing,
-        distanceEstimateM: distance_estimate_m,
-        perpendicularDistanceM: geoResult.perpendicularDistanceM,
-        h3Res9: geoResult.h3Res9,
-        species,
-        groupSize: group_size,
-        bodyConditionScore: body_condition_score,
-        healthIssuesJson: '[]',
-        notes,
-        synced: false,
-      }).catch(() => {});
+      localDb
+        .insertObservation({
+          id: newDetection.id,
+          sessionId,
+          observedAt: newDetection.observed_at,
+          observerLat: obsLat,
+          observerLon: obsLon,
+          animalLat: geoResult.animalLat,
+          animalLon: geoResult.animalLon,
+          gpsAccuracyM: gps_accuracy_m,
+          bearingDeg: bearing,
+          distanceEstimateM: distance_estimate_m,
+          perpendicularDistanceM: geoResult.perpendicularDistanceM,
+          h3Res9: geoResult.h3Res9,
+          species,
+          groupSize: group_size,
+          bodyConditionScore: body_condition_score,
+          healthIssuesJson: '[]',
+          notes,
+          synced: false,
+        })
+        .catch(() => {});
     }
 
     return newDetection;
@@ -395,26 +401,28 @@ export const useSurveyStore = create<SurveyState>((set, get) => ({
       detections: detections.map((d) => (d.id === updated.id ? updated : d)),
     });
     if (sessionId) {
-      localDb.insertObservation({
-        id: updated.id,
-        sessionId,
-        observedAt: updated.observed_at,
-        observerLat: updated.observer_lat,
-        observerLon: updated.observer_lon,
-        animalLat: updated.animal_lat,
-        animalLon: updated.animal_lon,
-        gpsAccuracyM: updated.gps_accuracy_m,
-        bearingDeg: updated.bearing_deg,
-        distanceEstimateM: updated.distance_estimate_m,
-        perpendicularDistanceM: updated.perpendicular_distance_m,
-        h3Res9: updated.h3_res9,
-        species: updated.species,
-        groupSize: updated.group_size,
-        bodyConditionScore: updated.body_condition_score,
-        healthIssuesJson: '[]',
-        notes: updated.notes,
-        synced: false,
-      }).catch(() => {});
+      localDb
+        .insertObservation({
+          id: updated.id,
+          sessionId,
+          observedAt: updated.observed_at,
+          observerLat: updated.observer_lat,
+          observerLon: updated.observer_lon,
+          animalLat: updated.animal_lat,
+          animalLon: updated.animal_lon,
+          gpsAccuracyM: updated.gps_accuracy_m,
+          bearingDeg: updated.bearing_deg,
+          distanceEstimateM: updated.distance_estimate_m,
+          perpendicularDistanceM: updated.perpendicular_distance_m,
+          h3Res9: updated.h3_res9,
+          species: updated.species,
+          groupSize: updated.group_size,
+          bodyConditionScore: updated.body_condition_score,
+          healthIssuesJson: '[]',
+          notes: updated.notes,
+          synced: false,
+        })
+        .catch(() => {});
     }
   },
 

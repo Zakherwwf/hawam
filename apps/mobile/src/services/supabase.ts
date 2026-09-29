@@ -213,6 +213,47 @@ export async function deleteMyAccount(): Promise<{ success: boolean; error?: str
   }
 }
 
+export interface MapObservationRow {
+  id: string;
+  observed_at: string;
+  species: 'cat' | 'dog' | 'unknown';
+  group_size: number | null;
+  body_condition_score: number | null;
+  notes: string | null;
+  latitude: number | null;
+  longitude: number | null;
+  perpendicular_distance_m: number | null;
+  observer_id: string | null;
+  observer_name: string | null;
+  protocol: 'transect' | 'stationary_point' | 'incidental';
+  public_code: string;
+}
+
+/**
+ * Every volunteer's observations for the shared map (signed-in users only).
+ * Returns null on failure so callers keep what they already have.
+ */
+export async function pullMapObservations(limit = 5000): Promise<MapObservationRow[] | null> {
+  try {
+    const { data, error } = await supabase
+      .from('observations_map')
+      .select(
+        'id, observed_at, species, group_size, body_condition_score, notes, latitude, longitude, ' +
+          'perpendicular_distance_m, observer_id, observer_name, protocol, public_code'
+      )
+      .order('observed_at', { ascending: false })
+      .limit(limit);
+    if (error) {
+      console.warn('Error fetching map observations:', error.message);
+      return null;
+    }
+    return (data as unknown as MapObservationRow[]) ?? [];
+  } catch (err) {
+    console.warn('Network error fetching map observations:', err);
+    return null;
+  }
+}
+
 /**
  * Pulls active official fixed routes from PostgreSQL
  */

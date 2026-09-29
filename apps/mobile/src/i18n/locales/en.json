@@ -1123,7 +1123,8 @@
   },
   "ui_common": {
     "email_placeholder": "name@example.org",
-    "not_set": "Not set"
+    "not_set": "Not set",
+    "code_pending": "Pending sync"
   },
   "ui_gamificationStore": {
     "first_steps": "First Steps",

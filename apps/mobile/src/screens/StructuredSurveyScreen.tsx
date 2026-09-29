@@ -364,7 +364,7 @@ export const StructuredSurveyScreen: React.FC<StructuredSurveyScreenProps> = ({
     const scientificCode = getNextSessionObservationCode(species, sessionDetections);
 
     const newDetection: SurveyDetection = {
-      id: `det-${Date.now()}`,
+      id: generateUUID(),
       species,
       identifier: scientificCode,
       group_size: 1,
@@ -502,7 +502,7 @@ export const StructuredSurveyScreen: React.FC<StructuredSurveyScreenProps> = ({
     } else {
       // Add new detection
       const newDetection: SurveyDetection = {
-        id: `det-${Date.now()}`,
+        id: generateUUID(),
         species: sightingSpecies,
         identifier: cleanIdentifier,
         group_size: groupSize,
@@ -666,10 +666,15 @@ export const StructuredSurveyScreen: React.FC<StructuredSurveyScreenProps> = ({
     const trackCoords: [number, number][] =
       simplifiedTrack.length >= 2 ? simplifiedTrack.map(([lat, lon]) => [lon, lat]) : [];
 
-    // Map detection local id to generated UUID
+    // Detections carry a UUID from the moment they are logged, so the local
+    // sighting, the synced observation and its photos share one id. Older
+    // drafts may still hold det-<timestamp> ids; those get a UUID here, and
+    // the map records it so their photos point at the right observation.
+    const UUID_PATTERN = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
     const detectionUuidMap = new Map<string, string>();
     const observationsPayload = sessionDetections.map((d) => {
-      const obsUuid = generateUUID();
+      const obsUuid = UUID_PATTERN.test(d.id) ? d.id : generateUUID();
+      detectionUuidMap.set(d.id, obsUuid);
       const animLon = d.animalLon ?? d.longitude ?? currentLon;
       const animLat = d.animalLat ?? d.latitude ?? currentLat;
       const obsLon = d.longitude ?? currentLon;

@@ -12,7 +12,7 @@ export default function ExploreRoute() {
     primaryViewMode,
     setPrimaryViewMode,
     setSelectedRouteForSurvey,
-    sightings,
+    mapSightings,
     stats,
     userAccount,
   } = useAppState();
@@ -47,7 +47,7 @@ export default function ExploreRoute() {
 
   return (
     <MapOverviewScreen
-      sightings={sightings}
+      sightings={mapSightings}
       onQuickSighting={openQuickSighting}
       onOpenAccount={() => {
         hapticTabSwitch();
