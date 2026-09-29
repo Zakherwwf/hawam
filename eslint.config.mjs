@@ -65,7 +65,7 @@ export default tseslint.config(
   {
     // Mobile UI text goes through i18next (apps/mobile/src/i18n). The emoji
     // selectors are repeated because this block replaces the list above.
-    files: ['apps/mobile/App.tsx', 'apps/mobile/src/**/*.tsx'],
+    files: ['apps/mobile/app/**/*.tsx', 'apps/mobile/src/**/*.tsx'],
     ignores: ['apps/mobile/src/__tests__/**'],
     rules: {
       'no-restricted-syntax': [

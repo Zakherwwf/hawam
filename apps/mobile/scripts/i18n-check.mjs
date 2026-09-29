@@ -39,15 +39,17 @@ const enBase = new Set([...en.keys()].map(baseKey));
 // Keys referenced from source
 const used = new Map();
 let dynamicCalls = 0;
-const sources = [path.join(root, 'App.tsx')];
-(function walk(dir) {
+const sources = [];
+function walk(dir) {
   for (const e of fs.readdirSync(dir, { withFileTypes: true })) {
     const p = path.join(dir, e.name);
     if (e.isDirectory()) {
       if (e.name !== '__tests__') walk(p);
     } else if (/\.(tsx?|jsx?)$/.test(e.name)) sources.push(p);
   }
-})(path.join(root, 'src'));
+}
+walk(path.join(root, 'src'));
+walk(path.join(root, 'app'));
 for (const file of sources) {
   const src = fs.readFileSync(file, 'utf8');
   for (const m of src.matchAll(/\b(?:i18n\.)?t\(\s*(['"`])([^'"`$]+)\1/g)) {
