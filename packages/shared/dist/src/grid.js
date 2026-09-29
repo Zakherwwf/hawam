@@ -28,7 +28,7 @@ export function generalizeTo1KmGrid(longitude, latitude) {
     const latIndex = Math.floor(clampedLat / latStep);
     // Longitudinal spacing from the band centre, so every point in a band
     // shares the same longitude grid
-    const bandCentreRad = (((latIndex + 0.5) * latStep) * Math.PI) / 180;
+    const bandCentreRad = ((latIndex + 0.5) * latStep * Math.PI) / 180;
     const lonStep = GRID_SIZE_METERS / (METERS_PER_DEGREE_LAT * Math.cos(bandCentreRad));
     const lonIndex = Math.floor(longitude / lonStep);
     // Cell Centroid (midpoint of the 1km x 1km cell)
@@ -57,6 +57,5 @@ export function generalizeTo1KmGrid(longitude, latitude) {
  */
 export function isLocationGeneralized(origLon, origLat, genLon, genLat) {
     const gen = generalizeTo1KmGrid(origLon, origLat);
-    return (Math.abs(gen.centroid[0] - genLon) < 0.0001 &&
-        Math.abs(gen.centroid[1] - genLat) < 0.0001);
+    return Math.abs(gen.centroid[0] - genLon) < 0.0001 && Math.abs(gen.centroid[1] - genLat) < 0.0001;
 }

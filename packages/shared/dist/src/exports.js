@@ -10,7 +10,11 @@ export const EXPORT_SCHEMA_VERSION = '2.0.0';
 /** GBIF backbone taxonomy, mirrored in public.ref_taxa (verified via api.gbif.org). */
 export const GBIF_TAXA = {
     cat: { scientificName: 'Felis catus Linnaeus, 1758', taxonRank: 'species', taxonKey: 2435035 },
-    dog: { scientificName: 'Canis lupus familiaris Linnaeus, 1758', taxonRank: 'subspecies', taxonKey: 6164210 },
+    dog: {
+        scientificName: 'Canis lupus familiaris Linnaeus, 1758',
+        taxonRank: 'subspecies',
+        taxonKey: 6164210,
+    },
     unknown: { scientificName: 'Carnivora', taxonRank: 'order', taxonKey: 732 },
 };
 /**
