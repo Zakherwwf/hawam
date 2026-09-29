@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Camera, ChartColumn, Route } from 'lucide-react';
+import { Camera, ChartColumn, PawPrint, Route } from 'lucide-react';
 import { RouteManager } from './components/RouteManager';
 import { PhotoReviewQueue } from './components/PhotoReviewQueue';
 import { DataExporter } from './components/DataExporter';
@@ -13,7 +13,7 @@ export function App() {
       <header className="bg-white border-b border-slate-200 sticky top-0 z-40">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
           <div className="flex items-center gap-3">
-            <span className="text-2xl">🇹🇳</span>
+            <PawPrint className="w-7 h-7 text-teal-700" aria-hidden />
             <div>
               <h1 className="text-base font-extrabold text-slate-900 leading-tight">
                 Observatoire National des Chiens & Chats Errants
@@ -27,7 +27,9 @@ export function App() {
           <div className="flex items-center gap-4">
             <div className="text-right hidden sm:block">
               <div className="text-xs font-bold text-slate-800">Dr. Chercheur Pasteur</div>
-              <div className="text-[11px] text-teal-700 font-medium">Rôle : Chercheur Accrédité</div>
+              <div className="text-[11px] text-teal-700 font-medium">
+                Rôle : Chercheur Accrédité
+              </div>
             </div>
             <div className="h-9 w-9 rounded-full bg-teal-800 text-white flex items-center justify-center font-bold text-xs shadow-sm">
               IPT
@@ -84,7 +86,8 @@ export function App() {
 
       {/* Footer */}
       <footer className="bg-white border-t border-slate-200 py-4 text-center text-xs text-slate-400">
-        Plateforme de Science Citoyenne • Protection éthique des données géospatiales conforme au protocole de non-divulgation.
+        Plateforme de Science Citoyenne • Protection éthique des données géospatiales conforme au
+        protocole de non-divulgation.
       </footer>
     </div>
   );

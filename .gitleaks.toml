@@ -1,0 +1,8 @@
+title = "Hawem gitleaks config"
+
+[extend]
+useDefault = true
+
+[allowlist]
+description = "Local Supabase demo anon key used by the documented .env.example (public, non-production)"
+regexes = ['''eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9\.eyJpc3MiOiJzdXBhYmFzZS1kZW1vIi''']

@@ -164,16 +164,21 @@ interface GamificationState {
   unlockBadge: (badgeId: string) => void;
   updateQuestProgress: (questId: string, delta: number) => void;
   claimQuestReward: (questId: string) => boolean;
-  useStreakFreeze: () => boolean;
+  consumeStreakFreeze: () => boolean;
   completeAcademyCertification: () => void;
 }
 
-export function computeLevel(xp: number): { level: number; rankTitle: string; rankTitleAr: string } {
+export function computeLevel(xp: number): {
+  level: number;
+  rankTitle: string;
+  rankTitleAr: string;
+} {
   if (xp < 300) return { level: 1, rankTitle: 'Newcomer Observer', rankTitleAr: 'راصد جديد' };
   if (xp < 700) return { level: 2, rankTitle: 'Street Observer', rankTitleAr: 'راصد شوارع' };
   if (xp < 1200) return { level: 3, rankTitle: 'Neighbourhood Watcher', rankTitleAr: 'حارس الحي' };
   if (xp < 2000) return { level: 4, rankTitle: 'Field Surveyor', rankTitleAr: 'مسّاح ميداني' };
-  if (xp < 3500) return { level: 5, rankTitle: 'Senior Field Surveyor', rankTitleAr: 'خبير مسح ميداني' };
+  if (xp < 3500)
+    return { level: 5, rankTitle: 'Senior Field Surveyor', rankTitleAr: 'خبير مسح ميداني' };
   if (xp < 6000) return { level: 6, rankTitle: 'Research Naturalist', rankTitleAr: 'باحث طبيعي' };
   return { level: 7, rankTitle: 'Field Scientist', rankTitleAr: 'عالم ميداني' };
 }
@@ -305,7 +310,7 @@ export const useGamificationStore = create<GamificationState>((set, get) => ({
     return true;
   },
 
-  useStreakFreeze: () => {
+  consumeStreakFreeze: () => {
     const { freezesAvailable } = get();
     if (freezesAvailable > 0) {
       set({ freezesAvailable: freezesAvailable - 1 });

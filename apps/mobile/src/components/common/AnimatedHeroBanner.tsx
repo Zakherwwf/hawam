@@ -85,16 +85,12 @@ export const AnimatedHeroBanner: React.FC<AnimatedHeroBannerProps> = ({
     }
   };
 
-  let player: any = null;
-  try {
-    player = useVideoPlayer(getVideoSource(currentScene), (p) => {
-      p.loop = true;
-      p.muted = true;
-      p.play();
-    });
-  } catch (err) {
-    if (!hasVideoError) setHasVideoError(true);
-  }
+  // Hooks must run unconditionally; playback failures surface via hasVideoError
+  const player = useVideoPlayer(getVideoSource(currentScene), (p) => {
+    p.loop = true;
+    p.muted = true;
+    p.play();
+  });
 
   const isBgHero = variant === 'backgroundHero';
   const insets = useSafeAreaInsets();
@@ -119,11 +115,7 @@ export const AnimatedHeroBanner: React.FC<AnimatedHeroBannerProps> = ({
           showsTimecodes={false}
         />
       ) : (
-        <Image
-          source={getFallbackSource(currentScene)}
-          style={styles.media}
-          resizeMode="cover"
-        />
+        <Image source={getFallbackSource(currentScene)} style={styles.media} resizeMode="cover" />
       )}
 
       {/* Ambient Contrast Overlay */}

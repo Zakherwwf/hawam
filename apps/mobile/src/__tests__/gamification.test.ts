@@ -71,12 +71,12 @@ test('gamification: streak freeze consumption logic', () => {
   // Set known state
   useGamificationStore.setState({ freezesAvailable: 1 });
 
-  const freezeUsed1 = useGamificationStore.getState().useStreakFreeze();
+  const freezeUsed1 = useGamificationStore.getState().consumeStreakFreeze();
   assert.equal(freezeUsed1, true);
   assert.equal(useGamificationStore.getState().freezesAvailable, 0);
 
   // Subsequent attempt when 0 freezes remaining returns false
-  const freezeUsed2 = useGamificationStore.getState().useStreakFreeze();
+  const freezeUsed2 = useGamificationStore.getState().consumeStreakFreeze();
   assert.equal(freezeUsed2, false);
   assert.equal(useGamificationStore.getState().freezesAvailable, 0);
 });

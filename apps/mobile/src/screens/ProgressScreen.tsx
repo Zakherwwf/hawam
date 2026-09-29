@@ -87,7 +87,7 @@ export const ProgressScreen: React.FC<ProgressScreenProps> = ({ userAccount, sta
     freezesAvailable,
     badges,
     quests,
-    useStreakFreeze,
+    consumeStreakFreeze,
     claimQuestReward,
   } = useGamificationStore();
 
@@ -163,7 +163,7 @@ export const ProgressScreen: React.FC<ProgressScreenProps> = ({ userAccount, sta
           text: 'Activate Freeze',
           onPress: () => {
             hapticButtonPress();
-            const success = useStreakFreeze();
+            const success = consumeStreakFreeze();
             if (success) {
               Alert.alert(
                 'Streak Shielded',
@@ -195,611 +195,608 @@ export const ProgressScreen: React.FC<ProgressScreenProps> = ({ userAccount, sta
       <SafeAreaView style={styles.safeArea} edges={['top', 'left', 'right']}>
         <IOSNavigationBar title="Scientific Progress" />
 
-      <ScrollView contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
-        {/* Level & Scientific Rank Hero Card */}
-        <View style={styles.levelCard}>
-          <View style={styles.levelTopRow}>
-            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 12 }}>
-              <Image
-                source={require('../../assets/icon_cat_primary.png')}
-                style={{ width: 36, height: 36, resizeMode: 'contain' }}
+        <ScrollView
+          contentContainerStyle={styles.scrollContent}
+          showsVerticalScrollIndicator={false}
+        >
+          {/* Level & Scientific Rank Hero Card */}
+          <View style={styles.levelCard}>
+            <View style={styles.levelTopRow}>
+              <View style={{ flexDirection: 'row', alignItems: 'center', gap: 12 }}>
+                <Image
+                  source={require('../../assets/icon_cat_primary.png')}
+                  style={{ width: 36, height: 36, resizeMode: 'contain' }}
+                />
+                <View>
+                  <Text style={styles.levelNumber}>LEVEL {level}</Text>
+                  <Text style={styles.rankTitle}>{rankTitle}</Text>
+                </View>
+              </View>
+              <View style={styles.xpBadge}>
+                <IOSIcon name="chart" size={14} color={DesignTokens.colors.tint} />
+                <Text style={styles.xpBadgeText}>{xpTotal} XP</Text>
+              </View>
+            </View>
+
+            {/* Progress Bar to next level */}
+            <View style={styles.progressBarTrack}>
+              <View
+                style={[styles.progressBarFill, { width: `${Math.round(levelProgress * 100)}%` }]}
               />
-              <View>
-                <Text style={styles.levelNumber}>LEVEL {level}</Text>
-                <Text style={styles.rankTitle}>{rankTitle}</Text>
-              </View>
             </View>
-            <View style={styles.xpBadge}>
-              <IOSIcon name="chart" size={14} color={DesignTokens.colors.tint} />
-              <Text style={styles.xpBadgeText}>{xpTotal} XP</Text>
+
+            <View style={styles.progressSubRow}>
+              <Text style={styles.progressSubText}>
+                {xpTotal} / {nextLevelXp} XP to Level {level + 1}
+              </Text>
+              <Text style={styles.progressSubText}>{Math.round(levelProgress * 100)}%</Text>
             </View>
           </View>
 
-          {/* Progress Bar to next level */}
-          <View style={styles.progressBarTrack}>
-            <View style={[styles.progressBarFill, { width: `${Math.round(levelProgress * 100)}%` }]} />
-          </View>
-
-          <View style={styles.progressSubRow}>
-            <Text style={styles.progressSubText}>
-              {xpTotal} / {nextLevelXp} XP to Level {level + 1}
-            </Text>
-            <Text style={styles.progressSubText}>{Math.round(levelProgress * 100)}%</Text>
-          </View>
-        </View>
-
-        {/* Weekly Streak & Freezes Row */}
-        {(() => {
-          const isStreakShielded = freezesAvailable === 0;
-          return (
-            <View style={styles.streakRow}>
-              <View style={[styles.streakBox, isStreakShielded && styles.streakBoxShielded]}>
-                {isStreakShielded && (
-                  <View style={styles.streakShieldGlowBadge}>
-                    <IOSIcon name="shield" size={10} color="#0F172A" />
-                    <Text style={styles.streakShieldGlowText}>SHIELDED</Text>
-                  </View>
-                )}
-                <View
-                  style={[
-                    styles.streakIconCircle,
-                    isStreakShielded && styles.streakIconCircleShielded,
-                  ]}
-                >
-                  <IOSIcon
-                    name={isStreakShielded ? 'shield' : 'clock'}
-                    size={18}
-                    color={isStreakShielded ? '#0F172A' : DesignTokens.colors.dog}
-                  />
-                </View>
-                <View>
-                  <Text style={styles.streakNumber}>{currentStreakWeeks} WEEKS</Text>
-                  <Text style={styles.streakLabel}>
-                    {isStreakShielded ? 'SHIELD PROTECTED' : 'SURVEY STREAK'}
-                  </Text>
-                </View>
-              </View>
-
-              <TouchableOpacity
-                style={styles.streakBox}
-                activeOpacity={0.7}
-                onPress={handleUseFreeze}
-              >
-                <View
-                  style={[
-                    styles.streakIconCircle,
-                    { backgroundColor: 'rgba(8, 145, 178, 0.12)' },
-                  ]}
-                >
-                  <IOSIcon name="shield" size={18} color={DesignTokens.colors.tint} />
-                </View>
-                <View>
-                  <Text style={styles.streakNumber}>{freezesAvailable} AVAILABLE</Text>
-                  <Text style={styles.streakLabel}>MONTHLY FREEZE</Text>
-                </View>
-              </TouchableOpacity>
-            </View>
-          );
-        })()}
-
-        {/* Rotating Weekly Quests */}
-        <View style={styles.sectionContainer}>
-          <View style={styles.sectionHeaderRow}>
-            <Text style={styles.sectionTitle}>
-              Weekly Research Quests
-            </Text>
-            <Text style={styles.sectionBadge}>3 ACTIVE</Text>
-          </View>
-
-          {quests.map((quest) => {
-            const isClaimable =
-              (quest.completed || quest.progress >= quest.target) && !quest.claimed;
-            const isClaimed = Boolean(quest.claimed);
-
+          {/* Weekly Streak & Freezes Row */}
+          {(() => {
+            const isStreakShielded = freezesAvailable === 0;
             return (
-              <View key={quest.id} style={styles.questCard}>
-                <View style={styles.questTopRow}>
-                  <View style={styles.questTitleRow}>
-                    {quest.completed || isClaimed ? (
-                      <View style={styles.questCheckCircle}>
-                        <IOSIcon name="check" size={12} color="#FFFFFF" />
-                      </View>
-                    ) : null}
-                    <Text
-                      style={[
-                        styles.questTitle,
-                        (quest.completed || isClaimed) && styles.questTitleDone,
-                      ]}
-                    >
-                      {quest.title}
-                    </Text>
-                  </View>
-                  <View style={styles.questRewardPill}>
-                    <Text style={styles.questRewardText}>+{quest.xpReward} XP</Text>
-                  </View>
-                </View>
-
-                <Text style={styles.questDesc}>{quest.description}</Text>
-
-                {/* Quest Progress bar */}
-                <View style={styles.questBarTrack}>
-                  <View
-                    style={[
-                      styles.questBarFill,
-                      {
-                        width: `${Math.min(
-                          100,
-                          Math.round((quest.progress / quest.target) * 100)
-                        )}%`,
-                      },
-                      (quest.completed || isClaimed) && {
-                        backgroundColor: DesignTokens.colors.success,
-                      },
-                    ]}
-                  />
-                </View>
-
-                <View style={styles.questBottomRow}>
-                  <Text style={styles.questProgressText}>
-                    {quest.progress} / {quest.target} completed
-                  </Text>
-                  {isClaimable ? (
-                    <TouchableOpacity
-                      style={styles.claimXpBtn}
-                      activeOpacity={0.8}
-                      onPress={() => {
-                        hapticSuccess();
-                        claimQuestReward(quest.id);
-                        Alert.alert(
-                          'XP Claimed!',
-                          `You received +${quest.xpReward} XP for advancing public health research.`
-                        );
-                      }}
-                    >
-                      <IOSIcon name="star" size={13} color="#0F172A" />
-                      <Text style={styles.claimXpBtnText} numberOfLines={1}>
-                        +{quest.xpReward} XP CLAIM
-                      </Text>
-                    </TouchableOpacity>
-                  ) : isClaimed ? (
-                    <View style={styles.claimedPill}>
-                      <IOSIcon name="check" size={11} color="#166534" />
-                      <Text style={styles.claimedPillText}>CLAIMED</Text>
+              <View style={styles.streakRow}>
+                <View style={[styles.streakBox, isStreakShielded && styles.streakBoxShielded]}>
+                  {isStreakShielded && (
+                    <View style={styles.streakShieldGlowBadge}>
+                      <IOSIcon name="shield" size={10} color="#0F172A" />
+                      <Text style={styles.streakShieldGlowText}>SHIELDED</Text>
                     </View>
-                  ) : null}
-                </View>
-              </View>
-            );
-          })}
-        </View>
-
-        {/* Scientific Badges Showcase */}
-        <View style={styles.sectionContainer}>
-          <View style={styles.sectionHeaderRow}>
-            <Text style={styles.sectionTitle}>
-              Surveyor Badges
-            </Text>
-            <Text style={styles.sectionBadge}>
-              {badges.filter((b) => b.unlockedAt).length} / {badges.length} UNLOCKED
-            </Text>
-          </View>
-
-          <View style={styles.badgesGrid}>
-            {badges.map((badge) => {
-              const isUnlocked = Boolean(badge.unlockedAt);
-              const tierColor =
-                badge.tier === 'gold'
-                  ? '#D97706'
-                  : badge.tier === 'silver'
-                  ? '#64748B'
-                  : '#B45309';
-
-              return (
-                <TouchableOpacity
-                  key={badge.id}
-                  style={[styles.badgeCard, !isUnlocked && styles.badgeCardLocked]}
-                  activeOpacity={0.7}
-                  onPress={() => {
-                    hapticButtonPress();
-                    setSelectedBadge(badge);
-                  }}
-                >
+                  )}
                   <View
                     style={[
-                      styles.badgeIconCircle,
-                      { backgroundColor: isUnlocked ? `${tierColor}18` : '#E2E8F0' },
+                      styles.streakIconCircle,
+                      isStreakShielded && styles.streakIconCircleShielded,
                     ]}
                   >
-                    {BADGE_ASSET_MAP[badge.id] ? (
+                    <IOSIcon
+                      name={isStreakShielded ? 'shield' : 'clock'}
+                      size={18}
+                      color={isStreakShielded ? '#0F172A' : DesignTokens.colors.dog}
+                    />
+                  </View>
+                  <View>
+                    <Text style={styles.streakNumber}>{currentStreakWeeks} WEEKS</Text>
+                    <Text style={styles.streakLabel}>
+                      {isStreakShielded ? 'SHIELD PROTECTED' : 'SURVEY STREAK'}
+                    </Text>
+                  </View>
+                </View>
+
+                <TouchableOpacity
+                  style={styles.streakBox}
+                  activeOpacity={0.7}
+                  onPress={handleUseFreeze}
+                >
+                  <View
+                    style={[
+                      styles.streakIconCircle,
+                      { backgroundColor: 'rgba(8, 145, 178, 0.12)' },
+                    ]}
+                  >
+                    <IOSIcon name="shield" size={18} color={DesignTokens.colors.tint} />
+                  </View>
+                  <View>
+                    <Text style={styles.streakNumber}>{freezesAvailable} AVAILABLE</Text>
+                    <Text style={styles.streakLabel}>MONTHLY FREEZE</Text>
+                  </View>
+                </TouchableOpacity>
+              </View>
+            );
+          })()}
+
+          {/* Rotating Weekly Quests */}
+          <View style={styles.sectionContainer}>
+            <View style={styles.sectionHeaderRow}>
+              <Text style={styles.sectionTitle}>Weekly Research Quests</Text>
+              <Text style={styles.sectionBadge}>3 ACTIVE</Text>
+            </View>
+
+            {quests.map((quest) => {
+              const isClaimable =
+                (quest.completed || quest.progress >= quest.target) && !quest.claimed;
+              const isClaimed = Boolean(quest.claimed);
+
+              return (
+                <View key={quest.id} style={styles.questCard}>
+                  <View style={styles.questTopRow}>
+                    <View style={styles.questTitleRow}>
+                      {quest.completed || isClaimed ? (
+                        <View style={styles.questCheckCircle}>
+                          <IOSIcon name="check" size={12} color="#FFFFFF" />
+                        </View>
+                      ) : null}
+                      <Text
+                        style={[
+                          styles.questTitle,
+                          (quest.completed || isClaimed) && styles.questTitleDone,
+                        ]}
+                      >
+                        {quest.title}
+                      </Text>
+                    </View>
+                    <View style={styles.questRewardPill}>
+                      <Text style={styles.questRewardText}>+{quest.xpReward} XP</Text>
+                    </View>
+                  </View>
+
+                  <Text style={styles.questDesc}>{quest.description}</Text>
+
+                  {/* Quest Progress bar */}
+                  <View style={styles.questBarTrack}>
+                    <View
+                      style={[
+                        styles.questBarFill,
+                        {
+                          width: `${Math.min(
+                            100,
+                            Math.round((quest.progress / quest.target) * 100)
+                          )}%`,
+                        },
+                        (quest.completed || isClaimed) && {
+                          backgroundColor: DesignTokens.colors.success,
+                        },
+                      ]}
+                    />
+                  </View>
+
+                  <View style={styles.questBottomRow}>
+                    <Text style={styles.questProgressText}>
+                      {quest.progress} / {quest.target} completed
+                    </Text>
+                    {isClaimable ? (
+                      <TouchableOpacity
+                        style={styles.claimXpBtn}
+                        activeOpacity={0.8}
+                        onPress={() => {
+                          hapticSuccess();
+                          claimQuestReward(quest.id);
+                          Alert.alert(
+                            'XP Claimed!',
+                            `You received +${quest.xpReward} XP for advancing public health research.`
+                          );
+                        }}
+                      >
+                        <IOSIcon name="star" size={13} color="#0F172A" />
+                        <Text style={styles.claimXpBtnText} numberOfLines={1}>
+                          +{quest.xpReward} XP CLAIM
+                        </Text>
+                      </TouchableOpacity>
+                    ) : isClaimed ? (
+                      <View style={styles.claimedPill}>
+                        <IOSIcon name="check" size={11} color="#166534" />
+                        <Text style={styles.claimedPillText}>CLAIMED</Text>
+                      </View>
+                    ) : null}
+                  </View>
+                </View>
+              );
+            })}
+          </View>
+
+          {/* Scientific Badges Showcase */}
+          <View style={styles.sectionContainer}>
+            <View style={styles.sectionHeaderRow}>
+              <Text style={styles.sectionTitle}>Surveyor Badges</Text>
+              <Text style={styles.sectionBadge}>
+                {badges.filter((b) => b.unlockedAt).length} / {badges.length} UNLOCKED
+              </Text>
+            </View>
+
+            <View style={styles.badgesGrid}>
+              {badges.map((badge) => {
+                const isUnlocked = Boolean(badge.unlockedAt);
+                const tierColor =
+                  badge.tier === 'gold'
+                    ? '#D97706'
+                    : badge.tier === 'silver'
+                      ? '#64748B'
+                      : '#B45309';
+
+                return (
+                  <TouchableOpacity
+                    key={badge.id}
+                    style={[styles.badgeCard, !isUnlocked && styles.badgeCardLocked]}
+                    activeOpacity={0.7}
+                    onPress={() => {
+                      hapticButtonPress();
+                      setSelectedBadge(badge);
+                    }}
+                  >
+                    <View
+                      style={[
+                        styles.badgeIconCircle,
+                        { backgroundColor: isUnlocked ? `${tierColor}18` : '#E2E8F0' },
+                      ]}
+                    >
+                      {BADGE_ASSET_MAP[badge.id] ? (
+                        <Image
+                          source={BADGE_ASSET_MAP[badge.id]}
+                          style={{
+                            width: 26,
+                            height: 26,
+                            resizeMode: 'contain',
+                            opacity: isUnlocked ? 1 : 0.35,
+                          }}
+                        />
+                      ) : (
+                        <IOSIcon
+                          name={badge.icon as any}
+                          size={22}
+                          color={isUnlocked ? tierColor : DesignTokens.colors.tertiaryLabel}
+                        />
+                      )}
+                    </View>
+                    <Text
+                      style={[styles.badgeName, !isUnlocked && styles.badgeTextLocked]}
+                      numberOfLines={1}
+                    >
+                      {badge.name}
+                    </Text>
+                    <Text style={styles.badgeTier}>{badge.tier.toUpperCase()}</Text>
+                  </TouchableOpacity>
+                );
+              })}
+            </View>
+          </View>
+
+          {/* Effort-Based Leaderboard (Ranked by KM / Complete Surveys) */}
+          <View style={styles.sectionContainer}>
+            <View style={styles.sectionHeaderRow}>
+              <Text style={styles.sectionTitle}>Effort Leaderboard</Text>
+              <Text style={styles.sectionSubtitle}>Ranked strictly by survey effort</Text>
+            </View>
+
+            <View style={{ marginBottom: 10 }}>
+              <IOSSegmentedControl<'km' | 'surveys'>
+                selectedValue={leaderboardTab}
+                onValueChange={(val) => {
+                  hapticTabSwitch();
+                  setLeaderboardTab(val);
+                }}
+                values={[
+                  { label: 'Km Surveyed', value: 'km' },
+                  { label: 'Complete Surveys', value: 'surveys' },
+                ]}
+              />
+            </View>
+
+            {/* Governorate Filter Strip */}
+            <View style={styles.govFilterWrapper}>
+              <ScrollView
+                horizontal
+                showsHorizontalScrollIndicator={false}
+                contentContainerStyle={styles.govFilterScroll}
+              >
+                {governorateList.map((gov) => {
+                  const isActive = selectedGov === gov.key;
+                  return (
+                    <TouchableOpacity
+                      key={gov.key}
+                      style={[styles.govPill, isActive && styles.govPillActive]}
+                      onPress={() => {
+                        hapticTabSwitch();
+                        setSelectedGov(gov.key);
+                      }}
+                      activeOpacity={0.7}
+                    >
+                      <Text style={[styles.govPillText, isActive && styles.govPillTextActive]}>
+                        {gov.label}
+                      </Text>
+                    </TouchableOpacity>
+                  );
+                })}
+              </ScrollView>
+              <LinearGradient
+                colors={['rgba(255, 255, 255, 0.95)', 'rgba(255, 255, 255, 0)']}
+                start={{ x: 0, y: 0 }}
+                end={{ x: 1, y: 0 }}
+                style={styles.govFadeLeft}
+                pointerEvents="none"
+              />
+              <LinearGradient
+                colors={['rgba(255, 255, 255, 0)', 'rgba(255, 255, 255, 0.95)']}
+                start={{ x: 0, y: 0 }}
+                end={{ x: 1, y: 0 }}
+                style={styles.govFadeRight}
+                pointerEvents="none"
+              />
+            </View>
+
+            {/* Authentic Scientific Leaderboard Table */}
+            <View style={styles.leaderboardList}>
+              {(() => {
+                const actualKm = Number(stats?.kmWalked ? stats.kmWalked.toFixed(1) : '0');
+                const actualSurveys = stats?.sessionsCompleted || 0;
+
+                const userParticipant: SurveyorProfile = {
+                  rank: 1,
+                  name: userAccount?.name ? `${userAccount.name} (You)` : 'You (Surveyor)',
+                  metric:
+                    leaderboardTab === 'km'
+                      ? `${actualKm.toFixed(1)} km`
+                      : `${actualSurveys} ${actualSurveys === 1 ? 'survey' : 'surveys'}`,
+                  isUser: true,
+                  governorate: userAccount?.governorate || 'Tunis',
+                  sector: userAccount?.governorate
+                    ? `${userAccount.governorate} Urban Transects`
+                    : 'Coastal Urban Transects',
+                  badgesEarned: badges.filter((b) => b.unlockedAt).length,
+                  surveysCount: actualSurveys,
+                  kmCount: actualKm,
+                  role: userAccount?.role
+                    ? `${userAccount.role.toUpperCase()} • ${rankTitle}`
+                    : rankTitle,
+                  avatar: userAccount?.avatarUri
+                    ? { uri: userAccount.avatarUri }
+                    : require('../../assets/icon_cat_primary.png'),
+                };
+
+                const allParticipants: SurveyorProfile[] = [userParticipant, ...cloudParticipants];
+
+                const filtered = allParticipants
+                  .filter(
+                    (entry) =>
+                      selectedGov === 'all' ||
+                      entry.governorate.toLowerCase() === selectedGov.toLowerCase()
+                  )
+                  .sort((a, b) => {
+                    if (leaderboardTab === 'km') {
+                      return b.kmCount - a.kmCount;
+                    }
+                    return b.surveysCount - a.surveysCount;
+                  })
+                  .map((entry, idx) => ({
+                    ...entry,
+                    displayRank: idx + 1,
+                  }));
+
+                if (filtered.length === 0) {
+                  return (
+                    <View style={styles.emptyGovLeaderboard}>
+                      <IOSIcon name="location" size={24} color="#94A3B8" />
+                      <Text style={styles.emptyGovText}>
+                        No registered surveyors in this governorate yet
+                      </Text>
+                    </View>
+                  );
+                }
+
+                return filtered.map((entry) => (
+                  <TouchableOpacity
+                    key={entry.name}
+                    style={[styles.leaderboardRow, entry.isUser && styles.leaderboardRowUser]}
+                    activeOpacity={0.7}
+                    onPress={() => {
+                      hapticButtonPress();
+                      setSelectedSurveyor(entry);
+                    }}
+                  >
+                    <Text style={styles.leaderboardRank}>#{entry.displayRank}</Text>
+                    <View
+                      style={{
+                        flex: 1,
+                        flexDirection: 'row',
+                        alignItems: 'center',
+                        gap: 6,
+                      }}
+                    >
+                      <Text style={[styles.leaderboardName, entry.isUser && { fontWeight: '700' }]}>
+                        {entry.name}
+                      </Text>
+                      <Text style={styles.leaderboardGovTag}>• {entry.governorate}</Text>
+                    </View>
+                    <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
+                      <Text style={styles.leaderboardMetric}>{entry.metric}</Text>
+                      <IOSIcon name="chevronRight" size={14} color="#94A3B8" />
+                    </View>
+                  </TouchableOpacity>
+                ));
+              })()}
+            </View>
+          </View>
+        </ScrollView>
+
+        {/* Badge Inspection Modal */}
+        <Modal
+          visible={Boolean(selectedBadge)}
+          animationType="fade"
+          transparent
+          onRequestClose={handleCloseBadge}
+        >
+          <View style={styles.modalBackdrop}>
+            <View style={styles.modalCard}>
+              {selectedBadge ? (
+                <>
+                  <View
+                    style={[
+                      styles.modalIconCircle,
+                      {
+                        backgroundColor: selectedBadge.unlockedAt
+                          ? selectedBadge.tier === 'gold'
+                            ? '#FEF3C7'
+                            : selectedBadge.tier === 'silver'
+                              ? '#F1F5F9'
+                              : '#FFEDD5'
+                          : '#F1F5F9',
+                      },
+                    ]}
+                  >
+                    {BADGE_ASSET_MAP[selectedBadge.id] ? (
                       <Image
-                        source={BADGE_ASSET_MAP[badge.id]}
+                        source={BADGE_ASSET_MAP[selectedBadge.id]}
                         style={{
-                          width: 26,
-                          height: 26,
+                          width: 48,
+                          height: 48,
                           resizeMode: 'contain',
-                          opacity: isUnlocked ? 1 : 0.35,
+                          opacity: selectedBadge.unlockedAt ? 1 : 0.35,
                         }}
                       />
                     ) : (
                       <IOSIcon
-                        name={badge.icon as any}
-                        size={22}
-                        color={isUnlocked ? tierColor : DesignTokens.colors.tertiaryLabel}
+                        name={selectedBadge.icon as any}
+                        size={38}
+                        color={
+                          selectedBadge.unlockedAt
+                            ? selectedBadge.tier === 'gold'
+                              ? '#D97706'
+                              : selectedBadge.tier === 'silver'
+                                ? '#475569'
+                                : '#B45309'
+                            : DesignTokens.colors.tertiaryLabel
+                        }
                       />
                     )}
                   </View>
-                  <Text
-                    style={[styles.badgeName, !isUnlocked && styles.badgeTextLocked]}
-                    numberOfLines={1}
-                  >
-                    {badge.name}
-                  </Text>
-                  <Text style={styles.badgeTier}>{badge.tier.toUpperCase()}</Text>
-                </TouchableOpacity>
-              );
-            })}
-          </View>
-        </View>
 
-        {/* Effort-Based Leaderboard (Ranked by KM / Complete Surveys) */}
-        <View style={styles.sectionContainer}>
-          <View style={styles.sectionHeaderRow}>
-            <Text style={styles.sectionTitle}>
-              Effort Leaderboard
-            </Text>
-            <Text style={styles.sectionSubtitle}>Ranked strictly by survey effort</Text>
-          </View>
-
-          <View style={{ marginBottom: 10 }}>
-            <IOSSegmentedControl<'km' | 'surveys'>
-              selectedValue={leaderboardTab}
-              onValueChange={(val) => {
-                hapticTabSwitch();
-                setLeaderboardTab(val);
-              }}
-              values={[
-                { label: 'Km Surveyed', value: 'km' },
-                { label: 'Complete Surveys', value: 'surveys' },
-              ]}
-            />
-          </View>
-
-          {/* Governorate Filter Strip */}
-          <View style={styles.govFilterWrapper}>
-            <ScrollView
-              horizontal
-              showsHorizontalScrollIndicator={false}
-              contentContainerStyle={styles.govFilterScroll}
-            >
-              {governorateList.map((gov) => {
-                const isActive = selectedGov === gov.key;
-                return (
-                  <TouchableOpacity
-                    key={gov.key}
-                    style={[styles.govPill, isActive && styles.govPillActive]}
-                    onPress={() => {
-                      hapticTabSwitch();
-                      setSelectedGov(gov.key);
-                    }}
-                    activeOpacity={0.7}
-                  >
-                    <Text style={[styles.govPillText, isActive && styles.govPillTextActive]}>
-                      {gov.label}
-                    </Text>
-                  </TouchableOpacity>
-                );
-              })}
-            </ScrollView>
-            <LinearGradient
-              colors={['rgba(255, 255, 255, 0.95)', 'rgba(255, 255, 255, 0)']}
-              start={{ x: 0, y: 0 }}
-              end={{ x: 1, y: 0 }}
-              style={styles.govFadeLeft}
-              pointerEvents="none"
-            />
-            <LinearGradient
-              colors={['rgba(255, 255, 255, 0)', 'rgba(255, 255, 255, 0.95)']}
-              start={{ x: 0, y: 0 }}
-              end={{ x: 1, y: 0 }}
-              style={styles.govFadeRight}
-              pointerEvents="none"
-            />
-          </View>
-
-          {/* Authentic Scientific Leaderboard Table */}
-          <View style={styles.leaderboardList}>
-            {(() => {
-              const actualKm = Number(stats?.kmWalked ? stats.kmWalked.toFixed(1) : '0');
-              const actualSurveys = stats?.sessionsCompleted || 0;
-
-              const userParticipant: SurveyorProfile = {
-                rank: 1,
-                name: userAccount?.name ? `${userAccount.name} (You)` : 'You (Surveyor)',
-                metric:
-                  leaderboardTab === 'km'
-                    ? `${actualKm.toFixed(1)} km`
-                    : `${actualSurveys} ${actualSurveys === 1 ? 'survey' : 'surveys'}`,
-                isUser: true,
-                governorate: userAccount?.governorate || 'Tunis',
-                sector: userAccount?.governorate ? `${userAccount.governorate} Urban Transects` : 'Coastal Urban Transects',
-                badgesEarned: badges.filter((b) => b.unlockedAt).length,
-                surveysCount: actualSurveys,
-                kmCount: actualKm,
-                role: userAccount?.role ? `${userAccount.role.toUpperCase()} • ${rankTitle}` : rankTitle,
-                avatar: userAccount?.avatarUri ? { uri: userAccount.avatarUri } : require('../../assets/icon_cat_primary.png'),
-              };
-
-              const allParticipants: SurveyorProfile[] = [userParticipant, ...cloudParticipants];
-
-              const filtered = allParticipants
-                .filter(
-                  (entry) =>
-                    selectedGov === 'all' ||
-                    entry.governorate.toLowerCase() === selectedGov.toLowerCase()
-                )
-                .sort((a, b) => {
-                  if (leaderboardTab === 'km') {
-                    return b.kmCount - a.kmCount;
-                  }
-                  return b.surveysCount - a.surveysCount;
-                })
-                .map((entry, idx) => ({
-                  ...entry,
-                  displayRank: idx + 1,
-                }));
-
-              if (filtered.length === 0) {
-                return (
-                  <View style={styles.emptyGovLeaderboard}>
-                    <IOSIcon name="location" size={24} color="#94A3B8" />
-                    <Text style={styles.emptyGovText}>
-                      No registered surveyors in this governorate yet
-                    </Text>
-                  </View>
-                );
-              }
-
-              return filtered.map((entry) => (
-                <TouchableOpacity
-                  key={entry.name}
-                  style={[
-                    styles.leaderboardRow,
-                    entry.isUser && styles.leaderboardRowUser,
-                  ]}
-                  activeOpacity={0.7}
-                  onPress={() => {
-                    hapticButtonPress();
-                    setSelectedSurveyor(entry);
-                  }}
-                >
-                  <Text style={styles.leaderboardRank}>#{entry.displayRank}</Text>
                   <View
-                    style={{
-                      flex: 1,
-                      flexDirection: 'row',
-                      alignItems: 'center',
-                      gap: 6,
-                    }}
-                  >
-                    <Text
-                      style={[
-                        styles.leaderboardName,
-                        entry.isUser && { fontWeight: '700' },
-                      ]}
-                    >
-                      {entry.name}
-                    </Text>
-                    <Text style={styles.leaderboardGovTag}>• {entry.governorate}</Text>
-                  </View>
-                  <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
-                    <Text style={styles.leaderboardMetric}>{entry.metric}</Text>
-                    <IOSIcon name="chevronRight" size={14} color="#94A3B8" />
-                  </View>
-                </TouchableOpacity>
-              ));
-            })()}
-          </View>
-        </View>
-      </ScrollView>
-
-      {/* Badge Inspection Modal */}
-      <Modal
-        visible={Boolean(selectedBadge)}
-        animationType="fade"
-        transparent
-        onRequestClose={handleCloseBadge}
-      >
-        <View style={styles.modalBackdrop}>
-          <View style={styles.modalCard}>
-            {selectedBadge ? (
-              <>
-                <View
-                  style={[
-                    styles.modalIconCircle,
-                    {
-                      backgroundColor: selectedBadge.unlockedAt
-                        ? selectedBadge.tier === 'gold'
-                          ? '#FEF3C7'
-                          : selectedBadge.tier === 'silver'
-                          ? '#F1F5F9'
-                          : '#FFEDD5'
-                        : '#F1F5F9',
-                    },
-                  ]}
-                >
-                  {BADGE_ASSET_MAP[selectedBadge.id] ? (
-                    <Image
-                      source={BADGE_ASSET_MAP[selectedBadge.id]}
-                      style={{
-                        width: 48,
-                        height: 48,
-                        resizeMode: 'contain',
-                        opacity: selectedBadge.unlockedAt ? 1 : 0.35,
-                      }}
-                    />
-                  ) : (
-                    <IOSIcon
-                      name={selectedBadge.icon as any}
-                      size={38}
-                      color={
-                        selectedBadge.unlockedAt
-                          ? selectedBadge.tier === 'gold'
-                            ? '#D97706'
-                            : selectedBadge.tier === 'silver'
-                            ? '#475569'
-                            : '#B45309'
-                          : DesignTokens.colors.tertiaryLabel
-                      }
-                    />
-                  )}
-                </View>
-
-                <View
-                  style={[
-                    styles.modalTierPill,
-                    {
-                      backgroundColor:
-                        selectedBadge.tier === 'gold'
-                          ? '#FEF3C7'
-                          : selectedBadge.tier === 'silver'
-                          ? '#F1F5F9'
-                          : '#FFEDD5',
-                    },
-                  ]}
-                >
-                  <Text
                     style={[
-                      styles.modalTierText,
+                      styles.modalTierPill,
                       {
-                        color:
+                        backgroundColor:
                           selectedBadge.tier === 'gold'
-                            ? '#D97706'
+                            ? '#FEF3C7'
                             : selectedBadge.tier === 'silver'
-                            ? '#475569'
-                            : '#B45309',
+                              ? '#F1F5F9'
+                              : '#FFEDD5',
                       },
                     ]}
                   >
-                    {selectedBadge.tier.toUpperCase()} TIER
-                  </Text>
-                </View>
+                    <Text
+                      style={[
+                        styles.modalTierText,
+                        {
+                          color:
+                            selectedBadge.tier === 'gold'
+                              ? '#D97706'
+                              : selectedBadge.tier === 'silver'
+                                ? '#475569'
+                                : '#B45309',
+                        },
+                      ]}
+                    >
+                      {selectedBadge.tier.toUpperCase()} TIER
+                    </Text>
+                  </View>
 
-                <Text style={styles.modalBadgeTitle}>
-                  {selectedBadge.name}
-                </Text>
+                  <Text style={styles.modalBadgeTitle}>{selectedBadge.name}</Text>
 
-                <Text style={styles.modalBadgeDesc}>{selectedBadge.description}</Text>
+                  <Text style={styles.modalBadgeDesc}>{selectedBadge.description}</Text>
 
-                <View
-                  style={[
-                    styles.modalStatusBox,
-                    selectedBadge.unlockedAt ? styles.modalStatusUnlocked : styles.modalStatusLocked,
-                  ]}
-                >
-                  <IOSIcon
-                    name={selectedBadge.unlockedAt ? 'check' : 'lock'}
-                    size={16}
-                    color={
-                      selectedBadge.unlockedAt
-                        ? DesignTokens.colors.success
-                        : DesignTokens.colors.secondaryLabel
-                    }
-                  />
-                  <Text
+                  <View
                     style={[
-                      styles.modalStatusText,
+                      styles.modalStatusBox,
                       selectedBadge.unlockedAt
-                        ? styles.modalStatusTextUnlocked
-                        : styles.modalStatusTextLocked,
+                        ? styles.modalStatusUnlocked
+                        : styles.modalStatusLocked,
                     ]}
                   >
-                    {selectedBadge.unlockedAt
-                      ? `Unlocked ${new Date(selectedBadge.unlockedAt).toLocaleDateString()}`
-                      : 'Locked • Complete scientific field requirement'}
-                  </Text>
-                </View>
+                    <IOSIcon
+                      name={selectedBadge.unlockedAt ? 'check' : 'lock'}
+                      size={16}
+                      color={
+                        selectedBadge.unlockedAt
+                          ? DesignTokens.colors.success
+                          : DesignTokens.colors.secondaryLabel
+                      }
+                    />
+                    <Text
+                      style={[
+                        styles.modalStatusText,
+                        selectedBadge.unlockedAt
+                          ? styles.modalStatusTextUnlocked
+                          : styles.modalStatusTextLocked,
+                      ]}
+                    >
+                      {selectedBadge.unlockedAt
+                        ? `Unlocked ${new Date(selectedBadge.unlockedAt).toLocaleDateString()}`
+                        : 'Locked • Complete scientific field requirement'}
+                    </Text>
+                  </View>
 
-                <TouchableOpacity
-                  style={styles.modalDismissBtn}
-                  onPress={handleCloseBadge}
-                  activeOpacity={0.8}
-                >
-                  <Text style={styles.modalDismissText}>Done</Text>
-                </TouchableOpacity>
-              </>
-            ) : null}
+                  <TouchableOpacity
+                    style={styles.modalDismissBtn}
+                    onPress={handleCloseBadge}
+                    activeOpacity={0.8}
+                  >
+                    <Text style={styles.modalDismissText}>Done</Text>
+                  </TouchableOpacity>
+                </>
+              ) : null}
+            </View>
           </View>
-        </View>
-      </Modal>
+        </Modal>
 
-      {/* Surveyor Summary Modal */}
-      <Modal
-        visible={Boolean(selectedSurveyor)}
-        animationType="fade"
-        transparent
-        onRequestClose={handleCloseSurveyor}
-      >
-        <View style={styles.modalBackdrop}>
-          <View style={styles.modalCard}>
-            {selectedSurveyor ? (
-              <>
-                <View style={styles.surveyorAvatarCircle}>
-                  <Image
-                    source={selectedSurveyor.avatar}
-                    style={{ width: 44, height: 44, resizeMode: 'contain' }}
-                  />
-                  <View style={styles.surveyorRankBadge}>
-                    <Text style={styles.surveyorRankBadgeText}>#{selectedSurveyor.rank}</Text>
+        {/* Surveyor Summary Modal */}
+        <Modal
+          visible={Boolean(selectedSurveyor)}
+          animationType="fade"
+          transparent
+          onRequestClose={handleCloseSurveyor}
+        >
+          <View style={styles.modalBackdrop}>
+            <View style={styles.modalCard}>
+              {selectedSurveyor ? (
+                <>
+                  <View style={styles.surveyorAvatarCircle}>
+                    <Image
+                      source={selectedSurveyor.avatar}
+                      style={{ width: 44, height: 44, resizeMode: 'contain' }}
+                    />
+                    <View style={styles.surveyorRankBadge}>
+                      <Text style={styles.surveyorRankBadgeText}>#{selectedSurveyor.rank}</Text>
+                    </View>
                   </View>
-                </View>
 
-                <Text style={styles.modalBadgeTitle}>
-                  {selectedSurveyor.name} {selectedSurveyor.isUser ? '(You)' : ''}
-                </Text>
-                <Text style={styles.surveyorRoleText}>{selectedSurveyor.role}</Text>
-
-                <View style={styles.surveyorGovPill}>
-                  <IOSIcon name="location" size={13} color="#0284C7" />
-                  <Text style={styles.surveyorGovPillText}>
-                    {selectedSurveyor.governorate} • {selectedSurveyor.sector}
+                  <Text style={styles.modalBadgeTitle}>
+                    {selectedSurveyor.name} {selectedSurveyor.isUser ? '(You)' : ''}
                   </Text>
-                </View>
+                  <Text style={styles.surveyorRoleText}>{selectedSurveyor.role}</Text>
 
-                {/* Bento Metrics */}
-                <View style={styles.surveyorMetricsGrid}>
-                  <View style={styles.surveyorMetricTile}>
-                    <Text style={styles.surveyorMetricVal}>{selectedSurveyor.badgesEarned}</Text>
-                    <Text style={styles.surveyorMetricLabel}>BADGES</Text>
+                  <View style={styles.surveyorGovPill}>
+                    <IOSIcon name="location" size={13} color="#0284C7" />
+                    <Text style={styles.surveyorGovPillText}>
+                      {selectedSurveyor.governorate} • {selectedSurveyor.sector}
+                    </Text>
                   </View>
-                  <View style={styles.surveyorMetricTile}>
-                    <Text style={styles.surveyorMetricVal}>{selectedSurveyor.kmCount} km</Text>
-                    <Text style={styles.surveyorMetricLabel}>DISTANCE</Text>
-                  </View>
-                  <View style={styles.surveyorMetricTile}>
-                    <Text style={styles.surveyorMetricVal}>{selectedSurveyor.surveysCount}</Text>
-                    <Text style={styles.surveyorMetricLabel}>SURVEYS</Text>
-                  </View>
-                </View>
 
-                <View style={styles.surveyorAssuranceBox}>
-                  <IOSIcon name="shield" size={14} color="#166534" />
-                  <Text style={styles.surveyorAssuranceText}>
-                    eBird / Darwin Core Verified Field Observer
-                  </Text>
-                </View>
+                  {/* Bento Metrics */}
+                  <View style={styles.surveyorMetricsGrid}>
+                    <View style={styles.surveyorMetricTile}>
+                      <Text style={styles.surveyorMetricVal}>{selectedSurveyor.badgesEarned}</Text>
+                      <Text style={styles.surveyorMetricLabel}>BADGES</Text>
+                    </View>
+                    <View style={styles.surveyorMetricTile}>
+                      <Text style={styles.surveyorMetricVal}>{selectedSurveyor.kmCount} km</Text>
+                      <Text style={styles.surveyorMetricLabel}>DISTANCE</Text>
+                    </View>
+                    <View style={styles.surveyorMetricTile}>
+                      <Text style={styles.surveyorMetricVal}>{selectedSurveyor.surveysCount}</Text>
+                      <Text style={styles.surveyorMetricLabel}>SURVEYS</Text>
+                    </View>
+                  </View>
 
-                <TouchableOpacity
-                  style={styles.modalDismissBtn}
-                  onPress={handleCloseSurveyor}
-                  activeOpacity={0.8}
-                >
-                  <Text style={styles.modalDismissText}>Close Profile</Text>
-                </TouchableOpacity>
-              </>
-            ) : null}
+                  <View style={styles.surveyorAssuranceBox}>
+                    <IOSIcon name="shield" size={14} color="#166534" />
+                    <Text style={styles.surveyorAssuranceText}>
+                      eBird / Darwin Core Verified Field Observer
+                    </Text>
+                  </View>
+
+                  <TouchableOpacity
+                    style={styles.modalDismissBtn}
+                    onPress={handleCloseSurveyor}
+                    activeOpacity={0.8}
+                  >
+                    <Text style={styles.modalDismissText}>Close Profile</Text>
+                  </TouchableOpacity>
+                </>
+              ) : null}
+            </View>
           </View>
-        </View>
-      </Modal>
+        </Modal>
       </SafeAreaView>
     </View>
   );
