@@ -13,13 +13,21 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { useTranslation } from 'react-i18next';
 import { generalizeTo1KmGrid } from '@tunisia-survey/shared';
 import { IOSColors, IOSTypography } from '../theme/ios';
-import { IOSNavigationBar, IOSGroupedList, IOSListRow, IOSIcon, IOSButton } from '../components/ios';
+import {
+  IOSNavigationBar,
+  IOSGroupedList,
+  IOSListRow,
+  IOSIcon,
+  IOSButton,
+} from '../components/ios';
 import { setAppLanguage } from '../i18n';
 import { useSyncStore } from '../features/sync/syncStore';
 import { useThemeStore } from '../features/theme/themeStore';
 import { SightingItem } from './SightingsScreen';
 import { UserAccount } from './AccountScreen';
 import { deleteMyAccount, exportMyData } from '../services/supabase';
+
+const csvField = (value: string) => `"${value.replace(/"/g, '""')}"`;
 
 interface SettingsScreenProps {
   onLanguageChange?: (lng: 'ar' | 'fr' | 'en') => void;
@@ -77,8 +85,12 @@ export const SettingsScreen: React.FC<SettingsScreenProps> = ({
     setIsExporting(true);
     try {
       const records = sightings.map((s, idx) => {
-        const lat = exactCoordsEnabled ? s.latitude.toFixed(6) : (Math.round(s.latitude * 100) / 100).toFixed(4);
-        const lon = exactCoordsEnabled ? s.longitude.toFixed(6) : (Math.round(s.longitude * 100) / 100).toFixed(4);
+        const lat = exactCoordsEnabled
+          ? s.latitude.toFixed(6)
+          : (Math.round(s.latitude * 100) / 100).toFixed(4);
+        const lon = exactCoordsEnabled
+          ? s.longitude.toFixed(6)
+          : (Math.round(s.longitude * 100) / 100).toFixed(4);
         return [
           `urn:catalog:IPT:HAWEM:${s.id}`,
           'HumanObservation',
@@ -90,13 +102,14 @@ export const SettingsScreen: React.FC<SettingsScreenProps> = ({
           lon,
           'WGS84',
           exactCoordsEnabled ? '5' : '1000',
-          'Tunisia',
-          'TN',
-          'Institut Pasteur de Tunis',
+          // Country is resolved server-side; the device does not guess it
+          '',
+          csvField(userAccount?.organization || ''),
         ].join(',');
       });
 
-      const header = 'occurrenceID,basisOfRecord,scientificName,vernacularName,individualCount,eventDate,decimalLatitude,decimalLongitude,geodeticDatum,coordinateUncertaintyInMeters,country,countryCode,institutionCode';
+      const header =
+        'occurrenceID,basisOfRecord,scientificName,vernacularName,individualCount,eventDate,decimalLatitude,decimalLongitude,geodeticDatum,coordinateUncertaintyInMeters,countryCode,institutionCode';
       const csv = `${header}\n${records.join('\n')}`;
 
       await Share.share({
@@ -153,17 +166,20 @@ export const SettingsScreen: React.FC<SettingsScreenProps> = ({
   const handleExportSECR = async () => {
     setIsExporting(true);
     try {
-      const rows = sightings.map((s) => [
-        s.id,
-        s.species,
-        s.observed_at.slice(0, 10),
-        s.distance_from_path_m !== undefined ? s.distance_from_path_m.toFixed(1) : '5.0',
-        s.latitude.toFixed(6),
-        s.longitude.toFixed(6),
-        s.body_condition_score || 3,
-      ].join(','));
+      const rows = sightings.map((s) =>
+        [
+          s.id,
+          s.species,
+          s.observed_at.slice(0, 10),
+          s.distance_from_path_m !== undefined ? s.distance_from_path_m.toFixed(1) : '5.0',
+          s.latitude.toFixed(6),
+          s.longitude.toFixed(6),
+          s.body_condition_score || 3,
+        ].join(',')
+      );
 
-      const header = 'session_id,species,date,perpendicular_distance_m,animal_lat,animal_lon,body_condition_score';
+      const header =
+        'session_id,species,date,perpendicular_distance_m,animal_lat,animal_lon,body_condition_score';
       const csv = `${header}\n${rows.join('\n')}`;
 
       await Share.share({
@@ -178,12 +194,11 @@ export const SettingsScreen: React.FC<SettingsScreenProps> = ({
   };
 
   return (
-    <SafeAreaView style={[styles.safeArea, { backgroundColor: colors.screenBg }]} edges={['top', 'left', 'right']}>
-      <IOSNavigationBar
-        title={t('settings.title')}
-        onBack={onBack}
-        backTitle={t('nav.home')}
-      />
+    <SafeAreaView
+      style={[styles.safeArea, { backgroundColor: colors.screenBg }]}
+      edges={['top', 'left', 'right']}
+    >
+      <IOSNavigationBar title={t('settings.title')} onBack={onBack} backTitle={t('nav.home')} />
 
       <ScrollView contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
         {/* Visual Appearance & Theme Group */}
@@ -193,7 +208,11 @@ export const SettingsScreen: React.FC<SettingsScreenProps> = ({
         >
           <IOSListRow
             title={themeMode === 'night' ? 'Night Mode (Nocturnal)' : 'Day Mode (Standard)'}
-            subtitle={themeMode === 'night' ? 'Dark high-contrast palette for evening surveys' : 'Porcelain daylight palette'}
+            subtitle={
+              themeMode === 'night'
+                ? 'Dark high-contrast palette for evening surveys'
+                : 'Porcelain daylight palette'
+            }
             icon={themeMode === 'night' ? 'moon' : 'sun'}
             iconColor={themeMode === 'night' ? '#818CF8' : '#F59E0B'}
             isLast
@@ -254,7 +273,8 @@ export const SettingsScreen: React.FC<SettingsScreenProps> = ({
             value={`±${accuracyThreshold}`}
             showDisclosure
             onPress={() => {
-              const next = accuracyThreshold === '5m' ? '10m' : accuracyThreshold === '10m' ? '20m' : '5m';
+              const next =
+                accuracyThreshold === '5m' ? '10m' : accuracyThreshold === '10m' ? '20m' : '5m';
               setAccuracyThreshold(next);
             }}
           />
@@ -276,10 +296,7 @@ export const SettingsScreen: React.FC<SettingsScreenProps> = ({
         </IOSGroupedList>
 
         {/* Surveyor Profile Group */}
-        <IOSGroupedList
-          header={t('settings.profile_header')}
-          footer={t('settings.profile_footer')}
-        >
+        <IOSGroupedList header={t('settings.profile_header')} footer={t('settings.profile_footer')}>
           <IOSListRow
             title={t('settings.observer_name')}
             icon="person"
@@ -329,16 +346,20 @@ export const SettingsScreen: React.FC<SettingsScreenProps> = ({
             subtitle={`Last sync: ${lastSyncedAt || 'Never'} • ${pendingCount} in outbox`}
             icon="compass"
             iconColor={IOSColors.systemTeal}
-            value={isSyncing ? 'Syncing...' : pendingCount === 0 ? 'Up to Date' : `${pendingCount} Queued`}
+            value={
+              isSyncing
+                ? 'Syncing...'
+                : pendingCount === 0
+                  ? 'Up to Date'
+                  : `${pendingCount} Queued`
+            }
             rightComponent={
               <TouchableOpacity
                 onPress={handleTriggerSync}
                 style={[styles.syncButton, isSyncing && styles.syncButtonActive]}
                 disabled={isSyncing}
               >
-                <Text style={styles.syncButtonText}>
-                  {isSyncing ? 'Syncing...' : 'Sync Now'}
-                </Text>
+                <Text style={styles.syncButtonText}>{isSyncing ? 'Syncing...' : 'Sync Now'}</Text>
               </TouchableOpacity>
             }
           />

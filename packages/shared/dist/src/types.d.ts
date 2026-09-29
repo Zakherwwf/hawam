@@ -66,6 +66,8 @@ export interface SurveySession {
     time_of_day?: TimeOfDay | null;
     app_version: string;
     device_gps_accuracy_avg?: number | null;
+    country_code?: string | null;
+    timezone?: string | null;
     created_at?: string;
 }
 export interface ObservationPublic {
@@ -96,6 +98,10 @@ export interface ObservationPublic {
     identifier?: string | null;
     observer_name?: string | null;
     linked_individual_id?: string | null;
+    country_code?: string | null;
+    admin1_code?: string | null;
+    timezone?: string | null;
+    observed_at_local?: string | null;
     created_at?: string;
 }
 export interface ObservationRestrictedLocation {

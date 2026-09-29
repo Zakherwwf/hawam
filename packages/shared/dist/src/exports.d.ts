@@ -4,21 +4,34 @@
  * 2. Capture-History Matrix (SECR / MARK / unmarked)
  * 3. Distance Sampling (R Distance package)
  */
-import { ObservationPublic, ObservationRestrictedLocation, SurveySession, Individual } from './types';
+import { ObservationPublic, ObservationRestrictedLocation, SurveySession, Individual, Species } from './types';
+/** Bump when a column is added, removed or changes meaning. */
+export declare const EXPORT_SCHEMA_VERSION = "2.0.0";
+/** GBIF backbone taxonomy, mirrored in public.ref_taxa (verified via api.gbif.org). */
+export declare const GBIF_TAXA: Record<Species, {
+    scientificName: string;
+    taxonRank: string;
+    taxonKey: number;
+}>;
 export interface DarwinCoreOccurrenceRecord {
     occurrenceID: string;
     eventID: string;
     eventDate: string;
+    eventTimeZone: string;
     countryCode: string;
+    stateProvince: string;
     scientificName: string;
+    taxonRank: string;
+    taxonKey: number;
     vernacularName: string;
     individualCount: number;
     occurrenceStatus: 'present' | 'absent';
     samplingProtocol: string;
     samplingEffort: string;
-    decimalLatitude: number;
-    decimalLongitude: number;
-    coordinateUncertaintyInMeters: number;
+    /** null when the record has no position (e.g. a checklist without a GPS track) */
+    decimalLatitude: number | null;
+    decimalLongitude: number | null;
+    coordinateUncertaintyInMeters: number | null;
     dataGeneralizations: string;
     informationWithheld: string;
     sex: string;
@@ -66,7 +79,9 @@ export interface DistanceSamplingRecord {
     species: string;
     detected: 0 | 1;
 }
-export declare function exportDistanceSampling(sessions: SurveySession[], observations: ObservationPublic[], regionLabel?: string): DistanceSamplingRecord[];
+export declare function exportDistanceSampling(sessions: SurveySession[], observations: ObservationPublic[], 
+/** Stratum label; defaults to each session's country code */
+regionLabel?: string): DistanceSamplingRecord[];
 /**
  * Helper to convert array of objects into standard CSV text.
  */

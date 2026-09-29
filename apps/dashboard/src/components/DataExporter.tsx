@@ -27,7 +27,10 @@ const MOCK_SESSIONS: SurveySession[] = [
     app_version: '1.0.0',
     track: {
       type: 'LineString',
-      coordinates: [[10.165, 36.802], [10.170, 36.805]],
+      coordinates: [
+        [10.165, 36.802],
+        [10.17, 36.805],
+      ],
     },
   },
   {
@@ -43,7 +46,10 @@ const MOCK_SESSIONS: SurveySession[] = [
     app_version: '1.0.0',
     track: {
       type: 'LineString',
-      coordinates: [[10.165, 36.802], [10.170, 36.805]],
+      coordinates: [
+        [10.165, 36.802],
+        [10.17, 36.805],
+      ],
     },
   },
   {
@@ -59,7 +65,10 @@ const MOCK_SESSIONS: SurveySession[] = [
     app_version: '1.0.0',
     track: {
       type: 'LineString',
-      coordinates: [[10.192, 36.862], [10.198, 36.869]],
+      coordinates: [
+        [10.192, 36.862],
+        [10.198, 36.869],
+      ],
     },
   },
 ];
@@ -229,7 +238,9 @@ export const DataExporter: React.FC = () => {
 
   const handleExportDarwinCore = () => {
     if (includePreciseCoords && !auditReason) {
-      alert("L'export des coordonnées précises requiert un motif de recherche légitime pour le registre d'audit.");
+      alert(
+        "L'export des coordonnées précises requiert un motif de recherche légitime pour le registre d'audit."
+      );
       return;
     }
 
@@ -246,7 +257,7 @@ export const DataExporter: React.FC = () => {
       `Export Darwin Core téléchargé (${dwc.length} enregistrements). ${
         includePreciseCoords
           ? "Accès aux coordonnées précises consigné dans 'export_audit_log'."
-          : "Coordonnées publiques généralisées à 1 km."
+          : 'Coordonnées publiques généralisées à 1 km.'
       }`
     );
   };
@@ -257,10 +268,13 @@ export const DataExporter: React.FC = () => {
       individual_id: row.individual_id,
       species: row.species,
       coat_description: row.coat_description,
-      ...row.occasions.reduce((acc: Record<string, number>, occ: string, i: number) => {
-        acc[`occasion_${i + 1}_${occ}`] = row.history[i];
-        return acc;
-      }, {} as Record<string, number>),
+      ...row.occasions.reduce(
+        (acc: Record<string, number>, occ: string, i: number) => {
+          acc[`occasion_${i + 1}_${occ}`] = row.history[i];
+          return acc;
+        },
+        {} as Record<string, number>
+      ),
     }));
 
     const csv = objectsToCSV(flat);
@@ -269,7 +283,7 @@ export const DataExporter: React.FC = () => {
   };
 
   const handleExportDistance = () => {
-    const dist = exportDistanceSampling(sessions, observations, 'Grand Tunis');
+    const dist = exportDistanceSampling(sessions, observations);
     const csv = objectsToCSV(dist);
     downloadFile(csv, `distance_sampling_r_package_${Date.now()}.csv`);
     setDownloadNotice(`Fichier d'échantillonnage par distance (R package Distance) téléchargé.`);
@@ -280,7 +294,8 @@ export const DataExporter: React.FC = () => {
       <div>
         <h2 className="text-xl font-bold text-slate-900">Module d'Exportation Scientifique</h2>
         <p className="text-sm text-slate-500">
-          Génération de jeux de données calibrés pour les progiciels de modélisation statistique en écologie quantitative.
+          Génération de jeux de données calibrés pour les progiciels de modélisation statistique en
+          écologie quantitative.
         </p>
         <div className="flex items-center gap-2 mt-2">
           <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-semibold bg-emerald-100 text-emerald-800">
@@ -297,17 +312,28 @@ export const DataExporter: React.FC = () => {
 
       {downloadNotice && (
         <div className="bg-teal-50 border border-teal-200 text-teal-800 px-4 py-3 rounded-xl text-sm flex items-center justify-between">
-          <span className="inline-flex items-center gap-2"><Check className="w-4 h-4" aria-hidden />{downloadNotice}</span>
-          <button onClick={() => setDownloadNotice(null)} className="text-teal-600 font-bold ml-4" aria-label="Fermer"><X className="w-4 h-4" aria-hidden /></button>
+          <span className="inline-flex items-center gap-2">
+            <Check className="w-4 h-4" aria-hidden />
+            {downloadNotice}
+          </span>
+          <button
+            onClick={() => setDownloadNotice(null)}
+            className="text-teal-600 font-bold ml-4"
+            aria-label="Fermer"
+          >
+            <X className="w-4 h-4" aria-hidden />
+          </button>
         </div>
       )}
 
       {/* Sensitive Location Toggle Card */}
-      <div className={`p-6 rounded-2xl border transition ${
-        includePreciseCoords
-          ? 'bg-amber-50/50 border-amber-300 ring-2 ring-amber-400/20'
-          : 'bg-white border-slate-200'
-      }`}>
+      <div
+        className={`p-6 rounded-2xl border transition ${
+          includePreciseCoords
+            ? 'bg-amber-50/50 border-amber-300 ring-2 ring-amber-400/20'
+            : 'bg-white border-slate-200'
+        }`}
+      >
         <div className="flex items-start justify-between gap-4">
           <div>
             <div className="flex items-center gap-2">
@@ -317,7 +343,8 @@ export const DataExporter: React.FC = () => {
               </h3>
             </div>
             <p className="text-xs text-slate-500 mt-1 max-w-xl">
-              Par défaut, tous les exports appliquent la généralisation éthique à 1 km² pour protéger les animaux contre les risques d'abattage municipal.
+              Par défaut, tous les exports appliquent la généralisation éthique à 1 km² pour
+              protéger les animaux contre les risques d'abattage municipal.
             </p>
           </div>
 
@@ -347,7 +374,8 @@ export const DataExporter: React.FC = () => {
               className="w-full px-3 py-2 text-xs bg-white border border-amber-300 rounded-lg outline-none focus:ring-2 focus:ring-amber-500"
             />
             <p className="text-[11px] text-amber-700">
-              Chaque téléchargement comportant les coordonnées GPS réelles génère un enregistrement inviolable dans la table <code>export_audit_log</code>.
+              Chaque téléchargement comportant les coordonnées GPS réelles génère un enregistrement
+              inviolable dans la table <code>export_audit_log</code>.
             </p>
           </div>
         )}
@@ -360,11 +388,14 @@ export const DataExporter: React.FC = () => {
           <div className="space-y-2">
             <div className="flex items-center justify-between">
               <Globe className="w-7 h-7 text-teal-700" aria-hidden />
-              <span className="text-[11px] font-mono px-2 py-0.5 rounded bg-slate-100 text-slate-600">DwC-A / CSV</span>
+              <span className="text-[11px] font-mono px-2 py-0.5 rounded bg-slate-100 text-slate-600">
+                DwC-A / CSV
+              </span>
             </div>
             <h3 className="text-base font-bold text-slate-800">Darwin Core Occurrence</h3>
             <p className="text-xs text-slate-500 leading-relaxed">
-              Standard mondial de biodiversité (GBIF). Inclut présences, absences complètes (non-détections), effort d'échantillonnage, sexe et statut reproducteur.
+              Standard mondial de biodiversité (GBIF). Inclut présences, absences complètes
+              (non-détections), effort d'échantillonnage, sexe et statut reproducteur.
             </p>
           </div>
 
@@ -381,11 +412,14 @@ export const DataExporter: React.FC = () => {
           <div className="space-y-2">
             <div className="flex items-center justify-between">
               <Dna className="w-7 h-7 text-teal-700" aria-hidden />
-              <span className="text-[11px] font-mono px-2 py-0.5 rounded bg-slate-100 text-slate-600">secr / MARK</span>
+              <span className="text-[11px] font-mono px-2 py-0.5 rounded bg-slate-100 text-slate-600">
+                secr / MARK
+              </span>
             </div>
             <h3 className="text-base font-bold text-slate-800">Capture-Recapture (SECR)</h3>
             <p className="text-xs text-slate-500 leading-relaxed">
-              Matrice binaire d'historique de détection (0/1) par occasion d'échantillonnage pour chaque individu identifié par photo-ID.
+              Matrice binaire d'historique de détection (0/1) par occasion d'échantillonnage pour
+              chaque individu identifié par photo-ID.
             </p>
           </div>
 
@@ -402,11 +436,14 @@ export const DataExporter: React.FC = () => {
           <div className="space-y-2">
             <div className="flex items-center justify-between">
               <Ruler className="w-7 h-7 text-teal-700" aria-hidden />
-              <span className="text-[11px] font-mono px-2 py-0.5 rounded bg-slate-100 text-slate-600">R Distance</span>
+              <span className="text-[11px] font-mono px-2 py-0.5 rounded bg-slate-100 text-slate-600">
+                R Distance
+              </span>
             </div>
             <h3 className="text-base font-bold text-slate-800">Distance Sampling (Transects)</h3>
             <p className="text-xs text-slate-500 leading-relaxed">
-              Tableau des longueurs d'effort de transect couplées aux distances perpendiculaires des animaux observés pour estimer la détectabilité g(x).
+              Tableau des longueurs d'effort de transect couplées aux distances perpendiculaires des
+              animaux observés pour estimer la détectabilité g(x).
             </p>
           </div>
 

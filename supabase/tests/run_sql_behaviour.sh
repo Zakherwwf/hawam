@@ -17,6 +17,6 @@ for f in supabase/migrations/*.sql; do
   psql_in < "$f" >/dev/null 2>&1 || { echo "Migration failed: $f"; psql_in < "$f"; exit 1; }
 done
 
-out=$(psql_in < supabase/tests/security_hardening.behaviour.sql 2>&1 | grep -E 'PASS|FAIL|ERROR' | sed -E 's/^(NOTICE: +| +)//')
+out=$(for t in supabase/tests/*.behaviour.sql; do psql_in < "$t" 2>&1; done | grep -E 'PASS|FAIL|ERROR' | sed -E 's/^(NOTICE: +| +)//')
 echo "$out"
 if echo "$out" | grep -qE 'FAIL|ERROR'; then exit 1; fi
