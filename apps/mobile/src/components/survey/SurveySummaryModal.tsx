@@ -1,14 +1,7 @@
 import { useTranslation } from 'react-i18next';
 import React, { useState } from 'react';
-import {
-  View,
-  Text,
-  StyleSheet,
-  Modal,
-  TouchableOpacity,
-  ScrollView,
-  SafeAreaView,
-} from 'react-native';
+import { View, Text, StyleSheet, Modal, TouchableOpacity, ScrollView } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { colors, typography, spacing, radius, touchTargets } from '@tunisia-survey/design-tokens';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Icon } from '../design-system/Icon';
@@ -86,7 +79,7 @@ export const SurveySummaryModal: React.FC<SurveySummaryModalProps> = ({
           end={{ x: 1, y: 1 }}
           style={StyleSheet.absoluteFill}
         />
-        <SafeAreaView style={styles.safeArea}>
+        <SafeAreaView style={styles.safeArea} edges={['bottom', 'left', 'right']}>
           {step === 'checklist' ? (
             /* STEP 1: Scientific Complete Checklist Validation Question */
             <View style={styles.stepContainer}>
