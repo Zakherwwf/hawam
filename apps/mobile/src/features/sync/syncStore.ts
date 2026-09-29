@@ -12,7 +12,7 @@
 import { create } from 'zustand';
 import { storage } from '../../services/storageAdapter.ts';
 import { localDb } from '../../db/localDb.ts';
-import { pushSurveyBundle, type SurveyBundlePayload } from '../../services/supabase.ts';
+import { hasAuthSession, pushSurveyBundle, type SurveyBundlePayload } from '../../services/supabase.ts';
 import { uploadAnimalPhoto } from '../../services/storageService.ts';
 import { generateUUID } from '../../utils/uuid.ts';
 
@@ -245,6 +245,11 @@ export const useSyncStore = create<SyncState>((set, get) => ({
     const { outbox, isSyncing } = get();
     if (isSyncing || outbox.length === 0) {
       return { success: true, syncedCount: 0 };
+    }
+
+    // Guests keep their bundles queued until they sign in
+    if (!(await hasAuthSession())) {
+      return { success: false, syncedCount: 0 };
     }
 
     set({ isSyncing: true });

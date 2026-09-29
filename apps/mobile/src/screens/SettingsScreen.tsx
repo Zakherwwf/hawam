@@ -19,12 +19,14 @@ import { useSyncStore } from '../features/sync/syncStore';
 import { useThemeStore } from '../features/theme/themeStore';
 import { SightingItem } from './SightingsScreen';
 import { UserAccount } from './AccountScreen';
+import { deleteMyAccount, exportMyData } from '../services/supabase';
 
 interface SettingsScreenProps {
   onLanguageChange?: (lng: 'ar' | 'fr' | 'en') => void;
   onBack?: () => void;
   sightings?: SightingItem[];
   userAccount?: UserAccount | null;
+  onAccountDeleted?: () => void;
 }
 
 export const SettingsScreen: React.FC<SettingsScreenProps> = ({
@@ -32,6 +34,7 @@ export const SettingsScreen: React.FC<SettingsScreenProps> = ({
   onBack,
   sightings = [],
   userAccount,
+  onAccountDeleted,
 }) => {
   const { t, i18n } = useTranslation();
   const { isSyncing, lastSyncedAt, pendingCount, triggerSync } = useSyncStore();
@@ -40,6 +43,7 @@ export const SettingsScreen: React.FC<SettingsScreenProps> = ({
   const [exactCoordsEnabled, setExactCoordsEnabled] = useState(true);
   const [accuracyThreshold, setAccuracyThreshold] = useState('5m');
   const [isExporting, setIsExporting] = useState(false);
+  const [isDeleting, setIsDeleting] = useState(false);
 
   const currentLang = i18n.language || 'en';
 
@@ -104,6 +108,46 @@ export const SettingsScreen: React.FC<SettingsScreenProps> = ({
     } finally {
       setIsExporting(false);
     }
+  };
+
+  const handleExportMyData = async () => {
+    setIsExporting(true);
+    try {
+      const res = await exportMyData();
+      if (!res.success) {
+        Alert.alert(t('privacy.export_failed'), res.error);
+        return;
+      }
+      await Share.share({
+        title: t('privacy.export_title'),
+        message: JSON.stringify(res.data, null, 2),
+      });
+    } catch (e) {
+      console.warn('Personal data export error:', e);
+    } finally {
+      setIsExporting(false);
+    }
+  };
+
+  const handleDeleteAccount = () => {
+    Alert.alert(t('privacy.delete_confirm_title'), t('privacy.delete_confirm_body'), [
+      { text: t('privacy.cancel'), style: 'cancel' },
+      {
+        text: t('privacy.delete_confirm_action'),
+        style: 'destructive',
+        onPress: async () => {
+          setIsDeleting(true);
+          const res = await deleteMyAccount();
+          setIsDeleting(false);
+          if (!res.success) {
+            Alert.alert(t('privacy.delete_failed'), res.error);
+            return;
+          }
+          Alert.alert(t('privacy.delete_done_title'), t('privacy.delete_done_body'));
+          onAccountDeleted?.();
+        },
+      },
+    ]);
   };
 
   const handleExportSECR = async () => {
@@ -323,6 +367,28 @@ export const SettingsScreen: React.FC<SettingsScreenProps> = ({
             onPress={handleExportSECR}
           />
         </IOSGroupedList>
+
+        {/* Personal data: right of access and right to erasure */}
+        {userAccount ? (
+          <IOSGroupedList header={t('privacy.header')} footer={t('privacy.footer')}>
+            <IOSListRow
+              title={t('privacy.export_title')}
+              subtitle={t('privacy.export_sub')}
+              icon="document"
+              iconColor={IOSColors.systemBlue}
+              showDisclosure
+              onPress={isExporting ? undefined : handleExportMyData}
+            />
+            <IOSListRow
+              title={isDeleting ? t('privacy.deleting') : t('privacy.delete_title')}
+              subtitle={t('privacy.delete_sub')}
+              icon="trash"
+              iconColor={IOSColors.systemRed}
+              isLast
+              onPress={isDeleting ? undefined : handleDeleteAccount}
+            />
+          </IOSGroupedList>
+        ) : null}
 
         {/* Standards & Guidelines Info */}
         <IOSGroupedList header={t('settings.about_header')}>

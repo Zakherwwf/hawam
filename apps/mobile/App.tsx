@@ -363,6 +363,11 @@ function AppContent() {
 
   // Add sighting from Opportunistic form
   const handleSaveOpportunistic = (observation: any) => {
+    // Never substitute a placeholder position for a missing GPS fix
+    if (!Number.isFinite(observation.latitude) || !Number.isFinite(observation.longitude)) {
+      console.warn('Opportunistic sighting without coordinates was not saved');
+      return;
+    }
     const obsId = generateUUID();
     const newItem: SightingItem = {
       id: obsId,
@@ -370,8 +375,8 @@ function AppContent() {
       identifier: observation.identifier || undefined,
       observer_name: userAccount?.name || 'You',
       group_size: observation.group_size || 1,
-      latitude: observation.latitude || 36.8065,
-      longitude: observation.longitude || 10.1815,
+      latitude: observation.latitude,
+      longitude: observation.longitude,
       observed_at: observation.observed_at || new Date().toISOString(),
       body_condition_score: observation.body_condition_score,
       protocol: 'incidental',
@@ -441,6 +446,10 @@ function AppContent() {
 
   // Log sighting from Structured Survey session
   const handleLogAnimalInSurvey = (animal: any) => {
+    if (!Number.isFinite(animal.latitude) || !Number.isFinite(animal.longitude)) {
+      console.warn('Survey sighting without coordinates was not added to the sightings list');
+      return;
+    }
     const newItem: SightingItem = {
       id: animal.id || generateUUID(),
       species: animal.species,
@@ -448,8 +457,8 @@ function AppContent() {
       observer_name: userAccount?.name || 'You',
       group_size: animal.group_size || 1,
       distance_from_path_m: animal.distance_from_path_m,
-      latitude: animal.latitude || 36.8065,
-      longitude: animal.longitude || 10.1815,
+      latitude: animal.latitude,
+      longitude: animal.longitude,
       observed_at: animal.observed_at || new Date().toISOString(),
       body_condition_score: 3,
       protocol: animal.protocol || 'transect',
@@ -604,6 +613,10 @@ function AppContent() {
           onLanguageChange={handleLanguageChange}
           sightings={sightings}
           userAccount={userAccount}
+          onAccountDeleted={() => {
+            handleCloseModal();
+            handleSignOut();
+          }}
         />
       </SafeAreaView>
     );

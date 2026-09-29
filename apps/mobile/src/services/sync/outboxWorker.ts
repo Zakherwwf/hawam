@@ -5,7 +5,7 @@
  */
 
 import { localDb } from '../../db/localDb.ts';
-import { pushSurveyBundle, type SurveyBundlePayload } from '../supabase.ts';
+import { hasAuthSession, pushSurveyBundle, type SurveyBundlePayload } from '../supabase.ts';
 import { uploadAnimalPhoto } from '../storageService.ts';
 import { sanitizeBundleUuids } from '../../features/sync/syncStore.ts';
 
@@ -68,6 +68,11 @@ export async function processOutboxNow(options?: {
 
     const pendingItems = await localDb.getPendingOutbox();
     if (pendingItems.length === 0) {
+      return { processed: 0, succeeded: 0, failed: 0 };
+    }
+
+    // Guests keep their bundles queued until they sign in
+    if (!(await hasAuthSession())) {
       return { processed: 0, succeeded: 0, failed: 0 };
     }
 

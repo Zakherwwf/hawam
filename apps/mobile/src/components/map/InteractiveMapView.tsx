@@ -2,6 +2,7 @@ import React, { useRef, useEffect, useState } from 'react';
 import { View, StyleSheet, TouchableOpacity, Text, DimensionValue } from 'react-native';
 import { WebView } from 'react-native-webview';
 import * as Location from 'expo-location';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import { IOSColors, IOSTypography } from '../../theme/ios';
 import { IOSIcon } from '../ios';
 import { MAPBOX_CONFIG } from '../../config/mapbox';
@@ -47,6 +48,31 @@ export interface TransectMarker {
   isSelected?: boolean;
 }
 
+const CAMERA_STORAGE_KEY = 'hawem_map_camera_v1';
+const USER_LOCATION_ZOOM = 15;
+
+interface SavedCamera {
+  latitude: number;
+  longitude: number;
+  zoom: number;
+}
+
+async function loadSavedCamera(): Promise<SavedCamera | null> {
+  try {
+    const raw = await AsyncStorage.getItem(CAMERA_STORAGE_KEY);
+    if (!raw) return null;
+    const c = JSON.parse(raw);
+    if (
+      Number.isFinite(c?.latitude) && Math.abs(c.latitude) <= 90 &&
+      Number.isFinite(c?.longitude) && Math.abs(c.longitude) <= 180 &&
+      Number.isFinite(c?.zoom)
+    ) {
+      return { latitude: c.latitude, longitude: c.longitude, zoom: c.zoom };
+    }
+  } catch {}
+  return null;
+}
+
 interface InteractiveMapViewProps {
   initialLat?: number;
   initialLon?: number;
@@ -65,9 +91,9 @@ interface InteractiveMapViewProps {
 }
 
 export const InteractiveMapView: React.FC<InteractiveMapViewProps> = ({
-  initialLat = MAPBOX_CONFIG.defaultCenter.latitude,
-  initialLon = MAPBOX_CONFIG.defaultCenter.longitude,
-  initialZoom = MAPBOX_CONFIG.defaultZoom,
+  initialLat,
+  initialLon,
+  initialZoom,
   focusCoordinate,
   markers = [],
   colonyMarkers = [],
@@ -85,6 +111,15 @@ export const InteractiveMapView: React.FC<InteractiveMapViewProps> = ({
   const [currentLayer, setCurrentLayer] = useState<'streets' | 'satellite' | 'outdoors'>('streets');
   const [showColoniesLayer, setShowColoniesLayer] = useState(true);
   const [userLocation, setUserLocation] = useState<{ lat: number; lon: number; acc: number } | null>(null);
+
+  // Without an explicit centre the viewport resolves in order: last camera
+  // position, then the device location, then the world view the map opens on.
+  const hasExplicitCenter = initialLat !== undefined && initialLon !== undefined;
+  const startLat = initialLat ?? MAPBOX_CONFIG.defaultCenter.latitude;
+  const startLon = initialLon ?? MAPBOX_CONFIG.defaultCenter.longitude;
+  const startZoom = initialZoom ?? (hasExplicitCenter ? 16 : MAPBOX_CONFIG.defaultZoom);
+  const viewportResolved = useRef(hasExplicitCenter || !!focusCoordinate);
+  const [savedCameraChecked, setSavedCameraChecked] = useState(hasExplicitCenter);
 
   // Request live device GPS location using expo-location
   useEffect(() => {
@@ -113,7 +148,7 @@ export const InteractiveMapView: React.FC<InteractiveMapViewProps> = ({
           );
         }
       } catch (e) {
-        setUserLocation({ lat: initialLat, lon: initialLon, acc: 3.5 });
+        // No fix: show no user marker rather than a fabricated position
       }
     }
 
@@ -150,6 +185,32 @@ export const InteractiveMapView: React.FC<InteractiveMapViewProps> = ({
     const js = `if (window.centerOnUser) { window.centerOnUser(${focusCoordinate.latitude}, ${focusCoordinate.longitude}, ${z}); } true;`;
     webViewRef.current.injectJavaScript(js);
   }, [focusCoordinate, mapLoaded]);
+
+  useEffect(() => {
+    if (!mapLoaded || viewportResolved.current) return;
+    let cancelled = false;
+    loadSavedCamera().then((saved) => {
+      if (cancelled) return;
+      if (saved && !viewportResolved.current && webViewRef.current) {
+        viewportResolved.current = true;
+        webViewRef.current.injectJavaScript(
+          `if (window.jumpToCamera) { window.jumpToCamera(${saved.latitude}, ${saved.longitude}, ${saved.zoom}); } true;`
+        );
+      }
+      setSavedCameraChecked(true);
+    });
+    return () => {
+      cancelled = true;
+    };
+  }, [mapLoaded]);
+
+  useEffect(() => {
+    if (!mapLoaded || !savedCameraChecked || viewportResolved.current || !userLocation || !webViewRef.current) return;
+    viewportResolved.current = true;
+    webViewRef.current.injectJavaScript(
+      `if (window.centerOnUser) { window.centerOnUser(${userLocation.lat}, ${userLocation.lon}, ${USER_LOCATION_ZOOM}); } true;`
+    );
+  }, [mapLoaded, savedCameraChecked, userLocation]);
 
   const toggleLayer = () => {
     let next: 'streets' | 'satellite' | 'outdoors' = 'streets';
@@ -382,8 +443,8 @@ export const InteractiveMapView: React.FC<InteractiveMapViewProps> = ({
     var map = new mapboxgl.Map({
       container: 'map',
       style: STYLES.streets,
-      center: [${initialLon}, ${initialLat}],
-      zoom: ${initialZoom},
+      center: [${startLon}, ${startLat}],
+      zoom: ${startZoom},
       attributionControl: false
     });
 
@@ -516,6 +577,18 @@ export const InteractiveMapView: React.FC<InteractiveMapViewProps> = ({
         speed: 1.4
       });
     };
+
+    window.jumpToCamera = function(lat, lon, zoom) {
+      map.jumpTo({ center: [lon, lat], zoom: zoom });
+    };
+
+    map.on('moveend', function(e) {
+      if (!window.ReactNativeWebView) return;
+      var c = map.getCenter();
+      window.ReactNativeWebView.postMessage(JSON.stringify({
+        type: 'camera', lat: c.lat, lon: c.lng, zoom: map.getZoom(), byUser: !!(e && e.originalEvent)
+      }));
+    });
 
     window.updateMapboxData = function(data) {
       lastData = data;
@@ -714,6 +787,14 @@ export const InteractiveMapView: React.FC<InteractiveMapViewProps> = ({
               onColonyPress(data.id);
             } else if (data.type === 'transect_click' && onTransectPress) {
               onTransectPress(data.id);
+            } else if (data.type === 'camera' && !hasExplicitCenter) {
+              // A pan or zoom by the user settles the viewport; GPS must not yank it away
+              if (data.byUser) viewportResolved.current = true;
+              if (!viewportResolved.current) return;
+              AsyncStorage.setItem(
+                CAMERA_STORAGE_KEY,
+                JSON.stringify({ latitude: data.lat, longitude: data.lon, zoom: data.zoom })
+              ).catch(() => {});
             }
           } catch (e) {}
         }}

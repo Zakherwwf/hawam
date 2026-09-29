@@ -191,5 +191,26 @@
     ],
     "consent_checkbox": "I accept the ethical charter, privacy policy, and scientific data-sharing protocol",
     "accept_btn": "Accept & Continue"
+  },
+  "privacy": {
+    "header": "Your Data",
+    "footer": "Deleting your account keeps your observations for science, stripped of your identity: they stay at 1 km precision, and precise locations, GPS tracks, notes and photos are removed permanently.",
+    "export_title": "Export My Data",
+    "export_sub": "Everything the server holds about you, as JSON",
+    "export_failed": "Export Failed",
+    "delete_title": "Delete Account",
+    "deleting": "Deleting...",
+    "delete_sub": "Erase your identity, photos and precise locations",
+    "delete_confirm_title": "Delete your account?",
+    "delete_confirm_body": "Your profile, photos, precise locations and GPS tracks will be permanently erased. Anonymous 1 km observations remain in the scientific dataset. This cannot be undone.",
+    "delete_confirm_action": "Delete",
+    "cancel": "Cancel",
+    "delete_failed": "Deletion Failed",
+    "delete_done_title": "Account Deleted",
+    "delete_done_body": "Your personal data has been erased."
+  },
+  "opportunistic": {
+    "no_gps_title": "Location unavailable",
+    "no_gps_body": "Hawem needs a GPS fix to record where the animal was seen. Move to open sky or enable location access, then try again."
   }
 }

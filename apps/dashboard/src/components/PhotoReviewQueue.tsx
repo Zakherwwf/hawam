@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { Check, CircleCheckBig, X } from 'lucide-react';
 
 interface ProposedMatch {
   id: string;
@@ -82,18 +83,18 @@ export const PhotoReviewQueue: React.FC = () => {
           </p>
         </div>
         <div className="flex items-center gap-4 text-xs font-semibold">
-          <span className="px-3 py-1.5 bg-emerald-50 text-emerald-700 border border-emerald-200 rounded-lg">
-            ✓ {confirmedCount} Individus Confirmés
+          <span className="px-3 py-1.5 bg-emerald-50 text-emerald-700 border border-emerald-200 rounded-lg inline-flex items-center gap-1.5">
+            <Check className="w-3.5 h-3.5" aria-hidden />{confirmedCount} Individus Confirmés
           </span>
-          <span className="px-3 py-1.5 bg-rose-50 text-rose-700 border border-rose-200 rounded-lg">
-            ✕ {rejectedCount} Paires Rejetées
+          <span className="px-3 py-1.5 bg-rose-50 text-rose-700 border border-rose-200 rounded-lg inline-flex items-center gap-1.5">
+            <X className="w-3.5 h-3.5" aria-hidden />{rejectedCount} Paires Rejetées
           </span>
         </div>
       </div>
 
       {!currentMatch ? (
         <div className="bg-white rounded-2xl border border-slate-200 p-12 text-center space-y-4 shadow-sm">
-          <div className="text-5xl">🎉</div>
+          <CircleCheckBig className="w-12 h-12 mx-auto text-teal-600" aria-hidden />
           <h3 className="text-lg font-bold text-slate-900">File de validation à jour !</h3>
           <p className="text-sm text-slate-500 max-w-md mx-auto">
             Toutes les paires de photos proposées ont été examinées. De nouvelles paires apparaîtront dès que de nouvelles observations avec photos seront synchronisées.
@@ -105,7 +106,7 @@ export const PhotoReviewQueue: React.FC = () => {
           <div className="bg-slate-50 border-b border-slate-200 px-6 py-4 flex flex-wrap items-center justify-between gap-4">
             <div className="flex items-center gap-3">
               <span className="px-3 py-1 rounded-md text-xs font-bold uppercase tracking-wider bg-teal-100 text-teal-800">
-                {currentMatch.species === 'cat' ? '🐱 Felis catus' : '🐶 Canis lupus familiaris'}
+                {currentMatch.species === 'cat' ? 'Felis catus' : 'Canis lupus familiaris'}
               </span>
               <span className="text-xs text-slate-600">
                 Méthode : <strong>{currentMatch.method === 'algorithm' ? 'Algorithme HotSpotter / AI' : 'Observateur'}</strong>
@@ -173,16 +174,18 @@ export const PhotoReviewQueue: React.FC = () => {
             <div className="flex items-center gap-3">
               <button
                 onClick={() => handleDecision('reject')}
-                className="px-5 py-2.5 bg-rose-50 hover:bg-rose-100 text-rose-700 border border-rose-300 text-sm font-semibold rounded-xl transition"
+                className="px-5 py-2.5 bg-rose-50 hover:bg-rose-100 text-rose-700 border border-rose-300 text-sm font-semibold rounded-xl transition inline-flex items-center gap-2"
               >
-                ✕ Rejeter (Individus Différents)
+                <X className="w-4 h-4" aria-hidden />
+                Rejeter (Individus Différents)
               </button>
 
               <button
                 onClick={() => handleDecision('confirm')}
-                className="px-6 py-2.5 bg-teal-700 hover:bg-teal-800 text-white text-sm font-semibold rounded-xl shadow-sm transition"
+                className="px-6 py-2.5 bg-teal-700 hover:bg-teal-800 text-white text-sm font-semibold rounded-xl shadow-sm transition inline-flex items-center gap-2"
               >
-                ✓ Confirmer le Match (Même Individu)
+                <Check className="w-4 h-4" aria-hidden />
+                Confirmer le Match (Même Individu)
               </button>
             </div>
           </div>

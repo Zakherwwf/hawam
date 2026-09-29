@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { Camera, ChartColumn, Route } from 'lucide-react';
 import { RouteManager } from './components/RouteManager';
 import { PhotoReviewQueue } from './components/PhotoReviewQueue';
 import { DataExporter } from './components/DataExporter';
@@ -38,35 +39,38 @@ export function App() {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex space-x-8 border-t border-slate-100">
           <button
             onClick={() => setActiveTab('exports')}
-            className={`py-3 text-xs font-bold border-b-2 transition ${
+            className={`py-3 text-xs font-bold border-b-2 transition inline-flex items-center gap-1.5 ${
               activeTab === 'exports'
                 ? 'border-teal-700 text-teal-800'
                 : 'border-transparent text-slate-500 hover:text-slate-800'
             }`}
           >
-            📊 Exportations Scientifiques (DwC / SECR / Distance)
+            <ChartColumn className="w-4 h-4" aria-hidden />
+            Exportations Scientifiques (DwC / SECR / Distance)
           </button>
 
           <button
             onClick={() => setActiveTab('photos')}
-            className={`py-3 text-xs font-bold border-b-2 transition ${
+            className={`py-3 text-xs font-bold border-b-2 transition inline-flex items-center gap-1.5 ${
               activeTab === 'photos'
                 ? 'border-teal-700 text-teal-800'
                 : 'border-transparent text-slate-500 hover:text-slate-800'
             }`}
           >
-            📷 Validation Photo-ID (File de Correspondance)
+            <Camera className="w-4 h-4" aria-hidden />
+            Validation Photo-ID (File de Correspondance)
           </button>
 
           <button
             onClick={() => setActiveTab('routes')}
-            className={`py-3 text-xs font-bold border-b-2 transition ${
+            className={`py-3 text-xs font-bold border-b-2 transition inline-flex items-center gap-1.5 ${
               activeTab === 'routes'
                 ? 'border-teal-700 text-teal-800'
                 : 'border-transparent text-slate-500 hover:text-slate-800'
             }`}
           >
-            🗺️ Gestion des Itinéraires Fixes (Routes)
+            <Route className="w-4 h-4" aria-hidden />
+            Gestion des Itinéraires Fixes (Routes)
           </button>
         </div>
       </header>

@@ -9,6 +9,7 @@ import {
   Image,
   KeyboardAvoidingView,
   Platform,
+  Alert,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import * as Location from 'expo-location';
@@ -182,9 +183,10 @@ export const OpportunisticScreen: React.FC<OpportunisticScreenProps> = ({
   const [habitat, setHabitat] = useState<HabitatType>('residential');
   const [notes, setNotes] = useState<string>('');
 
-  // Georeference coordinates (silently recorded in background)
-  const [deviceLat, setDeviceLat] = useState<number>(36.8065);
-  const [deviceLon, setDeviceLon] = useState<number>(10.1815);
+  // Georeference coordinates (silently recorded in background). Null until a
+  // real fix arrives: a sighting is never stored at a made-up position.
+  const [deviceLat, setDeviceLat] = useState<number | null>(null);
+  const [deviceLon, setDeviceLon] = useState<number | null>(null);
 
   useEffect(() => {
     async function getGPS() {
@@ -196,7 +198,7 @@ export const OpportunisticScreen: React.FC<OpportunisticScreenProps> = ({
           setDeviceLon(loc.coords.longitude);
         }
       } catch (err) {
-        // Fallback default coordinates
+        // No fix yet; handleSave retries
       }
     }
     getGPS();
@@ -226,8 +228,27 @@ export const OpportunisticScreen: React.FC<OpportunisticScreenProps> = ({
     }
   };
 
-  const handleSave = () => {
+  const handleSave = async () => {
     hapticButtonPress();
+
+    let lat = deviceLat;
+    let lon = deviceLon;
+    if (lat === null || lon === null) {
+      try {
+        const loc =
+          (await Location.getLastKnownPositionAsync()) ||
+          (await Location.getCurrentPositionAsync({ accuracy: Location.Accuracy.Balanced }));
+        lat = loc.coords.latitude;
+        lon = loc.coords.longitude;
+        setDeviceLat(lat);
+        setDeviceLon(lon);
+      } catch {}
+    }
+    if (lat === null || lon === null) {
+      Alert.alert(t('opportunistic.no_gps_title'), t('opportunistic.no_gps_body'));
+      return;
+    }
+
     const cleanId = identifier.trim() || generateOpportunisticCode(species, Math.floor(Date.now() / 1000) % 1000);
     onSaveObservation({
       identifier: cleanId,
@@ -244,8 +265,8 @@ export const OpportunisticScreen: React.FC<OpportunisticScreenProps> = ({
       habitat_type: habitat,
       notes,
       protocol: 'incidental',
-      latitude: deviceLat,
-      longitude: deviceLon,
+      latitude: lat,
+      longitude: lon,
       observed_at: new Date().toISOString(),
     });
   };

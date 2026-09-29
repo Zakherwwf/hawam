@@ -4,6 +4,7 @@ import {
   base64ToUint8Array,
   buildStoragePath,
   getAnimalPhotoUrl,
+  resolveAnimalPhotoUrl,
   uploadAnimalPhoto,
   ANIMAL_PHOTOS_BUCKET,
 } from '../services/storageService.ts';
@@ -61,13 +62,13 @@ test('storageService: getAnimalPhotoUrl preserves existing web and local URIs', 
   );
 });
 
-test('storageService: getAnimalPhotoUrl resolves bucket path to Supabase public CDN URL', () => {
-  const bucketPath = 'observations/obs-1/photo-1.jpg';
-  const resolved = getAnimalPhotoUrl(bucketPath);
+test('storageService: getAnimalPhotoUrl never builds a public URL for private bucket paths', () => {
+  assert.equal(getAnimalPhotoUrl('observations/obs-1/photo-1.jpg'), '');
+});
 
-  assert.ok(resolved.includes(ANIMAL_PHOTOS_BUCKET));
-  assert.ok(resolved.includes(bucketPath));
-  assert.ok(resolved.startsWith('http'));
+test('storageService: resolveAnimalPhotoUrl passes local URIs through without a network call', async () => {
+  assert.equal(await resolveAnimalPhotoUrl('file:///tmp/cat.jpg'), 'file:///tmp/cat.jpg');
+  assert.equal(await resolveAnimalPhotoUrl(null), '');
 });
 
 test('storageService: uploadAnimalPhoto returns immediately for already uploaded cloud paths', async () => {
@@ -79,5 +80,12 @@ test('storageService: uploadAnimalPhoto returns immediately for already uploaded
 
   assert.equal(result.success, true);
   assert.equal(result.storagePath, 'observations/obs-100/photo-200.jpg');
-  assert.ok(result.publicUrl?.includes(ANIMAL_PHOTOS_BUCKET));
+});
+
+test('storageService: uploadAnimalPhoto refuses a device photo it cannot re-encode', async () => {
+  // No native image manipulator under Node, so scrubbing fails and must block the upload
+  const result = await uploadAnimalPhoto('file:///tmp/raw-with-gps.jpg', 'obs-1', 'photo-1');
+
+  assert.equal(result.success, false);
+  assert.equal(result.storagePath, 'file:///tmp/raw-with-gps.jpg');
 });

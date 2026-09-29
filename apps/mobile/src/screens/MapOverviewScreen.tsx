@@ -659,9 +659,6 @@ export const MapOverviewScreen: React.FC<MapOverviewScreenProps> = ({
         {/* Main Interactive Map Canvas */}
         <View style={styles.mapWrapper}>
           <InteractiveMapView
-            initialLat={36.8065}
-            initialLon={10.1815}
-            initialZoom={14}
             focusCoordinate={focusCoordinate}
             markers={mapMarkers}
             colonyMarkers={displayColonies.map((c) => ({

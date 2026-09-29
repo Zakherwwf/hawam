@@ -119,6 +119,20 @@ export interface SurveyBundlePayload {
 }
 
 /**
+ * Uploads and submit_survey_bundle require a signed-in user. Sync callers
+ * check this first so guest data stays queued locally instead of burning
+ * retry attempts on requests the server will reject.
+ */
+export async function hasAuthSession(): Promise<boolean> {
+  try {
+    const { data } = await supabase.auth.getSession();
+    return !!data?.session?.user?.id;
+  } catch {
+    return false;
+  }
+}
+
+/**
  * Ensures the authenticated user has accepted consent in public.users on Supabase.
  * The submit_survey_bundle RPC requires consent_accepted_at to be non-null.
  */
@@ -159,6 +173,38 @@ export async function pushSurveyBundle(payload: SurveyBundlePayload) {
     return { success: true, data };
   } catch (err: any) {
     console.warn('Network error pushing survey bundle to Supabase:', err);
+    return { success: false, error: err?.message || 'Network error' };
+  }
+}
+
+/**
+ * Right of access: every server row keyed to the signed-in user, as JSON.
+ */
+export async function exportMyData(): Promise<{ success: boolean; data?: unknown; error?: string }> {
+  try {
+    const { data, error } = await supabase.rpc('export_my_data');
+    if (error) return { success: false, error: error.message };
+    return { success: true, data };
+  } catch (err: any) {
+    return { success: false, error: err?.message || 'Network error' };
+  }
+}
+
+/**
+ * Right to erasure. The delete-account Edge Function keeps de-identified
+ * observations for science, removes precise locations, tracks, notes and
+ * photos, then deletes the auth user.
+ */
+export async function deleteMyAccount(): Promise<{ success: boolean; error?: string }> {
+  try {
+    const { data, error } = await supabase.functions.invoke('delete-account', {
+      body: { confirm: 'DELETE' },
+    });
+    if (error || !data?.success) {
+      return { success: false, error: error?.message || data?.error || 'Deletion failed' };
+    }
+    return { success: true };
+  } catch (err: any) {
     return { success: false, error: err?.message || 'Network error' };
   }
 }

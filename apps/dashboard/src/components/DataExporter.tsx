@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { Check, Dna, Globe, Ruler, ShieldCheck, TriangleAlert, X } from 'lucide-react';
 import {
   exportToDarwinCore,
   exportCaptureHistoryMatrix,
@@ -244,7 +245,7 @@ export const DataExporter: React.FC = () => {
     setDownloadNotice(
       `Export Darwin Core téléchargé (${dwc.length} enregistrements). ${
         includePreciseCoords
-          ? "⚠️ Accès aux coordonnées précises consigné dans 'export_audit_log'."
+          ? "Accès aux coordonnées précises consigné dans 'export_audit_log'."
           : "Coordonnées publiques généralisées à 1 km."
       }`
     );
@@ -296,8 +297,8 @@ export const DataExporter: React.FC = () => {
 
       {downloadNotice && (
         <div className="bg-teal-50 border border-teal-200 text-teal-800 px-4 py-3 rounded-xl text-sm flex items-center justify-between">
-          <span>✓ {downloadNotice}</span>
-          <button onClick={() => setDownloadNotice(null)} className="text-teal-600 font-bold ml-4">✕</button>
+          <span className="inline-flex items-center gap-2"><Check className="w-4 h-4" aria-hidden />{downloadNotice}</span>
+          <button onClick={() => setDownloadNotice(null)} className="text-teal-600 font-bold ml-4" aria-label="Fermer"><X className="w-4 h-4" aria-hidden /></button>
         </div>
       )}
 
@@ -310,7 +311,7 @@ export const DataExporter: React.FC = () => {
         <div className="flex items-start justify-between gap-4">
           <div>
             <div className="flex items-center gap-2">
-              <span className="text-lg">🛡️</span>
+              <ShieldCheck className="w-5 h-5 text-teal-700" aria-hidden />
               <h3 className="text-base font-bold text-slate-800">
                 Mode d'exportation des coordonnées spatiales
               </h3>
@@ -334,7 +335,8 @@ export const DataExporter: React.FC = () => {
         {includePreciseCoords && (
           <div className="mt-4 pt-4 border-t border-amber-200/60 space-y-3">
             <div className="flex items-center gap-2 text-xs font-bold text-amber-800 uppercase tracking-wide">
-              <span>⚠️ Habilitation Chercheur / Audit Obligatoire</span>
+              <TriangleAlert className="w-4 h-4" aria-hidden />
+              <span>Habilitation Chercheur / Audit Obligatoire</span>
             </div>
             <input
               type="text"
@@ -357,7 +359,7 @@ export const DataExporter: React.FC = () => {
         <div className="bg-white rounded-2xl border border-slate-200 p-6 flex flex-col justify-between shadow-sm space-y-4">
           <div className="space-y-2">
             <div className="flex items-center justify-between">
-              <span className="text-2xl">🌍</span>
+              <Globe className="w-7 h-7 text-teal-700" aria-hidden />
               <span className="text-[11px] font-mono px-2 py-0.5 rounded bg-slate-100 text-slate-600">DwC-A / CSV</span>
             </div>
             <h3 className="text-base font-bold text-slate-800">Darwin Core Occurrence</h3>
@@ -378,7 +380,7 @@ export const DataExporter: React.FC = () => {
         <div className="bg-white rounded-2xl border border-slate-200 p-6 flex flex-col justify-between shadow-sm space-y-4">
           <div className="space-y-2">
             <div className="flex items-center justify-between">
-              <span className="text-2xl">🧬</span>
+              <Dna className="w-7 h-7 text-teal-700" aria-hidden />
               <span className="text-[11px] font-mono px-2 py-0.5 rounded bg-slate-100 text-slate-600">secr / MARK</span>
             </div>
             <h3 className="text-base font-bold text-slate-800">Capture-Recapture (SECR)</h3>
@@ -399,7 +401,7 @@ export const DataExporter: React.FC = () => {
         <div className="bg-white rounded-2xl border border-slate-200 p-6 flex flex-col justify-between shadow-sm space-y-4">
           <div className="space-y-2">
             <div className="flex items-center justify-between">
-              <span className="text-2xl">📐</span>
+              <Ruler className="w-7 h-7 text-teal-700" aria-hidden />
               <span className="text-[11px] font-mono px-2 py-0.5 rounded bg-slate-100 text-slate-600">R Distance</span>
             </div>
             <h3 className="text-base font-bold text-slate-800">Distance Sampling (Transects)</h3>
