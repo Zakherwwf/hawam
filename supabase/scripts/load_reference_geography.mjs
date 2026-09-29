@@ -62,6 +62,71 @@ function readGeoJson(file) {
 const ISO2 = /^[A-Z]{2}$/;
 const lit = (s) => `'${String(s).replace(/'/g, "''")}'`;
 
+// 6 decimals is ~10 cm: far below the boundary data's own accuracy
+const round6 = (c) =>
+  Array.isArray(c[0]) ? c.map(round6) : c.map((v) => Math.round(v * 1e6) / 1e6);
+
+// Douglas-Peucker on one ring (lon/lat degrees), keeping it closed and valid
+function simplifyRing(ring, tolerance) {
+  if (ring.length <= 8) return ring;
+  const keep = new Uint8Array(ring.length);
+  keep[0] = keep[ring.length - 1] = 1;
+  const stack = [[0, ring.length - 1]];
+  while (stack.length) {
+    const [a, b] = stack.pop();
+    const [ax, ay] = ring[a];
+    const [bx, by] = ring[b];
+    const dx = bx - ax;
+    const dy = by - ay;
+    const len2 = dx * dx + dy * dy;
+    let maxD = -1;
+    let idx = -1;
+    for (let i = a + 1; i < b; i++) {
+      const [px, py] = ring[i];
+      let t = len2 ? ((px - ax) * dx + (py - ay) * dy) / len2 : 0;
+      t = Math.max(0, Math.min(1, t));
+      const ex = px - (ax + t * dx);
+      const ey = py - (ay + t * dy);
+      const d = ex * ex + ey * ey;
+      if (d > maxD) {
+        maxD = d;
+        idx = i;
+      }
+    }
+    if (maxD > tolerance * tolerance) {
+      keep[idx] = 1;
+      stack.push([a, idx], [idx, b]);
+    }
+  }
+  const out = ring.filter((_, i) => keep[i]);
+  return out.length >= 4 ? out : ring;
+}
+
+// The Management API rejects requests over ~3.5 MB. The few polygons above
+// MAX_POLYGON_JSON are simplified, starting at ~20 m, until they fit; that is
+// far finer than a country or timezone lookup needs.
+const MAX_POLYGON_JSON = 2_500_000;
+function fitPolygon(polygon) {
+  let rings = round6(polygon);
+  for (let tol = 0.0002; JSON.stringify(rings).length > MAX_POLYGON_JSON && tol < 1; tol *= 2) {
+    rings = round6(polygon.map((ring) => simplifyRing(ring, tol)));
+  }
+  return rings;
+}
+
+// One statement per polygon of a MultiPolygon keeps each request small
+function* parts(geometry) {
+  if (geometry.type === 'MultiPolygon') {
+    for (const polygon of geometry.coordinates) {
+      yield { type: 'Polygon', coordinates: fitPolygon(polygon) };
+    }
+  } else if (geometry.type === 'Polygon') {
+    yield { type: 'Polygon', coordinates: fitPolygon(geometry.coordinates) };
+  } else {
+    yield geometry;
+  }
+}
+
 // Valid polygons only, split into <=255-vertex pieces for fast lookups
 const polygonsSql = (geometry) =>
   `(ST_Dump(ST_Subdivide(ST_CollectionExtract(ST_MakeValid(ST_SetSRID(ST_GeomFromGeoJSON($g$${JSON.stringify(
@@ -76,18 +141,24 @@ function* statements(countries, admin1, timezones) {
     const p = f.properties;
     const iso = [p.ISO_A2, p.ISO_A2_EH].find((c) => ISO2.test(c ?? ''));
     if (!iso || !f.geometry) continue;
-    yield `INSERT INTO public.ref_countries (iso_a2, name, geom) SELECT ${lit(iso)}, ${lit(p.NAME)}, ${polygonsSql(f.geometry)};`;
+    for (const g of parts(f.geometry)) {
+      yield `INSERT INTO public.ref_countries (iso_a2, name, geom) SELECT ${lit(iso)}, ${lit(p.NAME)}, ${polygonsSql(g)};`;
+    }
   }
 
   for (const f of admin1) {
     const p = f.properties;
     if (!ISO2.test(p.iso_a2 ?? '') || !p.iso_3166_2 || !f.geometry) continue;
-    yield `INSERT INTO public.ref_admin1 (code, iso_a2, name, geom) SELECT ${lit(p.iso_3166_2)}, ${lit(p.iso_a2)}, ${lit(p.name ?? p.iso_3166_2)}, ${polygonsSql(f.geometry)};`;
+    for (const g of parts(f.geometry)) {
+      yield `INSERT INTO public.ref_admin1 (code, iso_a2, name, geom) SELECT ${lit(p.iso_3166_2)}, ${lit(p.iso_a2)}, ${lit(p.name ?? p.iso_3166_2)}, ${polygonsSql(g)};`;
+    }
   }
 
   for (const f of timezones) {
     if (!f.properties?.tzid || !f.geometry) continue;
-    yield `INSERT INTO public.ref_timezones (tzid, geom) SELECT ${lit(f.properties.tzid)}, ${polygonsSql(f.geometry)};`;
+    for (const g of parts(f.geometry)) {
+      yield `INSERT INTO public.ref_timezones (tzid, geom) SELECT ${lit(f.properties.tzid)}, ${polygonsSql(g)};`;
+    }
   }
 
   yield 'COMMIT;';
@@ -109,7 +180,7 @@ console.info(
 
 if (viaApi) {
   // The Management API runs one request at a time, so there is no transaction
-  // spanning the load; statements are sent in ~2 MB batches.
+  // spanning the load; statements are sent in ~1 MB batches.
   const run = async (query, attempt = 1) => {
     const res = await fetch(`https://api.supabase.com/v1/projects/${projectRef}/database/query`, {
       method: 'POST',
@@ -141,7 +212,7 @@ if (viaApi) {
     size = 0;
   };
   for (const sql of work) {
-    if (size + sql.length > 2_000_000) await flush();
+    if (size + sql.length > 1_000_000) await flush();
     batch.push(sql);
     size += sql.length;
   }
