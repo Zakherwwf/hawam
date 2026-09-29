@@ -6,13 +6,15 @@
  *   ref_timezones  <- timezone-boundary-builder full "with oceans" set (every IANA tzid)
  * then backfills country / admin1 / timezone on existing observations.
  *
- * Usage:
+ * Usage, either:
  *   DATABASE_URL=postgresql://postgres:<password>@db.<ref>.supabase.co:5432/postgres \
- *     node supabase/scripts/load_reference_geography.mjs
+ *     node supabase/scripts/load_reference_geography.mjs          (psql, one transaction)
+ *   SUPABASE_ACCESS_TOKEN=sbp_... SUPABASE_PROJECT_REF=<ref> \
+ *     node supabase/scripts/load_reference_geography.mjs          (Management API, batched)
  *
- * Needs `psql` and `unzip` on PATH. Downloads (~110 MB) are cached in
- * supabase/.cache/geography and reused on later runs. Safe to re-run: each
- * table is replaced inside one transaction.
+ * Needs `unzip` (and `psql` for the first form). Downloads (~110 MB) are cached
+ * in supabase/.cache/geography and reused on later runs. Safe to re-run: the
+ * tables are truncated and reloaded.
  */
 import { spawn, execFileSync } from 'node:child_process';
 import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs';
@@ -29,8 +31,11 @@ const SOURCES = {
 };
 
 const databaseUrl = process.env.DATABASE_URL;
-if (!databaseUrl) {
-  console.error('Set DATABASE_URL to the Postgres connection string.');
+const accessToken = process.env.SUPABASE_ACCESS_TOKEN;
+const projectRef = process.env.SUPABASE_PROJECT_REF;
+const viaApi = !databaseUrl && !!accessToken && !!projectRef;
+if (!databaseUrl && !viaApi) {
+  console.error('Set DATABASE_URL, or SUPABASE_ACCESS_TOKEN and SUPABASE_PROJECT_REF.');
   process.exit(1);
 }
 
@@ -102,18 +107,60 @@ console.info(
   `Loading ${countries.length} countries, ${admin1.length} regions, ${timezones.length} timezones...`
 );
 
-const psql = spawn('psql', [databaseUrl, '-v', 'ON_ERROR_STOP=1', '-q', '-t', '-A'], {
-  stdio: ['pipe', 'inherit', 'inherit'],
-});
-const done = new Promise((resolve, reject) =>
-  psql.on('close', (code) => (code === 0 ? resolve() : reject(new Error(`psql exited ${code}`))))
-);
+if (viaApi) {
+  // The Management API runs one request at a time, so there is no transaction
+  // spanning the load; statements are sent in ~2 MB batches.
+  const run = async (query, attempt = 1) => {
+    const res = await fetch(`https://api.supabase.com/v1/projects/${projectRef}/database/query`, {
+      method: 'POST',
+      headers: { Authorization: `Bearer ${accessToken}`, 'Content-Type': 'application/json' },
+      body: JSON.stringify({ query }),
+    });
+    const body = await res.text();
+    if (!res.ok) {
+      if (attempt < 3 && res.status >= 500) return run(query, attempt + 1);
+      throw new Error(`Management API ${res.status}: ${body.slice(0, 300)}`);
+    }
+    return JSON.parse(body);
+  };
 
-for (const sql of statements(countries, admin1, timezones)) {
-  if (!psql.stdin.write(sql + '\n')) {
-    await new Promise((r) => psql.stdin.once('drain', r));
+  const all = [...statements(countries, admin1, timezones)].filter(
+    (sql) => sql !== 'BEGIN;' && sql !== 'COMMIT;'
+  );
+  const reports = all.filter((sql) => sql.startsWith('SELECT '));
+  const work = all.filter((sql) => !sql.startsWith('SELECT '));
+  let batch = [];
+  let size = 0;
+  let sent = 0;
+  const flush = async () => {
+    if (!batch.length) return;
+    await run(batch.join('\n'));
+    sent += batch.length;
+    process.stdout.write(`\r  ${sent}/${work.length} statements`);
+    batch = [];
+    size = 0;
+  };
+  for (const sql of work) {
+    if (size + sql.length > 2_000_000) await flush();
+    batch.push(sql);
+    size += sql.length;
   }
+  await flush();
+  process.stdout.write('\n');
+  for (const sql of reports) console.info(Object.values((await run(sql))[0] ?? {})[0]);
+} else {
+  const psql = spawn('psql', [databaseUrl, '-v', 'ON_ERROR_STOP=1', '-q', '-t', '-A'], {
+    stdio: ['pipe', 'inherit', 'inherit'],
+  });
+  const done = new Promise((resolve, reject) =>
+    psql.on('close', (code) => (code === 0 ? resolve() : reject(new Error(`psql exited ${code}`))))
+  );
+  for (const sql of statements(countries, admin1, timezones)) {
+    if (!psql.stdin.write(sql + '\n')) {
+      await new Promise((r) => psql.stdin.once('drain', r));
+    }
+  }
+  psql.stdin.end();
+  await done;
 }
-psql.stdin.end();
-await done;
 console.info('Reference geography loaded.');
