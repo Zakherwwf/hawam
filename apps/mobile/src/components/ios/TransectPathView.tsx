@@ -260,7 +260,7 @@ const styles = StyleSheet.create({
   liveText: {
     fontSize: 10,
     fontWeight: '800',
-    color: IOSColors.systemGreen,
+    color: IOSColors.successText,
     letterSpacing: 0.5,
   },
   canvasWrapper: {

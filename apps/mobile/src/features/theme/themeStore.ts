@@ -8,44 +8,14 @@
 
 import { create } from 'zustand';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import { dayTheme, nightTheme, type AppTheme } from '@tunisia-survey/design-tokens';
 
 export type ThemeMode = 'day' | 'night';
 
-export interface ThemeColors {
-  isNight: boolean;
-  backgroundGradient: readonly [string, string, string];
-  screenBg: string;
-  cardBg: string;
-  textPrimary: string;
-  textSecondary: string;
-  border: string;
-  statusBarStyle: 'dark' | 'light';
-  pillBg: string;
-}
-
-export const DAY_THEME: ThemeColors = {
-  isNight: false,
-  backgroundGradient: ['#FDF2EC', '#FAF5EE', '#F3F6F2'] as const,
-  screenBg: '#F7F6F2',
-  cardBg: '#FFFFFF',
-  textPrimary: '#0F172A',
-  textSecondary: '#64748B',
-  border: '#E2E8F0',
-  statusBarStyle: 'dark',
-  pillBg: '#F1F5F9',
-};
-
-export const NIGHT_THEME: ThemeColors = {
-  isNight: true,
-  backgroundGradient: ['#0B1120', '#0F172A', '#1E293B'] as const,
-  screenBg: '#0B1120',
-  cardBg: '#1E293B',
-  textPrimary: '#F8FAFC',
-  textSecondary: '#94A3B8',
-  border: '#334155',
-  statusBarStyle: 'light',
-  pillBg: '#1E293B',
-};
+// Palettes live in packages/design-tokens
+export type ThemeColors = AppTheme;
+export const DAY_THEME: ThemeColors = dayTheme;
+export const NIGHT_THEME: ThemeColors = nightTheme;
 
 interface ThemeState {
   themeMode: ThemeMode;

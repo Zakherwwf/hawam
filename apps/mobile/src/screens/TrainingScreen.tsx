@@ -671,7 +671,7 @@ const styles = StyleSheet.create({
   },
   optionTextCorrect: {
     ...IOSTypography.subheadline,
-    color: IOSColors.systemGreen,
+    color: IOSColors.successText,
     fontWeight: '700',
     flex: 1,
     lineHeight: 18,
