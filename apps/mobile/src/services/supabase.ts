@@ -4,6 +4,7 @@
  */
 
 import type { ColonyRow, RouteRow, colonyToServer } from '../features/sync/serverMapping';
+import type { IndividualRow } from '../features/animals/knownAnimals';
 import { createClient } from '@supabase/supabase-js';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
@@ -121,6 +122,14 @@ export interface SurveyBundlePayload {
     behaviour?: string;
     habitat_type?: string;
     coat_pattern?: string;
+    /** Re-identification: register a new animal or propose a resighting */
+    individual?: {
+      id: string;
+      new?: boolean;
+      nickname?: string;
+      coat_pattern?: string;
+      decision?: 'same' | 'unsure';
+    };
   }>;
   photos?: Array<{
     id: string;
@@ -315,15 +324,13 @@ export async function pushColonyVisit(v: {
   notes?: string;
 }): Promise<boolean> {
   try {
-    const { error } = await supabase
-      .from('colony_visits')
-      .insert({
-        id: v.id,
-        colony_id: v.colonyId,
-        visited_at: v.visitedAt,
-        tags: v.tags,
-        notes: v.notes ?? null,
-      });
+    const { error } = await supabase.from('colony_visits').insert({
+      id: v.id,
+      colony_id: v.colonyId,
+      visited_at: v.visitedAt,
+      tags: v.tags,
+      notes: v.notes ?? null,
+    });
     return !error || error.code === '23505';
   } catch {
     return false;
@@ -333,16 +340,21 @@ export async function pushColonyVisit(v: {
 /**
  * Pulls known individuals for capture-recapture from PostgreSQL
  */
-export async function pullKnownIndividuals() {
+/** Known animals with last position, photo and flanks (individuals_app); null offline. */
+export async function pullKnownAnimals(): Promise<IndividualRow[] | null> {
   try {
-    const { data, error } = await supabase.from('individuals').select('*');
+    const { data, error } = await supabase
+      .from('individuals_app')
+      .select(
+        'id, species, nickname, coat_pattern, created_by, last_seen, sightings_count, latitude, longitude, photo_path, has_left_flank, has_right_flank'
+      )
+      .limit(5000);
     if (error) {
-      console.warn('Error fetching individuals from Supabase:', error);
-      return [];
+      console.warn('Error fetching known animals:', error.message);
+      return null;
     }
-    return data || [];
-  } catch (err) {
-    console.warn('Network error fetching individuals:', err);
-    return [];
+    return (data ?? []) as IndividualRow[];
+  } catch {
+    return null;
   }
 }

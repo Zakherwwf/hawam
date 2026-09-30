@@ -10,6 +10,7 @@
 import type { SurveyBundlePayload } from '../../services/supabase.ts';
 import type { InSurveyDetection, RawTrackPoint } from './surveyStore.ts';
 import { simplifyGpsTrack } from '../../services/georef/geoUtils.ts';
+import { linkPayload } from '../animals/knownAnimals.ts';
 
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 const SERVER_CODE = /^(CAT|DOG|OBS)-\d+$/;
@@ -84,6 +85,8 @@ export function buildWalkBundle({
       age_class: d.age_class,
       ear_tip_or_notch: d.ear_tip_or_notch,
       visible_health_issues: d.visible_health_issues?.length ? d.visible_health_issues : undefined,
+      coat_pattern: d.coat_pattern,
+      individual: linkPayload(d.link),
     };
   });
 
@@ -95,7 +98,7 @@ export function buildWalkBundle({
             id: newId(),
             observation_id: observations[i].id,
             storage_path: uri,
-            angle: 'other' as const,
+            angle: d.photoAngle ?? ('other' as const),
             taken_at: d.observed_at,
           },
         ]

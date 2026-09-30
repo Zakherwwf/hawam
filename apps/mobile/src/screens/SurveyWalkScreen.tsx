@@ -24,7 +24,7 @@ import { useSurveyStore, type InSurveyDetection } from '../features/survey/surve
 import { useRoutesStore } from '../features/routes/routesStore';
 import { useSyncStore } from '../features/sync/syncStore';
 import { buildWalkBundle } from '../features/survey/buildWalkBundle';
-import { nearbyTags, surveyXpPreview, timeOfDay } from '../features/survey/walkMath';
+import { surveyXpPreview, timeOfDay } from '../features/survey/walkMath';
 import { computeAnimalLocation } from '../services/georef/geoUtils';
 import { generateUUID } from '../utils/uuid';
 import { PREVIEW_MODE } from '../app-state/previewData';
@@ -580,9 +580,6 @@ export function SurveyWalkScreen({
       <LogAnimalSheet
         detection={editing}
         heading={here?.heading}
-        tagSuggestions={
-          editing && here ? nearbyTags(sightings, editing.species, here.lat, here.lon) : []
-        }
         onSave={saveDetection}
         onDelete={(id) => {
           useSurveyStore.getState().deleteDetection(id);

@@ -13,6 +13,7 @@ import i18n, { setAppLanguage } from '../i18n';
 import { useToast } from '../ui/Toast';
 import { useRoutesStore } from '../features/routes/routesStore';
 import { useColoniesStore } from '../features/colonies/coloniesStore';
+import { linkPayload, useKnownAnimals } from '../features/animals/knownAnimals';
 import { syncSharedData } from '../features/sync/sharedSync';
 import { quickSightingXp } from '../features/gamification/progress';
 import { CURRENT_CONSENT_VERSION } from '../screens/ConsentScreen';
@@ -29,7 +30,13 @@ import {
   type MapObservationRow,
 } from '../services/supabase';
 import { labelOwnSightings, mergeForMap } from './mergeSightings';
-import { PREVIEW_ACCOUNT, PREVIEW_MODE, PREVIEW_SIGHTINGS, PREVIEW_STATS } from './previewData';
+import {
+  PREVIEW_ACCOUNT,
+  PREVIEW_KNOWN_ANIMALS,
+  PREVIEW_MODE,
+  PREVIEW_SIGHTINGS,
+  PREVIEW_STATS,
+} from './previewData';
 import { handleAuthUrl } from '../services/deepLinkAuth';
 import { startOutboxWorker } from '../services/sync/outboxWorker';
 import {
@@ -152,6 +159,8 @@ export function AppStateProvider({ children }: { children: React.ReactNode }) {
   useEffect(() => {
     useRoutesStore.getState().loadRoutes();
     useColoniesStore.getState().loadColonies();
+    if (PREVIEW_MODE) useKnownAnimals.getState().replace(PREVIEW_KNOWN_ANIMALS);
+    else useKnownAnimals.getState().load();
   }, []);
   useEffect(() => {
     if (userAccount && !PREVIEW_MODE) syncSharedData();
@@ -470,6 +479,8 @@ export function AppStateProvider({ children }: { children: React.ReactNode }) {
           behaviour: observation.behaviour,
           habitat_type: observation.habitat_type,
           gps_accuracy_m: observation.gps_accuracy_m,
+          coat_pattern: observation.coat_pattern,
+          individual: linkPayload(observation.link),
         },
       ],
       photos: photosToSave.map((p) => ({

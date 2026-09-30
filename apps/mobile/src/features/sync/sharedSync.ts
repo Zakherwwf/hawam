@@ -5,11 +5,13 @@
 
 import {
   supabase,
+  pullKnownAnimals,
   pullRoutes,
   pullSharedColonies,
   pushColony,
   pushColonyVisit,
 } from '../../services/supabase';
+import { animalFromServer, useKnownAnimals } from '../animals/knownAnimals';
 import { useRoutesStore, type FixedRoute } from '../routes/routesStore';
 import { useColoniesStore } from '../colonies/coloniesStore';
 import { colonyFromServer, colonyToServer, routeFromServer } from './serverMapping';
@@ -36,6 +38,9 @@ export function syncSharedData(): Promise<void> {
         .filter((r): r is FixedRoute => r != null);
       useRoutesStore.getState().mergeServerRoutes(merged);
     }
+
+    const animals = await pullKnownAnimals();
+    if (animals) useKnownAnimals.getState().replace(animals.map(animalFromServer));
 
     await useColoniesStore.getState().syncWithServer({
       userId,

@@ -27,6 +27,8 @@ import {
 } from '../ui';
 import type { SightingItem } from '../app-state/types';
 import { useSyncStore } from '../features/sync/syncStore';
+import { useKnownAnimals } from '../features/animals/knownAnimals';
+import { supabase } from '../services/supabase';
 import { resolveAnimalPhotoUrl } from '../services/storageService';
 import { formatCoordinates, formatDay, formatObservedAt } from '../utils/formatObservation';
 
@@ -81,20 +83,19 @@ export function SightingsTab({
     return groups;
   }, [filtered, t]);
 
-  const known = useMemo(() => {
-    const m = new Map<string, SightingItem[]>();
-    for (const s of sightings) {
-      const tag = s.identifier?.trim();
-      if (!tag) continue;
-      m.set(tag, [...(m.get(tag) ?? []), s]);
-    }
-    return [...m.entries()]
-      .map(([tag, items]) => ({
-        tag,
-        items: items.sort((a, b) => b.observed_at.localeCompare(a.observed_at)),
-      }))
-      .sort((a, b) => b.items.length - a.items.length || a.tag.localeCompare(b.tag));
-  }, [sightings]);
+  // Animals this volunteer registered, as the server knows them
+  const animals = useKnownAnimals((st) => st.animals);
+  const [me, setMe] = useState<string | null>(null);
+  useEffect(() => {
+    supabase.auth.getSession().then(({ data }) => setMe(data.session?.user.id ?? null));
+  }, []);
+  const mine = useMemo(
+    () =>
+      animals
+        .filter((a) => a.createdBy && a.createdBy === me)
+        .sort((x, y) => y.sightings - x.sightings),
+    [animals, me]
+  );
 
   const cats = sightings.filter((s) => s.species === 'cat').length;
   const dogs = sightings.filter((s) => s.species === 'dog').length;
@@ -200,28 +201,36 @@ export function SightingsTab({
                 ))
               )}
             </>
-          ) : known.length === 0 ? (
+          ) : mine.length === 0 ? (
             <EmptyState
               icon="eye"
-              title={t('ui_sightings_v3.known_empty_title')}
-              message={t('ui_sightings_v3.known_empty_body')}
+              title={t('ui_reid.mine_empty_title')}
+              message={t('ui_reid.mine_empty_body')}
             />
           ) : (
-            <Section footer={t('ui_sightings_v3.known_footer')}>
-              {known.map((k) => (
+            <Section footer={t('ui_reid.mine_footer')}>
+              {mine.map((a) => (
                 <Row
-                  key={k.tag}
+                  key={a.id}
                   icon="paw"
-                  iconColor={k.items[0].species === 'dog' ? c.dog : c.cat}
-                  title={k.tag}
-                  subtitle={t('ui_sightings_v3.seen_times', {
-                    count: k.items.length,
-                    when: formatObservedAt(k.items[0].observed_at, {
-                      today: t('ui_common.today'),
-                      yesterday: t('ui_common.yesterday'),
-                    }),
-                  })}
-                  onPress={() => setOpen(k.items[0])}
+                  iconColor={a.species === 'dog' ? c.dog : c.cat}
+                  title={
+                    a.nickname ||
+                    t(a.species === 'dog' ? 'ui_reid.unnamed_dog' : 'ui_reid.unnamed_cat')
+                  }
+                  subtitle={[
+                    t('ui_reid.seen_times', { count: a.sightings }),
+                    a.lastSeen
+                      ? formatObservedAt(a.lastSeen, {
+                          today: t('ui_common.today'),
+                          yesterday: t('ui_common.yesterday'),
+                        })
+                      : null,
+                    a.coatPattern ? t(`ui_reid.coat_${a.coatPattern}`) : null,
+                  ]
+                    .filter(Boolean)
+                    .join(' · ')}
+                  chevron={false}
                 />
               ))}
             </Section>

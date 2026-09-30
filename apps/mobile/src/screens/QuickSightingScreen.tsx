@@ -44,6 +44,8 @@ import {
   useTheme,
 } from '../ui';
 import { quickSightingXp } from '../features/gamification/progress';
+import { KnownAnimalPicker, type PhotoAngle } from '../components/animals/KnownAnimalPicker';
+import { COAT_PATTERNS, type AnimalLink, type CoatPattern } from '../features/animals/knownAnimals';
 
 export interface QuickSightingPayload {
   species: Species;
@@ -60,7 +62,9 @@ export interface QuickSightingPayload {
   longitude: number;
   gps_accuracy_m?: number;
   observed_at: string;
-  photos: { uri: string; angle: 'other'; timestamp: string }[];
+  photos: { uri: string; angle: PhotoAngle; timestamp: string }[];
+  link: AnimalLink;
+  coat_pattern?: CoatPattern;
 }
 
 const HEALTH: HealthIssue[] = [
@@ -84,6 +88,9 @@ export function QuickSightingScreen({
   const insets = useSafeAreaInsets();
 
   const [photo, setPhoto] = useState<{ uri: string; timestamp: string } | null>(null);
+  const [link, setLink] = useState<AnimalLink>({ kind: 'none' });
+  const [photoAngle, setPhotoAngle] = useState<PhotoAngle>('other');
+  const [coat, setCoat] = useState<CoatPattern | undefined>();
   const [species, setSpecies] = useState<Species | null>(null);
   const [count, setCount] = useState(1);
   const [more, setMore] = useState(false);
@@ -96,6 +103,8 @@ export function QuickSightingScreen({
   const [notes, setNotes] = useState('');
   const [fix, setFix] = useState<{ lat: number; lon: number; acc?: number } | null>(null);
   const [gps, setGps] = useState<'finding' | 'ok' | 'denied' | 'failed'>('finding');
+  // A known animal belongs to one species; changing species clears the choice
+  useEffect(() => setLink({ kind: 'none' }), [species]);
   const [saving, setSaving] = useState(false);
   const observedAt = useRef(new Date().toISOString()).current;
 
@@ -205,7 +214,9 @@ export function QuickSightingScreen({
       longitude: f.lon,
       gps_accuracy_m: f.acc,
       observed_at: observedAt,
-      photos: photo ? [{ uri: photo.uri, angle: 'other', timestamp: photo.timestamp }] : [],
+      photos: photo ? [{ uri: photo.uri, angle: photoAngle, timestamp: photo.timestamp }] : [],
+      link: link.kind === 'new' ? { ...link, coatPattern: coat } : link,
+      coat_pattern: coat,
     });
   };
 
@@ -414,6 +425,43 @@ export function QuickSightingScreen({
               onPress={() => setCount((n) => Math.min(MAX_GROUP, n + 1))}
             />
           </View>
+
+          {/* Re-identification and coat */}
+          {species && species !== 'unknown' ? (
+            <View style={{ gap: 16 }}>
+              <KnownAnimalPicker
+                species={species}
+                lat={fix?.lat}
+                lon={fix?.lon}
+                value={link}
+                onChange={setLink}
+                hasPhoto={!!photo}
+                photoAngle={photoAngle}
+                onPhotoAngle={setPhotoAngle}
+                onTakePhoto={() => takePhoto('camera')}
+              />
+              <View style={{ gap: 8 }}>
+                <View>
+                  <Text variant="subhead" weight="600">
+                    {t('ui_reid.coat')}
+                  </Text>
+                  <Text variant="footnote" tone="ink2">
+                    {t('ui_reid.coat_hint')}
+                  </Text>
+                </View>
+                <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 8 }}>
+                  {COAT_PATTERNS.map((p) => (
+                    <Chip
+                      key={p}
+                      label={t(`ui_reid.coat_${p}`)}
+                      selected={coat === p}
+                      onPress={() => setCoat(coat === p ? undefined : p)}
+                    />
+                  ))}
+                </View>
+              </View>
+            </View>
+          ) : null}
 
           {/* 4. Location status */}
           <View

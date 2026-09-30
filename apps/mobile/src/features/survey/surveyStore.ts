@@ -45,6 +45,11 @@ export interface InSurveyDetection {
   age_class?: 'juvenile' | 'adult' | 'unknown';
   ear_tip_or_notch?: 'yes' | 'no' | 'unknown';
   visible_health_issues?: string[];
+  /** Re-identification decision for this sighting */
+  link?: import('../animals/knownAnimals.ts').AnimalLink;
+  coat_pattern?: import('../animals/knownAnimals.ts').CoatPattern;
+  /** Which side the single photo shows */
+  photoAngle?: 'left_flank' | 'right_flank' | 'other';
 }
 
 export interface RawTrackPoint {

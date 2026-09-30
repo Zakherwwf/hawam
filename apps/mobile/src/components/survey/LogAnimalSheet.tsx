@@ -12,6 +12,8 @@ import { useTranslation } from 'react-i18next';
 import type { InSurveyDetection } from '../../features/survey/surveyStore';
 import { DISTANCE_CHIPS, bearingFromSide, type Side } from '../../features/survey/walkMath';
 import { promptPhotoCaptureChoice } from '../../services/cameraService';
+import { KnownAnimalPicker } from '../animals/KnownAnimalPicker';
+import { COAT_PATTERNS } from '../../features/animals/knownAnimals';
 import {
   AnimalFace,
   Button,
@@ -30,7 +32,6 @@ const HEALTH = ['skin_lesions_mange', 'wound', 'limp', 'eye_nose_discharge', 'tu
 export function LogAnimalSheet({
   detection,
   heading,
-  tagSuggestions,
   onSave,
   onDelete,
   onClose,
@@ -38,7 +39,6 @@ export function LogAnimalSheet({
   detection: InSurveyDetection | null;
   /** Walking direction from GPS, used for the left/ahead/right shortcut */
   heading?: number;
-  tagSuggestions: string[];
   onSave: (d: InSurveyDetection) => void;
   onDelete: (id: string) => void;
   onClose: () => void;
@@ -227,37 +227,31 @@ export function LogAnimalSheet({
           ) : null}
         </View>
 
-        {/* Tag */}
-        {label(t('ui_sightings_v3.tag'), t('ui_sightings_v3.tag_hint'))}
-        <TextInput
-          value={
-            d.identifier && /^(CAT|DOG|OBS)-\d+$/.test(d.identifier) ? '' : (d.identifier ?? '')
-          }
-          onChangeText={(v) => set({ identifier: v })}
-          placeholder={t('ui_sightings_v3.tag_placeholder')}
-          placeholderTextColor={c.ink3}
-          style={input}
-          maxLength={40}
-          accessibilityLabel={t('ui_sightings_v3.tag')}
-        />
-        {tagSuggestions.length ? (
-          <View style={{ marginTop: 8, marginBottom: 4 }}>
-            <Text variant="footnote" tone="ink2" style={{ marginBottom: 6 }}>
-              {t('ui_walk.seen_before')}
-            </Text>
-            <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 8 }}>
-              {tagSuggestions.map((tag) => (
-                <Chip
-                  key={tag}
-                  label={tag}
-                  icon="eye"
-                  selected={d.identifier === tag}
-                  onPress={() => set({ identifier: tag })}
-                />
-              ))}
-            </View>
-          </View>
-        ) : null}
+        {/* Re-identification and coat */}
+        <View style={{ marginBottom: 20 }}>
+          <KnownAnimalPicker
+            species={d.species}
+            lat={d.observer_lat}
+            lon={d.observer_lon}
+            value={d.link ?? { kind: 'none' }}
+            onChange={(link) => set({ link })}
+            hasPhoto={!!photo}
+            photoAngle={d.photoAngle ?? 'other'}
+            onPhotoAngle={(photoAngle) => set({ photoAngle })}
+            onTakePhoto={takePhoto}
+          />
+        </View>
+        {label(t('ui_reid.coat'), t('ui_reid.coat_hint'))}
+        <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 8, marginBottom: 8 }}>
+          {COAT_PATTERNS.map((p) => (
+            <Chip
+              key={p}
+              label={t(`ui_reid.coat_${p}`)}
+              selected={d.coat_pattern === p}
+              onPress={() => set({ coat_pattern: d.coat_pattern === p ? undefined : p })}
+            />
+          ))}
+        </View>
 
         {/* More details */}
         <Press
@@ -401,7 +395,13 @@ export function LogAnimalSheet({
         <Button
           title={t('common.done')}
           icon="check"
-          onPress={() => onSave(d)}
+          onPress={() =>
+            onSave(
+              d.link?.kind === 'new'
+                ? { ...d, link: { ...d.link, coatPattern: d.coat_pattern } }
+                : d
+            )
+          }
           style={{ flex: 2 }}
         />
       </View>
