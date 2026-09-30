@@ -6,12 +6,15 @@
   "scripts": {
     "dev": "vite",
     "build": "tsc && vite build",
-    "preview": "vite preview"
+    "preview": "vite preview",
+    "test": "node --experimental-strip-types --test test/*.test.ts"
   },
   "dependencies": {
     "@supabase/supabase-js": "^2.117.1",
+    "@tunisia-survey/design-tokens": "workspace:*",
     "@tunisia-survey/shared": "workspace:*",
     "lucide-react": "^0.468.0",
+    "mapbox-gl": "^3.32.0",
     "react": "^18.3.1",
     "react-dom": "^18.3.1"
   },

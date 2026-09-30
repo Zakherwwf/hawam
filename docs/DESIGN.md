@@ -110,3 +110,16 @@ and #B1EC6F lime from board 2, #F1721D orange and sky/grass tones from board
 4), gradient heroes (boards 1 and 3), glass controls and cards, gradient icon
 tiles (board 3), gradient medallions, and vector illustrations (board 4).
 Still not adopted: stock photography and flags (zero-emoji rule).
+
+## Research portal (apps/dashboard)
+
+Same tokens as the app: `packages/design-tokens` is written into CSS variables
+at start-up (`src/lib/theme.ts`), so both products share one palette and both
+schemes. Following the taste skill, dashboards get a calm, dense product layout
+(dials: variance 3, motion 2, density 6): no glass, one brand gradient band for
+the headline effort figures, white cards with the one soft shadow, pill buttons,
+12 px inputs, 18 px cards. Web interface guidelines applied: URL holds the page
+and every filter, Intl formatting, tabular numbers, visible focus, labelled
+controls, skeleton loading, honest empty states, reduced motion, dark mode with
+`color-scheme`. Data is real and read through RLS as the signed-in researcher;
+`VITE_PREVIEW=1` (development only) serves sample data for design review.
