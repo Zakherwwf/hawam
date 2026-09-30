@@ -3,6 +3,10 @@
 # Usage: bash supabase/scripts/set_role.sh someone@example.org admin
 # After the first admin exists, roles are managed in the research portal.
 set -euo pipefail
+if [ $# -ne 2 ]; then
+  echo "Usage: bash supabase/scripts/set_role.sh <email> <volunteer|trained_surveyor|researcher|admin>"
+  exit 1
+fi
 EMAIL="$1"; ROLE="$2"
 case "$ROLE" in volunteer|trained_surveyor|researcher|admin) ;; *) echo "Unknown role: $ROLE"; exit 1;; esac
 REF="${SUPABASE_PROJECT_REF:-opglgsidxoedlmgegojz}"
