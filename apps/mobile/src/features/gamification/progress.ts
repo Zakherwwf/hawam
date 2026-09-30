@@ -323,3 +323,25 @@ export function recentWeeks(
   const current = weekIndex(now);
   return Array.from({ length: n }, (_, i) => weeks.has(current - (n - 1 - i)));
 }
+
+/** This week, Monday to Sunday: kilometres and minutes surveyed per day, and today's index. */
+export function weekDays(
+  sessions: SessionSummary[],
+  now = new Date()
+): { km: number[]; minutes: number[]; today: number } {
+  const start = weekStart(now);
+  const km = new Array(7).fill(0);
+  const minutes = new Array(7).fill(0);
+  for (const s of sessions) {
+    const d = new Date(s.start_time);
+    const day = Math.floor(
+      (new Date(d.getFullYear(), d.getMonth(), d.getDate()).getTime() - start.getTime()) /
+        86400000 +
+        0.5
+    );
+    if (day < 0 || day > 6) continue;
+    km[day] += s.distance_km ?? 0;
+    minutes[day] += s.duration_min ?? 0;
+  }
+  return { km: km.map((v) => Math.round(v * 10) / 10), minutes, today: (now.getDay() + 6) % 7 };
+}

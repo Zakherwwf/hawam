@@ -17,7 +17,17 @@ import { CreateColonyModal } from '../components/colonies/CreateColonyModal';
 import { useColoniesStore, type CatColony } from '../features/colonies/coloniesStore';
 import { useSyncStore } from '../features/sync/syncStore';
 import type { SightingItem } from '../app-state/types';
-import { Button, IconButton, Press, Symbol, Text, useTabClearance, useTheme } from '../ui';
+import {
+  Button,
+  IconButton,
+  Press,
+  Symbol,
+  Tag,
+  Text,
+  useCardShadow,
+  useTabClearance,
+  useTheme,
+} from '../ui';
 import { formatCoordinates, formatObservedAt } from '../utils/formatObservation';
 
 type Layer = 'all' | 'cat' | 'dog' | 'colonies';
@@ -244,76 +254,7 @@ export function MapTab({
       {/* Bottom card: the tapped pin, or what the map shows */}
       <View style={{ position: 'absolute', left: 12, right: 12, bottom: clearance - 12 }}>
         {selected ? (
-          <View
-            style={{
-              backgroundColor: c.surface,
-              borderRadius: radius.lg,
-              padding: 16,
-              gap: 10,
-              borderWidth: 0.5,
-              borderColor: c.hairline,
-            }}
-          >
-            <View style={{ flexDirection: 'row', alignItems: 'flex-start', gap: 12 }}>
-              <View
-                style={{
-                  width: 44,
-                  height: 44,
-                  borderRadius: 12,
-                  backgroundColor:
-                    selected.species === 'dog'
-                      ? c.dogSoft
-                      : selected.species === 'cat'
-                        ? c.catSoft
-                        : c.fill,
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                }}
-              >
-                <Symbol
-                  name="paw"
-                  size={22}
-                  color={
-                    selected.species === 'dog' ? c.dog : selected.species === 'cat' ? c.cat : c.ink3
-                  }
-                  weight="semibold"
-                />
-              </View>
-              <View style={{ flex: 1 }}>
-                <Text variant="headline" tabular>
-                  {selected.publicCode || t('ui_common.code_pending')}
-                </Text>
-                <Text variant="footnote" tone="ink2">
-                  {[
-                    selected.species === 'cat'
-                      ? t('ui_quick.cat')
-                      : selected.species === 'dog'
-                        ? t('ui_quick.dog')
-                        : t('ui_sightings_v3.animal'),
-                    t('ui_quick.count_value', { count: selected.group_size || 1 }),
-                    formatObservedAt(selected.observed_at, {
-                      today: t('ui_common.today'),
-                      yesterday: t('ui_common.yesterday'),
-                    }),
-                  ].join(' · ')}
-                </Text>
-                <Text variant="footnote" tone="ink3" tabular>
-                  {formatCoordinates(selected.latitude, selected.longitude)}
-                </Text>
-                {selected.observer_name ? (
-                  <Text variant="footnote" tone="ink3">
-                    {t('ui_map_v3.seen_by', { name: selected.observer_name })}
-                  </Text>
-                ) : null}
-              </View>
-              <IconButton
-                icon="close"
-                label={t('ui_common.close')}
-                tone="soft"
-                onPress={() => setSelected(null)}
-              />
-            </View>
-          </View>
+          <PinCard s={selected} onClose={() => setSelected(null)} />
         ) : layer === 'colonies' ? (
           <Button
             title={t('ui_map_v3.register_colony')}
@@ -353,6 +294,62 @@ export function MapTab({
         initialLat={here?.latitude ?? focus?.latitude}
         initialLon={here?.longitude ?? focus?.longitude}
       />
+    </View>
+  );
+}
+
+/** The card for a tapped pin: species tag, code, then labelled detail rows. */
+function PinCard({ s, onClose }: { s: SightingItem; onClose: () => void }) {
+  const { t } = useTranslation();
+  const { c, radius } = useTheme();
+  const shadow = useCardShadow();
+  const species =
+    s.species === 'cat'
+      ? t('ui_quick.cat')
+      : s.species === 'dog'
+        ? t('ui_quick.dog')
+        : t('ui_sightings_v3.animal');
+  const detail = (icon: 'clock' | 'pin' | 'profile' | 'paw', text: string) => (
+    <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
+      <Symbol name={icon} size={15} color={c.ink3} />
+      <Text variant="footnote" tone="ink2" tabular numberOfLines={1} style={{ flex: 1 }}>
+        {text}
+      </Text>
+    </View>
+  );
+  return (
+    <View
+      style={[
+        { backgroundColor: c.surface, borderRadius: radius.xl, padding: 20, gap: 12 },
+        shadow,
+      ]}
+    >
+      <View style={{ flexDirection: 'row', alignItems: 'flex-start', gap: 12 }}>
+        <View style={{ flex: 1, gap: 8 }}>
+          <Tag
+            label={species}
+            tone={s.species === 'cat' ? 'cat' : s.species === 'dog' ? 'dog' : 'neutral'}
+          />
+          <Text variant="title2" tabular>
+            {s.publicCode || t('ui_common.code_pending')}
+          </Text>
+        </View>
+        <IconButton icon="close" label={t('ui_common.close')} tone="soft" onPress={onClose} />
+      </View>
+      <View style={{ gap: 6 }}>
+        {detail('paw', t('ui_quick.count_value', { count: s.group_size || 1 }))}
+        {detail(
+          'clock',
+          formatObservedAt(s.observed_at, {
+            today: t('ui_common.today'),
+            yesterday: t('ui_common.yesterday'),
+          })
+        )}
+        {detail('pin', formatCoordinates(s.latitude, s.longitude))}
+        {s.observer_name
+          ? detail('profile', t('ui_map_v3.seen_by', { name: s.observer_name }))
+          : null}
+      </View>
     </View>
   );
 }

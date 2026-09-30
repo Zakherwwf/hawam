@@ -269,7 +269,23 @@
     "xp_cell": "Chaque nouvelle maille de 1 km",
     "xp_photo": "Une photo d'observation",
     "xp_sighting": "Chaque observation",
-    "xp_gain": "+{{xp}} XP"
+    "xp_gain": "+{{xp}} XP",
+    "hi": "Bonjour, {{name}}",
+    "greeting_sub": "Voici votre semaine",
+    "surveyed_this_week": "Relevé cette semaine",
+    "km": "km",
+    "week_minutes_one": "{{count}} minute de relevé",
+    "week_minutes_other": "{{count}} minutes de relevé",
+    "week_bars": "{{km}} km cette semaine, par jour",
+    "start_walk_short": "Relevé",
+    "day_0": "L",
+    "day_1": "M",
+    "day_2": "M",
+    "day_3": "J",
+    "day_4": "V",
+    "day_5": "S",
+    "day_6": "D",
+    "quick_short": "Observation"
   },
   "ui_tabs": {
     "map": "Carte",
@@ -377,7 +393,10 @@
     "tag_hint": "Utilisez la même étiquette quand vous revoyez cet animal.",
     "remove": "Retirer de ce téléphone",
     "remove_title": "Retirer cette observation ?",
-    "remove_body": "Elle est retirée de ce téléphone. Une copie déjà envoyée reste dans les données de recherche."
+    "remove_body": "Elle est retirée de ce téléphone. Une copie déjà envoyée reste dans les données de recherche.",
+    "waiting_tag": "En attente",
+    "times_one": "×{{count}}",
+    "times_other": "×{{count}}"
   },
   "ui_profile": {
     "role_volunteer": "Bénévole",
@@ -412,7 +431,10 @@
     "region": "Région",
     "region_hint": "Facultatif. Là où vous relevez d'habitude.",
     "region_placeholder": "Ville ou région",
-    "create": "Continuer"
+    "create": "Continuer",
+    "personal_info": "Informations",
+    "email": "E-mail",
+    "observer_id_label": "Identifiant"
   },
   "ui_settings_v3": {
     "upload_failed_title": "Pas encore envoyé",
@@ -461,7 +483,12 @@
     "create": "Créer un compte",
     "new_here": "Nouveau ? Créer un compte",
     "have_account": "Déjà un compte ? Se connecter",
-    "privacy": "Vos positions exactes ne sont partagées qu'avec les bénévoles et chercheurs connectés. Les cartes publiques montrent une grille de 1 km."
+    "privacy": "Vos positions exactes ne sont partagées qu'avec les bénévoles et chercheurs connectés. Les cartes publiques montrent une grille de 1 km.",
+    "welcome_title": "Comptez les chats et les chiens de votre rue",
+    "welcome_body": "Marchez, notez ce que vous voyez et aidez les chercheurs à comprendre les animaux qui partagent nos villes. Les zéros comptent aussi.",
+    "get_started": "Commencer",
+    "have_account_q": "Déjà un compte ?",
+    "sign_in": "Se connecter"
   },
   "ui_consent_v3": {
     "step": "Étape {{n}} sur {{total}}",

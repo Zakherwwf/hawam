@@ -4,6 +4,7 @@ import { SymbolView } from 'expo-symbols';
 import {
   Award,
   Bell,
+  Building,
   Camera,
   Check,
   ChevronLeft,
@@ -23,10 +24,12 @@ import {
   List,
   LocateFixed,
   Lock,
+  Mail,
   Map as MapIcon,
   MapPinned,
   Medal,
   Minus,
+  Pencil,
   Moon,
   PawPrint,
   Plus,
@@ -98,6 +101,9 @@ const ICONS = {
   route: { sf: 'point.topleft.down.to.point.bottomright.curvepath', fb: Route },
   pin: { sf: 'mappin.and.ellipse', fb: MapPinned },
   lock: { sf: 'lock', fb: Lock },
+  mail: { sf: 'envelope', fb: Mail },
+  building: { sf: 'building.2', fb: Building },
+  edit: { sf: 'pencil', fb: Pencil },
   star: { sf: 'star', fb: Star },
 } as const;
 

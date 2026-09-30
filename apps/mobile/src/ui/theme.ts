@@ -42,3 +42,20 @@ export function useReducedMotion(): boolean {
   }, []);
   return reduced;
 }
+
+/**
+ * The one card shadow: a faint, wide shadow in light mode that lifts white
+ * cards off the grey canvas without a border. Dark mode relies on the
+ * lighter surface colour instead.
+ */
+export function useCardShadow() {
+  const { dark } = useTheme();
+  if (dark) return {};
+  return {
+    shadowColor: '#1D1D1F',
+    shadowOpacity: 0.06,
+    shadowRadius: 18,
+    shadowOffset: { width: 0, height: 6 },
+    elevation: 2,
+  } as const;
+}

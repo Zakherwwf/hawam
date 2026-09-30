@@ -63,6 +63,16 @@ export const hawemType = {
     footnote: { fontSize: 13, lineHeight: 18, fontWeight: '400' },
     caption: { fontSize: 12, lineHeight: 16, fontWeight: '400' },
 };
-export const hawemSpace = { xxs: 4, xs: 8, sm: 12, md: 16, lg: 20, xl: 24, xxl: 32, xxxl: 48, gutter: 20 };
-export const hawemRadius = { sm: 10, lg: 18, pill: 999 };
+export const hawemSpace = {
+    xxs: 4,
+    xs: 8,
+    sm: 12,
+    md: 16,
+    lg: 20,
+    xl: 24,
+    xxl: 32,
+    xxxl: 48,
+    gutter: 20,
+};
+export const hawemRadius = { sm: 12, lg: 22, xl: 28, pill: 999 };
 export const hawemTouch = { min: 44 };

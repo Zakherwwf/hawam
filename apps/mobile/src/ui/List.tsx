@@ -3,7 +3,7 @@ import { I18nManager, Switch, View, type StyleProp, type ViewStyle } from 'react
 import { Press } from './Press';
 import { Symbol, type SymbolName } from './Symbol';
 import { Text } from './Text';
-import { useTheme } from './theme';
+import { useCardShadow, useTheme } from './theme';
 
 /** Grouped list section: optional header, rounded surface, optional footnote. */
 export function Section({
@@ -21,6 +21,7 @@ export function Section({
   inset?: boolean;
 }) {
   const { c, radius } = useTheme();
+  const shadow = useCardShadow();
   const items = React.Children.toArray(children).filter(Boolean);
   return (
     <View style={[{ marginBottom: 28 }, style]}>
@@ -33,23 +34,24 @@ export function Section({
           {header}
         </Text>
       ) : null}
+      {/* Outer view carries the shadow; the inner one clips pressed rows */}
       <View
         style={
-          inset
-            ? { backgroundColor: c.surface, borderRadius: radius.lg, overflow: 'hidden' }
-            : undefined
+          inset ? [{ backgroundColor: c.surface, borderRadius: radius.lg }, shadow] : undefined
         }
       >
-        {inset
-          ? items.map((child, i) => (
-              <View key={i}>
-                {child}
-                {i < items.length - 1 ? (
-                  <View style={{ height: 0.5, backgroundColor: c.hairline, marginStart: 60 }} />
-                ) : null}
-              </View>
-            ))
-          : children}
+        <View style={inset ? { borderRadius: radius.lg, overflow: 'hidden' } : undefined}>
+          {inset
+            ? items.map((child, i) => (
+                <View key={i}>
+                  {child}
+                  {i < items.length - 1 ? (
+                    <View style={{ height: 0.5, backgroundColor: c.hairline, marginStart: 60 }} />
+                  ) : null}
+                </View>
+              ))
+            : children}
+        </View>
       </View>
       {footer ? (
         <Text variant="footnote" tone="ink2" style={{ marginHorizontal: 16, marginTop: 8 }}>

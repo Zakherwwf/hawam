@@ -10,6 +10,9 @@ import { useTranslation } from 'react-i18next';
 import {
   Button,
   Card,
+  IconButton,
+  SectionHeader,
+  WeekBars,
   ProgressBar,
   ProgressRing,
   Row,
@@ -31,10 +34,12 @@ import {
   recentWeeks,
   weeklyQuests,
   weeklyStreak,
+  weekDays,
   type BadgeProgress,
   type BoardMetric,
   type Quest,
 } from '../features/gamification/progress';
+import { useSyncStore } from '../features/sync/syncStore';
 import {
   useEffortBoard,
   useMySessions,
@@ -44,7 +49,17 @@ import {
 
 const fmtKm = (n: number) => (n >= 100 ? Math.round(n).toString() : n.toFixed(1));
 
-export function ProgressTab({ onStartSurvey }: { onStartSurvey: () => void }) {
+export function ProgressTab({
+  onStartSurvey,
+  onQuickSighting,
+  onOpenUploads,
+  firstName,
+}: {
+  onStartSurvey: () => void;
+  onQuickSighting: () => void;
+  onOpenUploads: () => void;
+  firstName?: string;
+}) {
   const { t } = useTranslation();
   const { c } = useTheme();
   useRefreshProgressOnSync();
@@ -52,6 +67,7 @@ export function ProgressTab({ onStartSurvey }: { onStartSurvey: () => void }) {
   const sessions = useMySessions();
   const board = useEffortBoard();
   const [metric, setMetric] = useState<BoardMetric>('km');
+  const pending = useSyncStore((st) => st.pendingCount);
 
   const s = stats.data;
   const lv = levelProgress(s?.xp ?? 0);
@@ -59,6 +75,10 @@ export function ProgressTab({ onStartSurvey }: { onStartSurvey: () => void }) {
   const streak = weeklyStreak(list);
   const weeks = recentWeeks(list, 8);
   const quests = weeklyQuests(list);
+  const days = weekDays(list);
+  const weekKm = days.km.reduce((a, b) => a + b, 0);
+  const weekMin = Math.round(days.minutes.reduce((a, b) => a + b, 0));
+  const dayLabels = [0, 1, 2, 3, 4, 5, 6].map((i) => t(`ui_progress_v3.day_${i}`));
   const earned = s ? badges(s) : [];
   const ranked = useMemo(
     () => (board.data ? rankBoard(board.data.rows, metric, board.data.meId) : []),
@@ -72,6 +92,28 @@ export function ProgressTab({ onStartSurvey }: { onStartSurvey: () => void }) {
   return (
     <Screen
       title={t('ui_progress_v3.title')}
+      header={
+        <View style={{ flexDirection: 'row', alignItems: 'center', gap: 12, marginBottom: 20 }}>
+          <View style={{ flex: 1 }}>
+            <Text variant="title1" accessibilityRole="header" numberOfLines={1}>
+              {firstName ? t('ui_progress_v3.hi', { name: firstName }) : t('ui_progress_v3.title')}
+            </Text>
+            <Text variant="subhead" tone="ink2">
+              {t('ui_progress_v3.greeting_sub')}
+            </Text>
+          </View>
+          <IconButton
+            icon="bell"
+            label={
+              pending > 0
+                ? t('ui_sightings_v3.waiting', { count: pending })
+                : t('ui_settings_v3.up_to_date')
+            }
+            onPress={onOpenUploads}
+            badge={pending > 0}
+          />
+        </View>
+      }
       onRefresh={() => {
         stats.refetch();
         sessions.refetch();
@@ -87,6 +129,46 @@ export function ProgressTab({ onStartSurvey }: { onStartSurvey: () => void }) {
           </Text>
         </Card>
       ) : null}
+
+      {/* This week: the big number, the daily bars, the two ways to add to it */}
+      <Card style={{ marginBottom: 12 }}>
+        <Text variant="subhead" tone="ink2">
+          {t('ui_progress_v3.surveyed_this_week')}
+        </Text>
+        <View style={{ flexDirection: 'row', alignItems: 'baseline', gap: 6, marginTop: 2 }}>
+          <Text variant="largeTitle" tabular style={{ fontSize: 44, lineHeight: 52 }}>
+            {fmtKm(weekKm)}
+          </Text>
+          <Text variant="title3" tone="ink2">
+            {t('ui_progress_v3.km')}
+          </Text>
+        </View>
+        <Text variant="footnote" tone="ink2" style={{ marginBottom: 16 }}>
+          {t('ui_progress_v3.week_minutes', { count: weekMin })}
+        </Text>
+        <WeekBars
+          values={days.km}
+          labels={dayLabels}
+          highlight={days.today}
+          label={t('ui_progress_v3.week_bars', { km: fmtKm(weekKm) })}
+        />
+        <View style={{ flexDirection: 'row', gap: 10, marginTop: 20 }}>
+          <Button
+            title={t('ui_progress_v3.start_walk_short')}
+            icon="walk"
+            onPress={onStartSurvey}
+            style={{ flex: 1 }}
+          />
+          <Button
+            title={t('ui_progress_v3.quick_short')}
+            accessibilityHint={t('ui_record.quick')}
+            icon="camera"
+            kind="secondary"
+            onPress={onQuickSighting}
+            style={{ flex: 1 }}
+          />
+        </View>
+      </Card>
 
       {/* Level */}
       <Card style={{ flexDirection: 'row', alignItems: 'center', gap: 20, marginBottom: 12 }}>
@@ -202,14 +284,6 @@ export function ProgressTab({ onStartSurvey }: { onStartSurvey: () => void }) {
           <QuestRow key={q.id} q={q} />
         ))}
       </Section>
-      {quests.every((q) => !q.done) && list.length === 0 ? (
-        <Button
-          title={t('ui_progress_v3.start_walk')}
-          icon="walk"
-          onPress={onStartSurvey}
-          style={{ marginTop: -12, marginBottom: 28 }}
-        />
-      ) : null}
 
       {/* Totals */}
       <Card style={{ flexDirection: 'row', marginBottom: 28 }}>
@@ -226,13 +300,7 @@ export function ProgressTab({ onStartSurvey }: { onStartSurvey: () => void }) {
       </Card>
 
       {/* Badges */}
-      <Text
-        variant="title3"
-        accessibilityRole="header"
-        style={{ marginBottom: 8, marginHorizontal: 4 }}
-      >
-        {t('ui_progress_v3.badges')}
-      </Text>
+      <SectionHeader title={t('ui_progress_v3.badges')} />
       <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 12, marginBottom: 28 }}>
         {earned.map((b) => (
           <BadgeTile key={b.id} b={b} />
@@ -240,13 +308,7 @@ export function ProgressTab({ onStartSurvey }: { onStartSurvey: () => void }) {
       </View>
 
       {/* Leaderboard */}
-      <Text
-        variant="title3"
-        accessibilityRole="header"
-        style={{ marginBottom: 4, marginHorizontal: 4 }}
-      >
-        {t('ui_progress_v3.leaderboard')}
-      </Text>
+      <SectionHeader title={t('ui_progress_v3.leaderboard')} style={{ marginBottom: 2 }} />
       <Text variant="footnote" tone="ink2" style={{ marginBottom: 12, marginHorizontal: 4 }}>
         {t('ui_progress_v3.leaderboard_note')}
       </Text>

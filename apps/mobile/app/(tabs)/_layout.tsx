@@ -45,7 +45,14 @@ function TabBar({ state, navigation, onRecord }: BottomTabBarProps & { onRecord:
         accessibilityRole="tab"
         accessibilityLabel={t(d.labelKey)}
         accessibilityState={{ selected: focused }}
-        style={{ flex: 1, minHeight: 52, alignItems: 'center', justifyContent: 'center', gap: 2 }}
+        style={{
+          flex: 1,
+          minHeight: 56,
+          alignItems: 'center',
+          justifyContent: 'center',
+          gap: 2,
+          paddingTop: 4,
+        }}
       >
         <View>
           <Symbol name={d.icon} size={23} color={color} weight={focused ? 'semibold' : 'regular'} />
@@ -82,6 +89,14 @@ function TabBar({ state, navigation, onRecord }: BottomTabBarProps & { onRecord:
         >
           {t(d.labelKey)}
         </Text>
+        <View
+          style={{
+            width: 4,
+            height: 4,
+            borderRadius: 2,
+            backgroundColor: focused ? c.accent : 'transparent',
+          }}
+        />
       </Press>
     );
   };

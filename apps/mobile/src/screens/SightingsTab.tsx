@@ -19,6 +19,7 @@ import {
   Segmented,
   Sheet,
   Symbol,
+  Tag,
   Text,
   useTheme,
 } from '../ui';
@@ -293,7 +294,7 @@ function Thumb({ s, size = 48 }: { s: SightingItem; size?: number }) {
     return (
       <Image
         source={{ uri: url }}
-        style={{ width: size, height: size, borderRadius: 10, backgroundColor: c.fill }}
+        style={{ width: size, height: size, borderRadius: size / 2, backgroundColor: c.fill }}
       />
     );
   return (
@@ -301,7 +302,7 @@ function Thumb({ s, size = 48 }: { s: SightingItem; size?: number }) {
       style={{
         width: size,
         height: size,
-        borderRadius: 10,
+        borderRadius: size / 2,
         backgroundColor: soft,
         alignItems: 'center',
         justifyContent: 'center',
@@ -322,49 +323,41 @@ function speciesLabel(t: (k: string) => string, s: SightingItem['species']) {
 
 function SightingRow({ s, onPress }: { s: SightingItem; onPress: () => void }) {
   const { t } = useTranslation();
-  const { c } = useTheme();
   const title = s.identifier?.trim() || speciesLabel(t, s.species);
   const time = new Date(s.observed_at).toLocaleTimeString([], {
     hour: '2-digit',
     minute: '2-digit',
   });
-  const count = s.group_size > 1 ? ` · ${t('ui_quick.count_value', { count: s.group_size })}` : '';
+  const code = s.publicCode ?? t('ui_common.code_pending');
+  const status = s.syncPending ? t('ui_sightings_v3.waiting_tag') : t('ui_sightings_v3.uploaded');
   return (
     <Press
       onPress={onPress}
-      accessibilityLabel={`${title}${count}, ${time}`}
+      accessibilityLabel={`${title}, ${t('ui_quick.count_value', { count: s.group_size || 1 })}, ${time}, ${status}`}
       style={{
-        minHeight: 68,
+        minHeight: 72,
         paddingHorizontal: 16,
-        paddingVertical: 10,
+        paddingVertical: 12,
         flexDirection: 'row',
         alignItems: 'center',
-        gap: 12,
+        gap: 14,
       }}
     >
-      <Thumb s={s} />
-      <View style={{ flex: 1, minWidth: 0 }}>
-        <Text variant="body" weight="600" numberOfLines={1}>
+      <Thumb s={s} size={48} />
+      <View style={{ flex: 1, minWidth: 0, gap: 2 }}>
+        <Text variant="headline" numberOfLines={1}>
           {title}
-          <Text variant="body" tone="ink2">
-            {count}
-          </Text>
         </Text>
-        <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6, marginTop: 2 }}>
-          {s.syncPending ? <Symbol name="upload" size={13} color={c.warning} /> : null}
-          <Text
-            variant="footnote"
-            style={{ color: s.syncPending ? c.warning : c.ink2 }}
-            numberOfLines={1}
-          >
-            {s.syncPending
-              ? t('ui_sightings_v3.not_uploaded')
-              : (s.publicCode ?? t('ui_common.code_pending'))}{' '}
-            · {time}
-          </Text>
-        </View>
+        <Text variant="footnote" tone="ink2" numberOfLines={1} tabular>
+          {s.syncPending ? time : `${code} · ${time}`}
+        </Text>
       </View>
-      <Symbol name="chevronRight" size={14} color={c.ink3} weight="semibold" />
+      <View style={{ alignItems: 'flex-end', gap: 4 }}>
+        <Text variant="headline" tabular>
+          {t('ui_sightings_v3.times', { count: s.group_size || 1 })}
+        </Text>
+        <Tag label={status} tone={s.syncPending ? 'warning' : 'accent'} />
+      </View>
     </Press>
   );
 }

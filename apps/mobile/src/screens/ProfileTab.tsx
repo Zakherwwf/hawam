@@ -18,8 +18,10 @@ import {
   Section,
   Segmented,
   Symbol,
+  Tag,
   Text,
   useTheme,
+  type SymbolName,
 } from '../ui';
 import type { UserAccount } from '../app-state/types';
 import { useThemeStore } from '../features/theme/themeStore';
@@ -67,36 +69,75 @@ export function ProfileTab({
     );
   }
 
-  const subtitle = [t(`ui_profile.role_${userAccount.role}`), userAccount.organization?.trim()]
-    .filter(Boolean)
-    .join(' · ');
+  const info = (icon: SymbolName, label: string, value?: string) =>
+    value ? (
+      <View
+        key={label}
+        style={{ flexDirection: 'row', alignItems: 'center', gap: 14, paddingVertical: 10 }}
+      >
+        <Symbol name={icon} size={20} color={c.ink2} />
+        <View style={{ flex: 1 }}>
+          <Text variant="caption" tone="ink3">
+            {label}
+          </Text>
+          <Text variant="body" numberOfLines={2}>
+            {value}
+          </Text>
+        </View>
+      </View>
+    ) : null;
 
   return (
-    <Screen
-      title={t('ui_tabs.profile')}
-      accessory={
-        <Button
-          kind="secondary"
-          size="small"
-          title={t('common.edit')}
-          onPress={() => setEditing(true)}
-        />
-      }
-    >
+    <Screen title={t('ui_tabs.profile')}>
       <View style={{ alignItems: 'center', gap: 8, marginBottom: 24 }}>
-        <Avatar account={userAccount} size={88} />
-        <Text variant="title2" align="center">
+        <View>
+          <Avatar account={userAccount} size={104} />
+          <Press
+            onPress={() => setEditing(true)}
+            accessibilityLabel={t('ui_profile.edit_title')}
+            style={{
+              position: 'absolute',
+              right: -4,
+              bottom: -4,
+              width: 40,
+              height: 40,
+              borderRadius: 20,
+              backgroundColor: c.surface,
+              borderWidth: 3,
+              borderColor: c.canvas,
+              alignItems: 'center',
+              justifyContent: 'center',
+            }}
+          >
+            <Symbol name="edit" size={17} color={c.accent} weight="semibold" />
+          </Press>
+        </View>
+        <Text variant="title2" align="center" style={{ marginTop: 4 }}>
           {userAccount.name}
         </Text>
-        {subtitle ? (
-          <Text variant="subhead" tone="ink2" align="center">
-            {subtitle}
-          </Text>
-        ) : null}
-        <Text variant="footnote" tone="ink3" tabular>
-          {t('ui_profile.observer_id', { id: userAccount.surveyorId })}
-        </Text>
+        <View style={{ alignSelf: 'center' }}>
+          <Tag label={t(`ui_profile.role_${userAccount.role}`)} />
+        </View>
       </View>
+
+      <Card style={{ marginBottom: 20, paddingVertical: 12 }}>
+        <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 4 }}>
+          <Text variant="title3" style={{ flex: 1 }} accessibilityRole="header">
+            {t('ui_profile.personal_info')}
+          </Text>
+          <Button
+            kind="plain"
+            size="small"
+            title={t('common.edit')}
+            onPress={() => setEditing(true)}
+          />
+        </View>
+        {info('profile', t('ui_profile.name'), userAccount.name)}
+        {info('mail', t('ui_profile.email'), authEmail || userAccount.email)}
+        {info('building', t('ui_profile.organization'), userAccount.organization?.trim())}
+        {info('pin', t('ui_profile.region'), userAccount.governorate?.trim())}
+        {info('shield', t('ui_profile.observer_id_label'), userAccount.surveyorId)}
+      </Card>
 
       <Press
         onPress={onOpenProgress}

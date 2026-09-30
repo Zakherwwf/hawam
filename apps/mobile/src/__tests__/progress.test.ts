@@ -150,3 +150,28 @@ test('recentWeeks: oldest first, current week last', async () => {
   );
   assert.deepEqual(w, [false, true, false, true]);
 });
+
+test('weekDays: km per day this week, Monday first', async () => {
+  const { weekDays } = await import('../features/gamification/progress.ts');
+  const now = new Date(2026, 8, 30, 12); // Wednesday
+  const mk = (d: Date, km: number) => ({
+    start_time: d.toISOString(),
+    end_time: null,
+    distance_km: km,
+    duration_min: 10,
+    complete_session: true,
+    protocol: 'transect',
+  });
+  const w = weekDays(
+    [
+      mk(new Date(2026, 8, 28, 8), 1.2),
+      mk(new Date(2026, 8, 28, 18), 0.3),
+      mk(new Date(2026, 8, 30, 7), 2),
+      mk(new Date(2026, 8, 27, 9), 5),
+    ],
+    now
+  );
+  assert.deepEqual(w.km, [1.5, 0, 2, 0, 0, 0, 0]);
+  assert.equal(w.today, 2);
+  assert.equal(w.minutes[0], 20);
+});

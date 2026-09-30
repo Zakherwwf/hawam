@@ -1274,7 +1274,23 @@
     "xp_cell": "Each new 1 km cell",
     "xp_photo": "A photo of a sighting",
     "xp_sighting": "Each sighting",
-    "xp_gain": "+{{xp}} XP"
+    "xp_gain": "+{{xp}} XP",
+    "hi": "Hi, {{name}}",
+    "greeting_sub": "Here is your week",
+    "surveyed_this_week": "Surveyed this week",
+    "km": "km",
+    "week_minutes_one": "{{count}} minute on surveys",
+    "week_minutes_other": "{{count}} minutes on surveys",
+    "week_bars": "{{km}} km this week, by day",
+    "start_walk_short": "Walk",
+    "day_0": "M",
+    "day_1": "T",
+    "day_2": "W",
+    "day_3": "T",
+    "day_4": "F",
+    "day_5": "S",
+    "day_6": "S",
+    "quick_short": "Sighting"
   },
   "ui_tabs": {
     "map": "Map",
@@ -1382,7 +1398,10 @@
     "tag_hint": "Use the same tag when you see this animal again.",
     "remove": "Remove from this phone",
     "remove_title": "Remove this sighting?",
-    "remove_body": "It is removed from this phone. A copy already uploaded stays with the research data."
+    "remove_body": "It is removed from this phone. A copy already uploaded stays with the research data.",
+    "waiting_tag": "Waiting",
+    "times_one": "×{{count}}",
+    "times_other": "×{{count}}"
   },
   "ui_profile": {
     "role_volunteer": "Volunteer",
@@ -1417,7 +1436,10 @@
     "region": "Region",
     "region_hint": "Optional. Where you usually survey.",
     "region_placeholder": "City or region",
-    "create": "Continue"
+    "create": "Continue",
+    "personal_info": "Personal info",
+    "email": "Email",
+    "observer_id_label": "Observer ID"
   },
   "ui_settings_v3": {
     "upload_failed_title": "Not uploaded yet",
@@ -1466,7 +1488,12 @@
     "create": "Create account",
     "new_here": "New here? Create an account",
     "have_account": "Already have an account? Sign in",
-    "privacy": "Your exact locations are only shared with signed-in volunteers and researchers. Public maps show a 1 km grid."
+    "privacy": "Your exact locations are only shared with signed-in volunteers and researchers. Public maps show a 1 km grid.",
+    "welcome_title": "Count the cats and dogs on your street",
+    "welcome_body": "Walk, record what you see, and help researchers understand the animals that share our cities. Zero counts matter too.",
+    "get_started": "Get started",
+    "have_account_q": "Already have an account?",
+    "sign_in": "Sign in"
   },
   "ui_consent_v3": {
     "step": "Step {{n}} of {{total}}",

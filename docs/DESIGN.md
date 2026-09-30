@@ -36,8 +36,9 @@ never UI chrome.
 | cat           | `#3F5BD8`          | `#8EA2FF`                | data: cats                          |
 | dog           | `#C2410C`          | `#FF9A62`                | data: dogs                          |
 
-No gradients on UI. No pure black. No shadows on cards or buttons; the only
-shadow belongs to the photo on the sighting screen and to map pins.
+No gradients on UI. No pure black. Cards and grouped sections carry one faint,
+wide shadow in light mode (useCardShadow) instead of borders; dark mode uses
+the lighter surface instead. Buttons never have shadows.
 
 ## Type (SF Pro via the system font; Android maps to the same ladder)
 
@@ -61,8 +62,8 @@ Minimum text size 12.
 ## Space, shape, touch
 
 8-point grid: 4, 8, 12, 16, 20, 24, 32, 48. Screen side margin 20.
-Radii: `sm` 10 (inputs, small controls), `lg` 18 (grouped sections, sheets),
-`pill` (primary buttons, chips). Nothing else. Touch targets >= 44 x 44.
+Radii: `sm` 12 (inputs, small controls), `lg` 22 (cards, grouped sections),
+`xl` 28 (hero and floating cards), `pill` (buttons, chips, tags). Nothing else. Touch targets >= 44 x 44.
 
 ## Components
 
@@ -89,3 +90,15 @@ new 1 km cells. Leaderboards rank by kilometres walked and by complete
 checklists, never by animals counted. Streaks count weeks with at least one
 survey. Weekly quests reset on Monday and are computed from synced data.
 Badges are earned from real totals and always show progress towards the next.
+
+## Inspiration pass (image-to-code)
+
+Reference boards in `inspirations for image to code/`. Adopted: greeting header
+with a bell, one hero number with weekly bars and two pill actions (Progress),
+soft large-radius cards, section titles with a trailing action, activity rows
+with a value and a status tag on the right (Sightings), dark selected chips,
+a floating card with a category tag and icon detail rows over the map, a
+centred avatar with an edit badge and a "Personal info" card (Profile), an
+active dot in the tab bar, and a one-idea welcome screen before sign-in.
+Not adopted: gradients, stock photography and flags, which break the flat,
+one-accent, zero-emoji rules and cost legibility outdoors.

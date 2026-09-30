@@ -101,8 +101,9 @@ export declare const hawemSpace: {
     readonly gutter: 20;
 };
 export declare const hawemRadius: {
-    readonly sm: 10;
-    readonly lg: 18;
+    readonly sm: 12;
+    readonly lg: 22;
+    readonly xl: 28;
     readonly pill: 999;
 };
 export declare const hawemTouch: {

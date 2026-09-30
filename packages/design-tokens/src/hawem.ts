@@ -112,5 +112,5 @@ export const hawemSpace = {
   xxxl: 48,
   gutter: 20,
 } as const;
-export const hawemRadius = { sm: 10, lg: 18, pill: 999 } as const;
+export const hawemRadius = { sm: 12, lg: 22, xl: 28, pill: 999 } as const;
 export const hawemTouch = { min: 44 } as const;

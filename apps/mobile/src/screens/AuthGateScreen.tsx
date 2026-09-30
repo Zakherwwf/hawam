@@ -4,15 +4,7 @@
  * never has to pick between two modes first.
  */
 import React, { useState } from 'react';
-import {
-  Alert,
-  Image,
-  KeyboardAvoidingView,
-  Platform,
-  ScrollView,
-  TextInput,
-  View,
-} from 'react-native';
+import { Alert, KeyboardAvoidingView, Platform, ScrollView, TextInput, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useTranslation } from 'react-i18next';
 import { Button, Press, Symbol, Text, useTheme } from '../ui';
@@ -28,6 +20,7 @@ export const AuthGateScreen: React.FC<AuthGateScreenProps> = ({ onAuthenticated 
   const { t } = useTranslation();
 
   const [authMode, setAuthMode] = useState<'signin' | 'signup'>('signin');
+  const [welcome, setWelcome] = useState(true);
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
@@ -199,6 +192,21 @@ export const AuthGateScreen: React.FC<AuthGateScreenProps> = ({ onAuthenticated 
     }
   };
 
+  if (welcome) {
+    return (
+      <Welcome
+        onStart={() => {
+          setAuthMode('signup');
+          setWelcome(false);
+        }}
+        onSignIn={() => {
+          setAuthMode('signin');
+          setWelcome(false);
+        }}
+      />
+    );
+  }
+
   return (
     <AuthForm
       {...{
@@ -272,10 +280,7 @@ function AuthForm(p: {
               justifyContent: 'center',
             }}
           >
-            <Image
-              source={require('../../assets/icon_cat_primary.png')}
-              style={{ width: 48, height: 48, resizeMode: 'contain' }}
-            />
+            <Symbol name="paw" size={40} color={c.accent} weight="semibold" />
           </View>
           <Text variant="largeTitle" align="center">
             {t('ui_auth_v3.title')}
@@ -369,5 +374,62 @@ function AuthForm(p: {
         </Text>
       </ScrollView>
     </KeyboardAvoidingView>
+  );
+}
+
+/** First screen before sign-in: one idea, one button. */
+function Welcome({ onStart, onSignIn }: { onStart: () => void; onSignIn: () => void }) {
+  const { t } = useTranslation();
+  const { c } = useTheme();
+  const insets = useSafeAreaInsets();
+  return (
+    <View
+      style={{
+        flex: 1,
+        backgroundColor: c.accentSoft,
+        paddingTop: insets.top + 32,
+        paddingHorizontal: 28,
+        paddingBottom: Math.max(insets.bottom, 20) + 8,
+      }}
+    >
+      <View
+        style={{
+          width: 64,
+          height: 64,
+          borderRadius: 18,
+          backgroundColor: c.surface,
+          alignItems: 'center',
+          justifyContent: 'center',
+        }}
+      >
+        <Symbol name="paw" size={34} color={c.accent} weight="semibold" />
+      </View>
+      <View style={{ flex: 1, justifyContent: 'flex-end', gap: 16, paddingBottom: 32 }}>
+        <Text
+          variant="largeTitle"
+          style={{ fontSize: 44, lineHeight: 50, color: c.accent }}
+          accessibilityRole="header"
+        >
+          {t('ui_auth_v3.welcome_title')}
+        </Text>
+        <Text variant="body" style={{ color: c.accent, opacity: 0.85 }}>
+          {t('ui_auth_v3.welcome_body')}
+        </Text>
+      </View>
+      <Button title={t('ui_auth_v3.get_started')} onPress={onStart} />
+      <Press
+        onPress={onSignIn}
+        haptic={false}
+        accessibilityLabel={t('ui_auth_v3.have_account')}
+        style={{ minHeight: 48, alignItems: 'center', justifyContent: 'center', marginTop: 8 }}
+      >
+        <Text variant="subhead" style={{ color: c.accent }}>
+          {t('ui_auth_v3.have_account_q')}{' '}
+          <Text variant="subhead" weight="700" style={{ color: c.accent }}>
+            {t('ui_auth_v3.sign_in')}
+          </Text>
+        </Text>
+      </Press>
+    </View>
   );
 }
