@@ -7,7 +7,7 @@ import React, { useState } from 'react';
 import { Alert, KeyboardAvoidingView, Platform, ScrollView, TextInput, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useTranslation } from 'react-i18next';
-import { Button, Press, Symbol, Text, useTheme } from '../ui';
+import { Button, Press, StreetScene, Symbol, Text, useTheme } from '../ui';
 import { supabase } from '../services/supabase';
 import { signInWithGoogle, getOAuthRedirectUri } from '../services/googleAuthService';
 import type { UserAccount } from '../app-state/types';
@@ -262,7 +262,7 @@ function AuthForm(p: {
     >
       <ScrollView
         contentContainerStyle={{
-          paddingTop: insets.top + 48,
+          paddingTop: insets.top + 16,
           paddingHorizontal: 24,
           paddingBottom: insets.bottom + 24,
           gap: 16,
@@ -270,18 +270,7 @@ function AuthForm(p: {
         keyboardShouldPersistTaps="handled"
       >
         <View style={{ alignItems: 'center', gap: 12, marginBottom: 16 }}>
-          <View
-            style={{
-              width: 80,
-              height: 80,
-              borderRadius: 22,
-              backgroundColor: c.accentSoft,
-              alignItems: 'center',
-              justifyContent: 'center',
-            }}
-          >
-            <Symbol name="paw" size={40} color={c.accent} weight="semibold" />
-          </View>
+          <StreetScene style={{ width: '80%' }} />
           <Text variant="largeTitle" align="center">
             {t('ui_auth_v3.title')}
           </Text>
@@ -380,39 +369,33 @@ function AuthForm(p: {
 /** First screen before sign-in: one idea, one button. */
 function Welcome({ onStart, onSignIn }: { onStart: () => void; onSignIn: () => void }) {
   const { t } = useTranslation();
-  const { c } = useTheme();
+  const { c, dark } = useTheme();
   const insets = useSafeAreaInsets();
+  // Board 2's lime splash; deep green type and button on it
+  const bg = dark ? c.accentSoft : c.lime;
+  const ink = dark ? c.lime : c.onLime;
   return (
     <View
       style={{
         flex: 1,
-        backgroundColor: c.accentSoft,
-        paddingTop: insets.top + 32,
-        paddingHorizontal: 28,
+        backgroundColor: bg,
+        paddingTop: insets.top + 12,
+        paddingHorizontal: 24,
         paddingBottom: Math.max(insets.bottom, 20) + 8,
       }}
     >
-      <View
-        style={{
-          width: 64,
-          height: 64,
-          borderRadius: 18,
-          backgroundColor: c.surface,
-          alignItems: 'center',
-          justifyContent: 'center',
-        }}
-      >
-        <Symbol name="paw" size={34} color={c.accent} weight="semibold" />
+      <View style={{ flex: 1, justifyContent: 'center' }}>
+        <StreetScene label={t('ui_auth_v3.scene')} style={{ transform: [{ scale: 1.08 }] }} />
       </View>
-      <View style={{ flex: 1, justifyContent: 'flex-end', gap: 16, paddingBottom: 32 }}>
+      <View style={{ gap: 14, paddingBottom: 28 }}>
         <Text
           variant="largeTitle"
-          style={{ fontSize: 44, lineHeight: 50, color: c.accent }}
+          style={{ fontSize: 42, lineHeight: 48, color: ink }}
           accessibilityRole="header"
         >
           {t('ui_auth_v3.welcome_title')}
         </Text>
-        <Text variant="body" style={{ color: c.accent, opacity: 0.85 }}>
+        <Text variant="body" style={{ color: ink, opacity: 0.85 }}>
           {t('ui_auth_v3.welcome_body')}
         </Text>
       </View>
@@ -423,9 +406,9 @@ function Welcome({ onStart, onSignIn }: { onStart: () => void; onSignIn: () => v
         accessibilityLabel={t('ui_auth_v3.have_account')}
         style={{ minHeight: 48, alignItems: 'center', justifyContent: 'center', marginTop: 8 }}
       >
-        <Text variant="subhead" style={{ color: c.accent }}>
+        <Text variant="subhead" style={{ color: ink }}>
           {t('ui_auth_v3.have_account_q')}{' '}
-          <Text variant="subhead" weight="700" style={{ color: c.accent }}>
+          <Text variant="subhead" weight="700" style={{ color: ink }}>
             {t('ui_auth_v3.sign_in')}
           </Text>
         </Text>

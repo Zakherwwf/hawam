@@ -8,6 +8,7 @@ import React, { useEffect, useMemo, useState } from 'react';
 import { Alert, Image, TextInput, View } from 'react-native';
 import { useTranslation } from 'react-i18next';
 import {
+  AnimalFace,
   Button,
   Card,
   Chip,
@@ -18,6 +19,7 @@ import {
   Section,
   Segmented,
   Sheet,
+  StreetScene,
   Symbol,
   Tag,
   Text,
@@ -137,6 +139,7 @@ export function SightingsTab({
 
       {sightings.length === 0 ? (
         <EmptyState
+          art={<StreetScene style={{ marginBottom: 8 }} />}
           icon="paw"
           title={t('ui_sightings_v3.empty_title')}
           message={t('ui_sightings_v3.empty_body')}
@@ -288,8 +291,6 @@ function usePhotoUrl(path?: string) {
 function Thumb({ s, size = 48 }: { s: SightingItem; size?: number }) {
   const { c } = useTheme();
   const url = usePhotoUrl(s.photos?.[0]);
-  const tint = s.species === 'dog' ? c.dog : s.species === 'cat' ? c.cat : c.ink3;
-  const soft = s.species === 'dog' ? c.dogSoft : s.species === 'cat' ? c.catSoft : c.fill;
   if (url)
     return (
       <Image
@@ -297,18 +298,20 @@ function Thumb({ s, size = 48 }: { s: SightingItem; size?: number }) {
         style={{ width: size, height: size, borderRadius: size / 2, backgroundColor: c.fill }}
       />
     );
+  if (s.species === 'cat' || s.species === 'dog')
+    return <AnimalFace species={s.species} size={size} />;
   return (
     <View
       style={{
         width: size,
         height: size,
         borderRadius: size / 2,
-        backgroundColor: soft,
+        backgroundColor: c.fill,
         alignItems: 'center',
         justifyContent: 'center',
       }}
     >
-      <Symbol name="paw" size={size * 0.45} color={tint} weight="semibold" />
+      <Symbol name="paw" size={size * 0.45} color={c.ink3} weight="semibold" />
     </View>
   );
 }

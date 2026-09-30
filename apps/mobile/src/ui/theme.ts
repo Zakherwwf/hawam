@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { AccessibilityInfo } from 'react-native';
 import {
+  hawemGradients,
   hawemDark,
   hawemLight,
   hawemRadius,
@@ -16,6 +17,7 @@ export interface HawemTheme {
   type: typeof hawemType;
   space: typeof hawemSpace;
   radius: typeof hawemRadius;
+  g: (typeof hawemGradients)['light'] | (typeof hawemGradients)['dark'];
 }
 
 /** Design system v3 (docs/DESIGN.md), following the app's day/night setting. */
@@ -27,6 +29,7 @@ export function useTheme(): HawemTheme {
     type: hawemType,
     space: hawemSpace,
     radius: hawemRadius,
+    g: dark ? hawemGradients.dark : hawemGradients.light,
   };
 }
 

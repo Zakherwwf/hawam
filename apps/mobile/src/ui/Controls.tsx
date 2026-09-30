@@ -42,12 +42,12 @@ export function Chip({
       }}
     >
       {icon ? (
-        <Symbol name={icon} size={15} color={selected ? c.onAccent : c.ink2} weight="medium" />
+        <Symbol name={icon} size={15} color={selected ? onTint : c.ink2} weight="medium" />
       ) : null}
       <Text
         variant="subhead"
         weight={selected ? '600' : '400'}
-        style={{ color: selected ? c.onAccent : c.ink }}
+        style={{ color: selected ? onTint : c.ink }}
       >
         {label}
       </Text>
@@ -141,10 +141,12 @@ export function Card({
   padded?: boolean;
 }) {
   const { c, radius } = useTheme();
+  const shadow = useCardShadow();
   return (
     <View
       style={[
-        { backgroundColor: c.surface, borderRadius: radius.lg, padding: padded ? 16 : 0 },
+        { backgroundColor: c.surface, borderRadius: radius.lg, padding: padded ? 20 : 0 },
+        shadow,
         style,
       ]}
     >
@@ -158,7 +160,10 @@ export function EmptyState({
   title,
   message,
   action,
+  art,
 }: {
+  /** An illustration shown instead of the icon */
+  art?: React.ReactNode;
   icon: SymbolName;
   title: string;
   message?: string;
@@ -166,19 +171,28 @@ export function EmptyState({
 }) {
   const { c } = useTheme();
   return (
-    <View style={{ alignItems: 'center', paddingVertical: 40, paddingHorizontal: 24, gap: 10 }}>
-      <View
-        style={{
-          width: 64,
-          height: 64,
-          borderRadius: 32,
-          backgroundColor: c.accentSoft,
-          alignItems: 'center',
-          justifyContent: 'center',
-        }}
-      >
-        <Symbol name={icon} size={28} color={c.accent} />
-      </View>
+    <View
+      style={{
+        alignItems: 'center',
+        paddingVertical: art ? 16 : 40,
+        paddingHorizontal: 24,
+        gap: 10,
+      }}
+    >
+      {art ?? (
+        <View
+          style={{
+            width: 64,
+            height: 64,
+            borderRadius: 32,
+            backgroundColor: c.accentSoft,
+            alignItems: 'center',
+            justifyContent: 'center',
+          }}
+        >
+          <Symbol name={icon} size={28} color={c.accent} />
+        </View>
+      )}
       <Text variant="title3" align="center">
         {title}
       </Text>
@@ -303,16 +317,16 @@ export function WeekBars({
               width: '100%',
               height,
               justifyContent: 'flex-end',
-              borderRadius: 6,
-              backgroundColor: c.canvas,
+              borderRadius: 8,
+              backgroundColor: c.limeSoft,
               overflow: 'hidden',
             }}
           >
             <View
               style={{
                 height: v > 0 ? Math.max(6, (v / max) * height) : 0,
-                backgroundColor: i === highlight ? c.accent : c.accentSoft,
-                borderRadius: 6,
+                backgroundColor: i === highlight ? c.accent : c.lime,
+                borderRadius: 8,
               }}
             />
           </View>

@@ -150,12 +150,12 @@ function TabBar({ state, navigation, onRecord }: BottomTabBarProps & { onRecord:
                 width: 52,
                 height: 52,
                 borderRadius: 26,
-                backgroundColor: c.accent,
+                backgroundColor: c.lime,
                 alignItems: 'center',
                 justifyContent: 'center',
               }}
             >
-              <Symbol name="plus" size={26} color={c.onAccent} weight="bold" />
+              <Symbol name="plus" size={26} color={c.onLime} weight="bold" />
             </Press>
           </View>
           {tab(TABS[2])}

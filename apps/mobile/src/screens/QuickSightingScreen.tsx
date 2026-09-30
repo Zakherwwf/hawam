@@ -30,7 +30,19 @@ import type {
   Species,
   YesNoUnknown,
 } from '@tunisia-survey/shared';
-import { Button, Chip, IconButton, Press, Segmented, Symbol, Text, useTheme } from '../ui';
+import {
+  AnimalFace,
+  Button,
+  Chip,
+  Gradient,
+  IconButton,
+  Press,
+  Segmented,
+  Symbol,
+  Text,
+  useCardShadow,
+  useTheme,
+} from '../ui';
 import { quickSightingXp } from '../features/gamification/progress';
 
 export interface QuickSightingPayload {
@@ -68,7 +80,7 @@ export function QuickSightingScreen({
   onSave: (p: QuickSightingPayload) => void;
 }) {
   const { t } = useTranslation();
-  const { c, radius } = useTheme();
+  const { c, g, dark, radius } = useTheme();
   const insets = useSafeAreaInsets();
 
   const [photo, setPhoto] = useState<{ uri: string; timestamp: string } | null>(null);
@@ -281,34 +293,43 @@ export function QuickSightingScreen({
                 onPress={() => takePhoto('camera')}
                 accessibilityLabel={t('ui_quick.take_photo')}
                 accessibilityHint={t('ui_quick.photo_hint')}
-                style={{
-                  aspectRatio: 16 / 9,
-                  borderRadius: radius.lg,
-                  backgroundColor: c.surface,
-                  borderWidth: 1.5,
-                  borderStyle: 'dashed',
-                  borderColor: c.accent,
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  gap: 8,
-                }}
+                style={{ borderRadius: radius.xl, overflow: 'hidden' }}
               >
-                <View
+                <Gradient
+                  colors={g.sky}
                   style={{
-                    width: 56,
-                    height: 56,
-                    borderRadius: 28,
-                    backgroundColor: c.accent,
+                    aspectRatio: 16 / 10,
                     alignItems: 'center',
                     justifyContent: 'center',
+                    gap: 8,
                   }}
                 >
-                  <Symbol name="camera" size={26} color={c.onAccent} weight="semibold" />
-                </View>
-                <Text variant="headline">{t('ui_quick.take_photo')}</Text>
-                <Text variant="footnote" tone="ink2">
-                  {t('ui_quick.photo_hint')}
-                </Text>
+                  <View
+                    style={{
+                      borderRadius: 32,
+                      backgroundColor: 'rgba(255,255,255,0.75)',
+                      borderWidth: 1,
+                      borderColor: 'rgba(255,255,255,0.95)',
+                    }}
+                  >
+                    <View
+                      style={{
+                        width: 64,
+                        height: 64,
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                      }}
+                    >
+                      <Symbol name="camera" size={28} color={c.accent} weight="semibold" />
+                    </View>
+                  </View>
+                  <Text variant="headline" style={{ color: dark ? c.ink : '#16181D' }}>
+                    {t('ui_quick.take_photo')}
+                  </Text>
+                  <Text variant="footnote" style={{ color: dark ? c.ink2 : '#3A4A55' }}>
+                    {t('ui_quick.photo_hint')}
+                  </Text>
+                </Gradient>
               </Press>
               <Button
                 kind="plain"
@@ -328,6 +349,7 @@ export function QuickSightingScreen({
             </Text>
             <View style={{ flexDirection: 'row', gap: 12 }}>
               <SpeciesCard
+                species="cat"
                 label={t('ui_quick.cat')}
                 selected={species === 'cat'}
                 color={c.cat}
@@ -335,6 +357,7 @@ export function QuickSightingScreen({
                 onPress={() => setSpecies('cat')}
               />
               <SpeciesCard
+                species="dog"
                 label={t('ui_quick.dog')}
                 selected={species === 'dog'}
                 color={c.dog}
@@ -578,12 +601,14 @@ export function QuickSightingScreen({
 }
 
 function SpeciesCard({
+  species,
   label,
   selected,
   color,
   soft,
   onPress,
 }: {
+  species: 'cat' | 'dog';
   label: string;
   selected: boolean;
   color: string;
@@ -591,25 +616,29 @@ function SpeciesCard({
   onPress: () => void;
 }) {
   const { c, radius } = useTheme();
+  const shadow = useCardShadow();
   return (
     <Press
       onPress={onPress}
       accessibilityRole="radio"
       accessibilityState={{ selected }}
       accessibilityLabel={label}
-      style={{
-        flex: 1,
-        minHeight: 96,
-        borderRadius: radius.lg,
-        backgroundColor: selected ? soft : c.surface,
-        borderWidth: 2,
-        borderColor: selected ? color : 'transparent',
-        alignItems: 'center',
-        justifyContent: 'center',
-        gap: 8,
-      }}
+      style={[
+        {
+          flex: 1,
+          minHeight: 120,
+          borderRadius: radius.lg,
+          backgroundColor: selected ? soft : c.surface,
+          borderWidth: 2,
+          borderColor: selected ? color : 'transparent',
+          alignItems: 'center',
+          justifyContent: 'center',
+          gap: 8,
+        },
+        shadow,
+      ]}
     >
-      <Symbol name="paw" size={28} color={color} weight="semibold" />
+      <AnimalFace species={species} size={60} />
       <Text variant="headline" style={{ color: selected ? color : c.ink }}>
         {label}
       </Text>

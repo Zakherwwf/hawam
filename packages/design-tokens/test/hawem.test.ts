@@ -32,6 +32,15 @@ for (const [scheme, c] of [
     assert.ok(getContrastRatio(c.cat, c.catSoft) >= 4.5);
     assert.ok(getContrastRatio(c.dog, c.dogSoft) >= 4.5);
   });
+  test(`hawem ${scheme}: lime and warm pairs pass AA`, () => {
+    assert.ok(getContrastRatio(c.onLime, c.lime) >= 4.5);
+    // Text on limeSoft uses the accent (deep green in light, lime in dark)
+    assert.ok(getContrastRatio(c.accent, c.limeSoft) >= 4.5);
+    for (const bg of [c.canvas, c.surface, c.warmSoft]) {
+      const r = getContrastRatio(c.warmInk, bg);
+      assert.ok(r >= 4.5, `${scheme} warmInk on ${bg}: ${r.toFixed(2)}`);
+    }
+  });
   test(`hawem ${scheme}: badge tiers are legible on the surface`, () => {
     for (const token of ['bronze', 'silver', 'gold'] as const) {
       const r = getContrastRatio(c[token], c.surface);

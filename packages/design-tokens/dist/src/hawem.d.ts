@@ -1,7 +1,10 @@
 /**
- * Hawem design system v3 (docs/DESIGN.md). One action colour, flat surfaces,
- * SF type ladder. Every text colour passes WCAG AA on canvas and surface in
- * both schemes (test/hawem.test.ts).
+ * Hawem design system v3.1 (docs/DESIGN.md). Palette sampled from the
+ * reference boards in "inspirations for image to code": deep green #144513
+ * and lime #B1EC6F (board 2), warm orange #F1721D and the sky/grass
+ * illustration tones (board 4), gradient heroes (boards 1 and 3). Every text
+ * colour passes WCAG AA on canvas and surface in both schemes
+ * (test/hawem.test.ts).
  */
 export interface HawemColors {
     canvas: string;
@@ -29,6 +32,14 @@ export interface HawemColors {
     bronze: string;
     silver: string;
     gold: string;
+    /** Lime highlight (board 2): active bars, secondary buttons, selected states */
+    lime: string;
+    limeSoft: string;
+    onLime: string;
+    /** Warm orange (board 4): streaks, celebrations. warmInk is its text-safe shade */
+    warm: string;
+    warmSoft: string;
+    warmInk: string;
 }
 export declare const hawemLight: HawemColors;
 export declare const hawemDark: HawemColors;
@@ -108,4 +119,30 @@ export declare const hawemRadius: {
 };
 export declare const hawemTouch: {
     readonly min: 44;
+};
+/**
+ * Gradients, top to bottom (or start to end). Heroes carry white text only on
+ * their darker first two stops; the last stop fades towards the canvas.
+ */
+export declare const hawemGradients: {
+    readonly light: {
+        readonly hero: readonly ["#144513", "#2F7A2B", "#8FD45C"];
+        readonly lime: readonly ["#C9F28F", "#B1EC6F"];
+        readonly sky: readonly ["#A6E2F9", "#E3F6FD"];
+        readonly sunrise: readonly ["#F25A30", "#F1721D", "#FBDFC6"];
+        readonly ocean: readonly ["#3865CC", "#68A5E0", "#A8E6E1"];
+        readonly gold: readonly ["#F6D66B", "#D9A826"];
+        readonly silver: readonly ["#E4E8EE", "#AEB6C2"];
+        readonly bronze: readonly ["#F0B58A", "#B8733F"];
+    };
+    readonly dark: {
+        readonly hero: readonly ["#0A230A", "#144513", "#2F7A2B"];
+        readonly lime: readonly ["#B1EC6F", "#8FD45C"];
+        readonly sky: readonly ["#12324A", "#0B0D0B"];
+        readonly sunrise: readonly ["#8A2C14", "#B4520D", "#3A2210"];
+        readonly ocean: readonly ["#1C3A7A", "#2A5A9A", "#1F4E52"];
+        readonly gold: readonly ["#F6D66B", "#C8961A"];
+        readonly silver: readonly ["#E4E8EE", "#9AA3B0"];
+        readonly bronze: readonly ["#F0B58A", "#A8652F"];
+    };
 };

@@ -488,7 +488,8 @@
     "welcome_body": "Marchez, notez ce que vous voyez et aidez les chercheurs à comprendre les animaux qui partagent nos villes. Les zéros comptent aussi.",
     "get_started": "Commencer",
     "have_account_q": "Déjà un compte ?",
-    "sign_in": "Se connecter"
+    "sign_in": "Se connecter",
+    "scene": "Une rue avec des maisons, un chat et un chien"
   },
   "ui_consent_v3": {
     "step": "Étape {{n}} sur {{total}}",

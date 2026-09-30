@@ -7,10 +7,13 @@
 import React, { useMemo, useState } from 'react';
 import { View } from 'react-native';
 import { useTranslation } from 'react-i18next';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import {
   Button,
   Card,
-  IconButton,
+  Glass,
+  Gradient,
+  Press,
   SectionHeader,
   WeekBars,
   ProgressBar,
@@ -61,7 +64,8 @@ export function ProgressTab({
   firstName?: string;
 }) {
   const { t } = useTranslation();
-  const { c } = useTheme();
+  const { c, g } = useTheme();
+  const insets = useSafeAreaInsets();
   useRefreshProgressOnSync();
   const stats = useMyStats();
   const sessions = useMySessions();
@@ -93,26 +97,107 @@ export function ProgressTab({
     <Screen
       title={t('ui_progress_v3.title')}
       header={
-        <View style={{ flexDirection: 'row', alignItems: 'center', gap: 12, marginBottom: 20 }}>
-          <View style={{ flex: 1 }}>
-            <Text variant="title1" accessibilityRole="header" numberOfLines={1}>
-              {firstName ? t('ui_progress_v3.hi', { name: firstName }) : t('ui_progress_v3.title')}
-            </Text>
-            <Text variant="subhead" tone="ink2">
-              {t('ui_progress_v3.greeting_sub')}
-            </Text>
+        <Gradient
+          colors={g.hero}
+          style={{
+            marginTop: -(insets.top + 12),
+            marginHorizontal: -20,
+            paddingTop: insets.top + 16,
+            paddingHorizontal: 20,
+            paddingBottom: 76,
+            borderBottomLeftRadius: 32,
+            borderBottomRightRadius: 32,
+          }}
+        >
+          <View style={{ flexDirection: 'row', alignItems: 'center', gap: 12 }}>
+            <View style={{ flex: 1 }}>
+              <Text
+                variant="title1"
+                accessibilityRole="header"
+                numberOfLines={1}
+                style={{ color: '#FFFFFF' }}
+              >
+                {firstName
+                  ? t('ui_progress_v3.hi', { name: firstName })
+                  : t('ui_progress_v3.title')}
+              </Text>
+              <Text variant="subhead" style={{ color: 'rgba(255,255,255,0.85)' }}>
+                {t('ui_progress_v3.greeting_sub')}
+              </Text>
+            </View>
+            <Glass tone="onColor" style={{ borderRadius: 22 }}>
+              <Press
+                onPress={onOpenUploads}
+                accessibilityLabel={
+                  pending > 0
+                    ? t('ui_sightings_v3.waiting', { count: pending })
+                    : t('ui_settings_v3.up_to_date')
+                }
+                style={{ width: 44, height: 44, alignItems: 'center', justifyContent: 'center' }}
+              >
+                <Symbol name="bell" size={20} color="#FFFFFF" weight="medium" />
+                {pending > 0 ? (
+                  <View
+                    style={{
+                      position: 'absolute',
+                      top: 9,
+                      right: 10,
+                      width: 9,
+                      height: 9,
+                      borderRadius: 5,
+                      backgroundColor: c.warm,
+                    }}
+                  />
+                ) : null}
+              </Press>
+            </Glass>
           </View>
-          <IconButton
-            icon="bell"
-            label={
-              pending > 0
-                ? t('ui_sightings_v3.waiting', { count: pending })
-                : t('ui_settings_v3.up_to_date')
-            }
-            onPress={onOpenUploads}
-            badge={pending > 0}
-          />
-        </View>
+
+          <View style={{ flexDirection: 'row', alignItems: 'center', gap: 20, marginTop: 24 }}>
+            <ProgressRing
+              value={lv.fraction}
+              size={116}
+              stroke={12}
+              color="#FFFFFF"
+              trackColor="rgba(255,255,255,0.22)"
+              label={t('ui_progress_v3.level_n', { n: lv.level })}
+            >
+              <Text variant="caption" style={{ color: 'rgba(255,255,255,0.85)' }}>
+                {t('ui_progress_v3.level')}
+              </Text>
+              <Text
+                variant="title1"
+                tabular
+                style={{ fontSize: 38, lineHeight: 44, color: '#FFFFFF' }}
+              >
+                {lv.level}
+              </Text>
+            </ProgressRing>
+            <View style={{ flex: 1, gap: 6 }}>
+              <Text variant="title2" style={{ color: '#FFFFFF' }}>
+                {t(lv.rankKey)}
+              </Text>
+              <Glass
+                tone="onColor"
+                style={{
+                  alignSelf: 'flex-start',
+                  borderRadius: 999,
+                  paddingHorizontal: 12,
+                  paddingVertical: 4,
+                }}
+              >
+                <Text variant="subhead" weight="600" tabular style={{ color: '#FFFFFF' }}>
+                  {t('ui_progress_v3.xp_total', { xp: (s?.xp ?? 0).toLocaleString() })}
+                </Text>
+              </Glass>
+              <Text variant="footnote" style={{ color: 'rgba(255,255,255,0.85)' }}>
+                {lv.toNext == null
+                  ? t('ui_progress_v3.top_level')
+                  : t('ui_progress_v3.xp_to_next', { xp: lv.toNext, level: lv.level + 1 })}
+              </Text>
+            </View>
+          </View>
+        </Gradient>
       }
       onRefresh={() => {
         stats.refetch();
@@ -131,7 +216,7 @@ export function ProgressTab({
       ) : null}
 
       {/* This week: the big number, the daily bars, the two ways to add to it */}
-      <Card style={{ marginBottom: 12 }}>
+      <Card style={{ marginTop: -56, marginBottom: 12 }}>
         <Text variant="subhead" tone="ink2">
           {t('ui_progress_v3.surveyed_this_week')}
         </Text>
@@ -170,34 +255,6 @@ export function ProgressTab({
         </View>
       </Card>
 
-      {/* Level */}
-      <Card style={{ flexDirection: 'row', alignItems: 'center', gap: 20, marginBottom: 12 }}>
-        <ProgressRing
-          value={lv.fraction}
-          size={112}
-          stroke={11}
-          label={t('ui_progress_v3.level_n', { n: lv.level })}
-        >
-          <Text variant="caption" tone="ink2">
-            {t('ui_progress_v3.level')}
-          </Text>
-          <Text variant="title1" tabular style={{ fontSize: 34, lineHeight: 40 }}>
-            {lv.level}
-          </Text>
-        </ProgressRing>
-        <View style={{ flex: 1, gap: 4 }}>
-          <Text variant="title3">{t(lv.rankKey)}</Text>
-          <Text variant="subhead" tone="ink2" tabular>
-            {t('ui_progress_v3.xp_total', { xp: (s?.xp ?? 0).toLocaleString() })}
-          </Text>
-          <Text variant="footnote" tone="ink3">
-            {lv.toNext == null
-              ? t('ui_progress_v3.top_level')
-              : t('ui_progress_v3.xp_to_next', { xp: lv.toNext, level: lv.level + 1 })}
-          </Text>
-        </View>
-      </Card>
-
       {/* Weekly streak */}
       <Card style={{ marginBottom: 28 }}>
         <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10 }}>
@@ -206,7 +263,7 @@ export function ProgressTab({
               width: 36,
               height: 36,
               borderRadius: 18,
-              backgroundColor: streak.weeks > 0 ? c.warningSoft : c.fill,
+              backgroundColor: streak.weeks > 0 ? c.warmSoft : c.fill,
               alignItems: 'center',
               justifyContent: 'center',
             }}
@@ -214,7 +271,7 @@ export function ProgressTab({
             <Symbol
               name="flame"
               size={20}
-              color={streak.weeks > 0 ? c.warning : c.ink3}
+              color={streak.weeks > 0 ? c.warm : c.ink3}
               weight="semibold"
             />
           </View>
@@ -247,7 +304,7 @@ export function ProgressTab({
                 flex: 1,
                 height: 8,
                 borderRadius: 4,
-                backgroundColor: on ? c.warning : c.fill,
+                backgroundColor: on ? c.warm : c.fill,
                 opacity: i === weeks.length - 1 && !on ? 0.5 : 1,
               }}
             />
@@ -418,7 +475,7 @@ function QuestRow({ q }: { q: Quest }) {
 
 function BadgeTile({ b }: { b: BadgeProgress }) {
   const { t } = useTranslation();
-  const { c } = useTheme();
+  const { c, g } = useTheme();
   const tierColor = [c.ink3, c.bronze, c.silver, c.gold][b.tier];
   const tierName = [
     t('ui_progress_v3.tier_0'),
@@ -434,7 +491,7 @@ function BadgeTile({ b }: { b: BadgeProgress }) {
         width: '31%',
         flexGrow: 1,
         backgroundColor: c.surface,
-        borderRadius: 18,
+        borderRadius: 22,
         padding: 12,
         alignItems: 'center',
         gap: 6,
@@ -442,25 +499,36 @@ function BadgeTile({ b }: { b: BadgeProgress }) {
       accessible
       accessibilityLabel={`${t(b.titleKey)}, ${tierName}. ${t(b.descKey)}. ${b.next != null ? t('ui_progress_v3.badge_next', { value, next: b.next }) : ''}`}
     >
-      <View
-        style={{
-          width: 52,
-          height: 52,
-          borderRadius: 26,
-          borderWidth: 3,
-          borderColor: b.tier ? tierColor : c.fill,
-          backgroundColor: b.tier ? c.surface : c.canvas,
-          alignItems: 'center',
-          justifyContent: 'center',
-        }}
-      >
-        <Symbol
-          name={b.tier ? b.icon : 'lock'}
-          size={22}
-          color={b.tier ? tierColor : c.ink3}
-          weight="semibold"
-        />
-      </View>
+      {b.tier ? (
+        <Gradient
+          colors={[g.bronze, g.silver, g.gold][b.tier - 1]}
+          diagonal
+          style={{
+            width: 56,
+            height: 56,
+            borderRadius: 28,
+            alignItems: 'center',
+            justifyContent: 'center',
+            borderWidth: 3,
+            borderColor: c.surface,
+          }}
+        >
+          <Symbol name={b.icon} size={24} color="#FFFFFF" weight="bold" />
+        </Gradient>
+      ) : (
+        <View
+          style={{
+            width: 56,
+            height: 56,
+            borderRadius: 28,
+            backgroundColor: c.fill,
+            alignItems: 'center',
+            justifyContent: 'center',
+          }}
+        >
+          <Symbol name={b.icon} size={22} color={c.ink3} weight="semibold" />
+        </View>
+      )}
       <Text variant="footnote" weight="600" align="center" numberOfLines={2}>
         {t(b.titleKey)}
       </Text>

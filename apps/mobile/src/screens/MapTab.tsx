@@ -19,6 +19,7 @@ import { useSyncStore } from '../features/sync/syncStore';
 import type { SightingItem } from '../app-state/types';
 import {
   Button,
+  Glass,
   IconButton,
   Press,
   Symbol,
@@ -235,15 +236,22 @@ export function MapTab({
 
       {/* Map controls */}
       <View style={{ position: 'absolute', right: 12, top: insets.top + 60, gap: 8 }}>
-        <IconButton icon="locate" label={t('ui_mapOverview.near_me')} onPress={centerOnMe} />
+        <IconButton
+          icon="locate"
+          tone="glass"
+          label={t('ui_mapOverview.near_me')}
+          onPress={centerOnMe}
+        />
         <IconButton
           icon="layers"
+          tone="glass"
           label={t('ui_map_v3.style', { style: t(`ui_map_v3.style_${nextStyle[style]}`) })}
           onPress={() => setStyle(nextStyle[style])}
         />
         {onRefresh ? (
           <IconButton
             icon="sync"
+            tone="glass"
             label={t('ui_map_v3.refresh')}
             onPress={onRefresh}
             badge={pending > 0}
@@ -318,38 +326,35 @@ function PinCard({ s, onClose }: { s: SightingItem; onClose: () => void }) {
     </View>
   );
   return (
-    <View
-      style={[
-        { backgroundColor: c.surface, borderRadius: radius.xl, padding: 20, gap: 12 },
-        shadow,
-      ]}
-    >
-      <View style={{ flexDirection: 'row', alignItems: 'flex-start', gap: 12 }}>
-        <View style={{ flex: 1, gap: 8 }}>
-          <Tag
-            label={species}
-            tone={s.species === 'cat' ? 'cat' : s.species === 'dog' ? 'dog' : 'neutral'}
-          />
-          <Text variant="title2" tabular>
-            {s.publicCode || t('ui_common.code_pending')}
-          </Text>
+    <Glass intensity={60} style={[{ borderRadius: radius.xl }, shadow]}>
+      <View style={{ padding: 20, gap: 12 }}>
+        <View style={{ flexDirection: 'row', alignItems: 'flex-start', gap: 12 }}>
+          <View style={{ flex: 1, gap: 8 }}>
+            <Tag
+              label={species}
+              tone={s.species === 'cat' ? 'cat' : s.species === 'dog' ? 'dog' : 'neutral'}
+            />
+            <Text variant="title2" tabular>
+              {s.publicCode || t('ui_common.code_pending')}
+            </Text>
+          </View>
+          <IconButton icon="close" label={t('ui_common.close')} tone="soft" onPress={onClose} />
         </View>
-        <IconButton icon="close" label={t('ui_common.close')} tone="soft" onPress={onClose} />
+        <View style={{ gap: 6 }}>
+          {detail('paw', t('ui_quick.count_value', { count: s.group_size || 1 }))}
+          {detail(
+            'clock',
+            formatObservedAt(s.observed_at, {
+              today: t('ui_common.today'),
+              yesterday: t('ui_common.yesterday'),
+            })
+          )}
+          {detail('pin', formatCoordinates(s.latitude, s.longitude))}
+          {s.observer_name
+            ? detail('profile', t('ui_map_v3.seen_by', { name: s.observer_name }))
+            : null}
+        </View>
       </View>
-      <View style={{ gap: 6 }}>
-        {detail('paw', t('ui_quick.count_value', { count: s.group_size || 1 }))}
-        {detail(
-          'clock',
-          formatObservedAt(s.observed_at, {
-            today: t('ui_common.today'),
-            yesterday: t('ui_common.yesterday'),
-          })
-        )}
-        {detail('pin', formatCoordinates(s.latitude, s.longitude))}
-        {s.observer_name
-          ? detail('profile', t('ui_map_v3.seen_by', { name: s.observer_name }))
-          : null}
-      </View>
-    </View>
+    </Glass>
   );
 }

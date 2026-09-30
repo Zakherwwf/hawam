@@ -1493,7 +1493,8 @@
     "welcome_body": "Walk, record what you see, and help researchers understand the animals that share our cities. Zero counts matter too.",
     "get_started": "Get started",
     "have_account_q": "Already have an account?",
-    "sign_in": "Sign in"
+    "sign_in": "Sign in",
+    "scene": "A street with houses, a cat and a dog"
   },
   "ui_consent_v3": {
     "step": "Step {{n}} of {{total}}",

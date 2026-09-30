@@ -36,7 +36,12 @@ never UI chrome.
 | cat           | `#3F5BD8`          | `#8EA2FF`                | data: cats                          |
 | dog           | `#C2410C`          | `#FF9A62`                | data: dogs                          |
 
-No gradients on UI. No pure black. Cards and grouped sections carry one faint,
+Gradients: heroes (Progress, Profile), badge medallions, icon tiles and the
+sky photo well use the `hawemGradients` set; body text never sits on the light
+end of a gradient. Glass (`Glass`, blur plus translucent wash and a bright edge)
+for controls over the map and chips over a gradient hero. Illustrations are
+flat vector scenes (`StreetScene`, `AnimalFace`) in the board 4 style, never
+emoji. No pure black. Cards and grouped sections carry one faint,
 wide shadow in light mode (useCardShadow) instead of borders; dark mode uses
 the lighter surface instead. Buttons never have shadows.
 
@@ -100,5 +105,8 @@ with a value and a status tag on the right (Sightings), dark selected chips,
 a floating card with a category tag and icon detail rows over the map, a
 centred avatar with an edit badge and a "Personal info" card (Profile), an
 active dot in the tab bar, and a one-idea welcome screen before sign-in.
-Not adopted: gradients, stock photography and flags, which break the flat,
-one-accent, zero-emoji rules and cost legibility outdoors.
+Second pass (on request): colours sampled from the boards (#144513 deep green
+and #B1EC6F lime from board 2, #F1721D orange and sky/grass tones from board
+4), gradient heroes (boards 1 and 3), glass controls and cards, gradient icon
+tiles (board 3), gradient medallions, and vector illustrations (board 4).
+Still not adopted: stock photography and flags (zero-emoji rule).

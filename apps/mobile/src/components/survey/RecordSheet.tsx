@@ -1,7 +1,16 @@
 import React from 'react';
 import { View } from 'react-native';
 import { useTranslation } from 'react-i18next';
-import { Press, Sheet, Symbol, Text, useTheme, type SymbolName } from '../../ui';
+import {
+  Gradient,
+  Press,
+  Sheet,
+  Symbol,
+  Text,
+  useCardShadow,
+  useTheme,
+  type SymbolName,
+} from '../../ui';
 
 /**
  * What the + button opens: three large choices, each saying what it is for
@@ -30,6 +39,7 @@ export function RecordSheet({
       <View style={{ gap: 12 }}>
         <Choice
           icon="camera"
+          tile="lime"
           title={t('ui_record.quick')}
           body={t('ui_record.quick_body')}
           tag={t('ui_record.quick_tag')}
@@ -37,6 +47,7 @@ export function RecordSheet({
           primary
         />
         <Choice
+          tile="hero"
           icon="walk"
           title={t('ui_record.walk')}
           body={t('ui_record.walk_body')}
@@ -44,6 +55,7 @@ export function RecordSheet({
           onPress={pick(onWalk)}
         />
         <Choice
+          tile="ocean"
           icon="timer"
           title={t('ui_record.stationary')}
           body={t('ui_record.stationary_body')}
@@ -62,7 +74,9 @@ function Choice({
   tag,
   onPress,
   primary,
+  tile,
 }: {
+  tile: 'lime' | 'hero' | 'ocean';
   icon: SymbolName;
   title: string;
   body: string;
@@ -70,7 +84,8 @@ function Choice({
   onPress: () => void;
   primary?: boolean;
 }) {
-  const { c, radius } = useTheme();
+  const { c, g, radius } = useTheme();
+  const shadow = useCardShadow();
   return (
     <Press
       onPress={onPress}
@@ -84,21 +99,28 @@ function Choice({
         borderRadius: radius.lg,
         backgroundColor: c.surface,
         borderWidth: primary ? 2 : 0,
-        borderColor: c.accent,
+        borderColor: c.lime,
+        ...shadow,
       }}
     >
-      <View
+      <Gradient
+        colors={g[tile]}
+        diagonal
         style={{
-          width: 48,
-          height: 48,
-          borderRadius: 24,
-          backgroundColor: primary ? c.accent : c.accentSoft,
+          width: 56,
+          height: 56,
+          borderRadius: 18,
           alignItems: 'center',
           justifyContent: 'center',
         }}
       >
-        <Symbol name={icon} size={24} color={primary ? c.onAccent : c.accent} weight="semibold" />
-      </View>
+        <Symbol
+          name={icon}
+          size={26}
+          color={tile === 'lime' ? c.onLime : '#FFFFFF'}
+          weight="semibold"
+        />
+      </Gradient>
       <View style={{ flex: 1, gap: 2 }}>
         <Text variant="headline">{title}</Text>
         <Text variant="subhead" tone="ink2">

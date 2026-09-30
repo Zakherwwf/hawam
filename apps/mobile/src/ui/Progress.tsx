@@ -23,7 +23,7 @@ export function ProgressBar({
       accessibilityRole="progressbar"
       accessibilityLabel={label}
       accessibilityValue={{ min: 0, max: 100, now: Math.round(v * 100) }}
-      style={{ height, borderRadius: height / 2, backgroundColor: c.fill, overflow: 'hidden' }}
+      style={{ height, borderRadius: height / 2, backgroundColor: c.limeSoft, overflow: 'hidden' }}
     >
       <View
         style={{
@@ -45,11 +45,13 @@ export function ProgressRing({
   color,
   children,
   label,
+  trackColor,
 }: {
   value: number;
   size?: number;
   stroke?: number;
   color?: string;
+  trackColor?: string;
   children?: React.ReactNode;
   label?: string;
 }) {
@@ -80,7 +82,7 @@ export function ProgressRing({
           cx={size / 2}
           cy={size / 2}
           r={r}
-          stroke={c.fill}
+          stroke={trackColor ?? c.limeSoft}
           strokeWidth={stroke}
           fill="none"
         />

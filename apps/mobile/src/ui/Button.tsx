@@ -3,6 +3,7 @@ import { ActivityIndicator, View, type StyleProp, type ViewStyle } from 'react-n
 import { Press } from './Press';
 import { Symbol, type SymbolName } from './Symbol';
 import { Text } from './Text';
+import { Glass } from './Surfaces';
 import { useTheme } from './theme';
 
 type Kind = 'primary' | 'secondary' | 'plain' | 'destructive';
@@ -28,16 +29,27 @@ export function Button({
   style?: StyleProp<ViewStyle>;
   accessibilityHint?: string;
 }) {
-  const { c, radius } = useTheme();
+  const { c, dark, radius } = useTheme();
   const bg =
     kind === 'primary'
       ? c.accent
       : kind === 'secondary'
-        ? c.accentSoft
+        ? dark
+          ? c.accentSoft
+          : c.lime
         : kind === 'destructive'
           ? c.dangerSoft
           : 'transparent';
-  const fg = kind === 'primary' ? c.onAccent : kind === 'destructive' ? c.danger : c.accent;
+  const fg =
+    kind === 'primary'
+      ? c.onAccent
+      : kind === 'secondary'
+        ? dark
+          ? c.accent
+          : c.onLime
+        : kind === 'destructive'
+          ? c.danger
+          : c.accent;
   const h = size === 'large' ? 52 : 44;
   return (
     <Press
@@ -93,13 +105,13 @@ export function IconButton({
   icon: SymbolName;
   label: string;
   onPress: () => void;
-  tone?: 'surface' | 'accent' | 'soft';
+  tone?: 'surface' | 'accent' | 'soft' | 'glass';
   badge?: boolean;
 }) {
   const { c } = useTheme();
   const bg = tone === 'accent' ? c.accent : tone === 'soft' ? c.accentSoft : c.surface;
   const fg = tone === 'accent' ? c.onAccent : tone === 'soft' ? c.accent : c.ink;
-  return (
+  const button = (
     <Press
       onPress={onPress}
       accessibilityLabel={label}
@@ -108,7 +120,7 @@ export function IconButton({
         width: 44,
         height: 44,
         borderRadius: 22,
-        backgroundColor: bg,
+        backgroundColor: tone === 'glass' ? 'transparent' : bg,
         alignItems: 'center',
         justifyContent: 'center',
       }}
@@ -131,4 +143,7 @@ export function IconButton({
       ) : null}
     </Press>
   );
+  // Map controls: frosted glass over the map (boards 1 and 3)
+  if (tone === 'glass') return <Glass style={{ borderRadius: 22 }}>{button}</Glass>;
+  return button;
 }

@@ -8,9 +8,12 @@ import React, { useState } from 'react';
 import { Alert, Image, TextInput, View } from 'react-native';
 import * as ImagePicker from 'expo-image-picker';
 import { useTranslation } from 'react-i18next';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import {
   Button,
   Card,
+  Glass,
+  Gradient,
   Press,
   ProgressRing,
   Row,
@@ -18,7 +21,6 @@ import {
   Section,
   Segmented,
   Symbol,
-  Tag,
   Text,
   useTheme,
   type SymbolName,
@@ -46,7 +48,8 @@ export function ProfileTab({
   onOpenProgress: () => void;
 }) {
   const { t } = useTranslation();
-  const { c, dark } = useTheme();
+  const { c, dark, g } = useTheme();
+  const insets = useSafeAreaInsets();
   const toggleTheme = useThemeStore((s) => s.toggleTheme);
   const [editing, setEditing] = useState(false);
   const stats = useMyStats();
@@ -88,39 +91,64 @@ export function ProfileTab({
     ) : null;
 
   return (
-    <Screen title={t('ui_tabs.profile')}>
-      <View style={{ alignItems: 'center', gap: 8, marginBottom: 24 }}>
-        <View>
-          <Avatar account={userAccount} size={104} />
-          <Press
-            onPress={() => setEditing(true)}
-            accessibilityLabel={t('ui_profile.edit_title')}
-            style={{
-              position: 'absolute',
-              right: -4,
-              bottom: -4,
-              width: 40,
-              height: 40,
-              borderRadius: 20,
-              backgroundColor: c.surface,
-              borderWidth: 3,
-              borderColor: c.canvas,
-              alignItems: 'center',
-              justifyContent: 'center',
-            }}
+    <Screen
+      title={t('ui_tabs.profile')}
+      header={
+        <Gradient
+          colors={g.hero}
+          style={{
+            marginTop: -(insets.top + 12),
+            marginHorizontal: -20,
+            paddingTop: insets.top + 16,
+            paddingBottom: 64,
+            alignItems: 'center',
+            gap: 8,
+            borderBottomLeftRadius: 32,
+            borderBottomRightRadius: 32,
+          }}
+        >
+          <Text
+            variant="headline"
+            style={{ color: '#FFFFFF', marginBottom: 8 }}
+            accessibilityRole="header"
           >
-            <Symbol name="edit" size={17} color={c.accent} weight="semibold" />
-          </Press>
-        </View>
-        <Text variant="title2" align="center" style={{ marginTop: 4 }}>
-          {userAccount.name}
-        </Text>
-        <View style={{ alignSelf: 'center' }}>
-          <Tag label={t(`ui_profile.role_${userAccount.role}`)} />
-        </View>
-      </View>
-
-      <Card style={{ marginBottom: 20, paddingVertical: 12 }}>
+            {t('ui_tabs.profile')}
+          </Text>
+          <View style={{ borderRadius: 60, borderWidth: 4, borderColor: 'rgba(255,255,255,0.6)' }}>
+            <Avatar account={userAccount} size={104} />
+            <Press
+              onPress={() => setEditing(true)}
+              accessibilityLabel={t('ui_profile.edit_title')}
+              style={{
+                position: 'absolute',
+                right: -6,
+                bottom: -6,
+                width: 40,
+                height: 40,
+                borderRadius: 20,
+                backgroundColor: c.lime,
+                alignItems: 'center',
+                justifyContent: 'center',
+              }}
+            >
+              <Symbol name="edit" size={17} color={c.onLime} weight="semibold" />
+            </Press>
+          </View>
+          <Text variant="title2" align="center" style={{ marginTop: 6, color: '#FFFFFF' }}>
+            {userAccount.name}
+          </Text>
+          <Glass
+            tone="onColor"
+            style={{ borderRadius: 999, paddingHorizontal: 12, paddingVertical: 4 }}
+          >
+            <Text variant="footnote" weight="600" style={{ color: '#FFFFFF' }}>
+              {t(`ui_profile.role_${userAccount.role}`)}
+            </Text>
+          </Glass>
+        </Gradient>
+      }
+    >
+      <Card style={{ marginTop: -44, marginBottom: 20, paddingVertical: 12 }}>
         <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 4 }}>
           <Text variant="title3" style={{ flex: 1 }} accessibilityRole="header">
             {t('ui_profile.personal_info')}
