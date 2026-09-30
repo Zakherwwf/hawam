@@ -1,26 +1,19 @@
 import React from 'react';
 import { router } from 'expo-router';
-import { AccountScreen } from '../../src/screens/AccountScreen';
+import { ProfileTab } from '../../src/screens/ProfileTab';
 import { useAppState } from '../../src/app-state/AppStateProvider';
-import { hapticButtonPress } from '../../src/utils/haptics';
 
-export default function MeRoute() {
-  const { userAccount, saveAccount, signOut, sightings, stats } = useAppState();
+export default function ProfileRoute() {
+  const { userAccount, saveAccount, signOut } = useAppState();
   return (
-    <AccountScreen
+    <ProfileTab
       userAccount={userAccount}
-      onSaveAccount={saveAccount}
+      authEmail={userAccount?.email}
+      onSave={saveAccount}
       onSignOut={signOut}
-      onOpenTraining={() => {
-        hapticButtonPress();
-        router.push('/training');
-      }}
-      onOpenSettings={() => {
-        hapticButtonPress();
-        router.push('/settings');
-      }}
-      sightings={sightings}
-      stats={stats}
+      onOpenTraining={() => router.push('/training')}
+      onOpenSettings={() => router.push('/settings')}
+      onOpenProgress={() => router.navigate('/progress')}
     />
   );
 }

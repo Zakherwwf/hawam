@@ -1,4 +1,4 @@
-import type { SightingItem } from '../screens/SightingsScreen';
+import type { SightingItem } from './types';
 import type { MapObservationRow } from '../services/supabase';
 
 /** A server observation as the screens display it. */

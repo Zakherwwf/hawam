@@ -93,4 +93,10 @@ export interface InteractiveMapViewProps {
   onColonyPress?: (colonyId: string) => void;
   onTransectPress?: (transectId: string) => void;
   height?: DimensionValue;
+  /** Hide the renderer's own floating controls (the screen provides its own) */
+  hideControls?: boolean;
+  /** Base map style, when the screen controls it */
+  mapStyle?: MapStyle;
 }
+
+export type MapStyle = 'streets' | 'satellite' | 'outdoors';

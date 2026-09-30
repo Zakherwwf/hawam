@@ -1,18 +1,14 @@
 import React from 'react';
 import { router } from 'expo-router';
-import { SightingsScreen } from '../../src/screens/SightingsScreen';
+import { SightingsTab } from '../../src/screens/SightingsTab';
 import { useAppState } from '../../src/app-state/AppStateProvider';
-import { hapticQuickLog } from '../../src/utils/haptics';
 
-export default function ActivityRoute() {
+export default function SightingsRoute() {
   const { sightings, updateSighting, deleteSighting } = useAppState();
   return (
-    <SightingsScreen
+    <SightingsTab
       sightings={sightings}
-      onAddNew={() => {
-        hapticQuickLog();
-        router.push('/opportunistic');
-      }}
+      onAddNew={() => router.push('/opportunistic')}
       onUpdateSighting={updateSighting}
       onDeleteSighting={deleteSighting}
     />

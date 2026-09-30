@@ -3,8 +3,8 @@
  * Active only when __DEV__ and EXPO_PUBLIC_PREVIEW_MODE=1; release builds
  * (__DEV__ false) can never enter preview mode.
  */
-import type { SightingItem } from '../screens/SightingsScreen';
-import type { UserAccount } from '../screens/AccountScreen';
+import type { SightingItem } from './types';
+import type { UserAccount } from './types';
 
 export const PREVIEW_MODE =
   typeof __DEV__ !== 'undefined' && __DEV__ && process.env.EXPO_PUBLIC_PREVIEW_MODE === '1';
@@ -15,7 +15,7 @@ export const PREVIEW_ACCOUNT: UserAccount = {
   organization: 'Carthage Street Animal Watch',
   role: 'surveyor',
   governorate: 'Tunis',
-  surveyorId: 'TUN-OBS-4F2A91',
+  surveyorId: 'OBS-4F2A91',
   createdAt: '2026-08-14T09:12:00Z',
 };
 

@@ -37,6 +37,8 @@ export const InteractiveMapView: React.FC<InteractiveMapViewProps> = ({
   onColonyPress,
   onTransectPress,
   height = '100%',
+  hideControls = false,
+  mapStyle,
 }) => {
   const { t } = useTranslation();
   const webViewRef = useRef<WebView>(null);
@@ -165,6 +167,15 @@ export const InteractiveMapView: React.FC<InteractiveMapViewProps> = ({
       `if (window.centerOnUser) { window.centerOnUser(${userLocation.lat}, ${userLocation.lon}, ${USER_LOCATION_ZOOM}); } true;`
     );
   }, [mapLoaded, savedCameraChecked, userLocation]);
+
+  // The screen may own the base style (MapTab's layer button)
+  useEffect(() => {
+    if (!mapStyle || !mapLoaded || mapStyle === currentLayer) return;
+    setCurrentLayer(mapStyle);
+    webViewRef.current?.injectJavaScript(
+      `if (window.switchMapboxStyle) { window.switchMapboxStyle("${mapStyle}"); } true;`
+    );
+  }, [mapStyle, mapLoaded, currentLayer]);
 
   const toggleLayer = () => {
     let next: 'streets' | 'satellite' | 'outdoors' = 'streets';
@@ -731,7 +742,7 @@ export const InteractiveMapView: React.FC<InteractiveMapViewProps> = ({
   `;
 
   return (
-    <View style={[styles.container, { height }]}>
+    <View style={[styles.container, { height }, hideControls && { borderRadius: 0 }]}>
       <WebView
         ref={webViewRef}
         originWhitelist={['*']}
@@ -767,40 +778,42 @@ export const InteractiveMapView: React.FC<InteractiveMapViewProps> = ({
       />
 
       {/* Floating Modern Map Controls (Airy Apple/Tactile Style) */}
-      <View style={styles.floatingControls}>
-        <TouchableOpacity style={styles.controlPill} onPress={toggleLayer} activeOpacity={0.7}>
-          <IOSIcon name="map" size={15} color={IOSColors.label} />
-          <Text style={styles.controlPillText}>
-            {currentLayer === 'streets'
-              ? t('ui_interactiveMapView.satellite')
-              : currentLayer === 'satellite'
-                ? t('ui_interactiveMapView.outdoors')
-                : t('ui_interactiveMapView.streets')}
-          </Text>
-        </TouchableOpacity>
-
-        {colonyMarkers.length > 0 && (
-          <TouchableOpacity
-            style={[styles.controlPill, showColoniesLayer && styles.controlPillActive]}
-            onPress={() => setShowColoniesLayer(!showColoniesLayer)}
-            activeOpacity={0.7}
-          >
-            <IOSIcon name="shield" size={13} color={showColoniesLayer ? '#FFFFFF' : '#7C3AED'} />
-            <Text
-              style={[styles.controlPillText, showColoniesLayer && styles.controlPillTextActive]}
-            >
-              {t('ui_interactiveMapView.colonies', { v1: showColoniesLayer ? 'ON' : 'OFF' })}
+      {!hideControls ? (
+        <View style={styles.floatingControls}>
+          <TouchableOpacity style={styles.controlPill} onPress={toggleLayer} activeOpacity={0.7}>
+            <IOSIcon name="map" size={15} color={IOSColors.label} />
+            <Text style={styles.controlPillText}>
+              {currentLayer === 'streets'
+                ? t('ui_interactiveMapView.satellite')
+                : currentLayer === 'satellite'
+                  ? t('ui_interactiveMapView.outdoors')
+                  : t('ui_interactiveMapView.streets')}
             </Text>
           </TouchableOpacity>
-        )}
 
-        <TouchableOpacity style={styles.controlCircle} onPress={centerOnUser} activeOpacity={0.7}>
-          <IOSIcon name="location" size={18} color={IOSColors.systemTeal} />
-        </TouchableOpacity>
-      </View>
+          {colonyMarkers.length > 0 && (
+            <TouchableOpacity
+              style={[styles.controlPill, showColoniesLayer && styles.controlPillActive]}
+              onPress={() => setShowColoniesLayer(!showColoniesLayer)}
+              activeOpacity={0.7}
+            >
+              <IOSIcon name="shield" size={13} color={showColoniesLayer ? '#FFFFFF' : '#7C3AED'} />
+              <Text
+                style={[styles.controlPillText, showColoniesLayer && styles.controlPillTextActive]}
+              >
+                {t('ui_interactiveMapView.colonies', { v1: showColoniesLayer ? 'ON' : 'OFF' })}
+              </Text>
+            </TouchableOpacity>
+          )}
+
+          <TouchableOpacity style={styles.controlCircle} onPress={centerOnUser} activeOpacity={0.7}>
+            <IOSIcon name="location" size={18} color={IOSColors.systemTeal} />
+          </TouchableOpacity>
+        </View>
+      ) : null}
 
       {/* Accuracy Tag */}
-      {userLocation ? (
+      {userLocation && !hideControls ? (
         <View style={styles.accuracyTag}>
           <View style={styles.pulseDot} />
           <Text style={styles.accuracyText}>

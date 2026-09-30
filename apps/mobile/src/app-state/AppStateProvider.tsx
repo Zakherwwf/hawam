@@ -9,10 +9,12 @@ import { Linking } from 'react-native';
 import { router } from 'expo-router';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
-import { setAppLanguage } from '../i18n';
+import i18n, { setAppLanguage } from '../i18n';
+import { useToast } from '../ui/Toast';
+import { quickSightingXp } from '../features/gamification/progress';
 import { CURRENT_CONSENT_VERSION } from '../screens/ConsentScreen';
-import type { SightingItem } from '../screens/SightingsScreen';
-import type { UserAccount } from '../screens/AccountScreen';
+import type { SightingItem } from './types';
+import type { UserAccount } from './types';
 import { useSyncStore } from '../features/sync/syncStore';
 import { useSurveyStore } from '../features/survey/surveyStore';
 import { useGamificationStore } from '../features/gamification/gamificationStore';
@@ -53,10 +55,8 @@ interface AppState {
   refreshMapObservations: () => Promise<void>;
   capturedPhotos: any[];
   stats: SurveyStats;
-  primaryViewMode: 'map' | 'dashboard';
   selectedRouteForSurvey: string | null;
   setCapturedPhotos: (photos: any[]) => void;
-  setPrimaryViewMode: (mode: 'map' | 'dashboard') => void;
   setSelectedRouteForSurvey: (routeId: string | null) => void;
   closeModal: () => void;
   acceptConsent: (version?: string) => Promise<void>;
@@ -128,7 +128,6 @@ export function AppStateProvider({ children }: { children: React.ReactNode }) {
   const [sightings, setSightings] = useState<SightingItem[]>([]);
   const [capturedPhotos, setCapturedPhotos] = useState<any[]>([]);
   const [stats, setStats] = useState<SurveyStats>(EMPTY_STATS);
-  const [primaryViewMode, setPrimaryViewMode] = useState<'map' | 'dashboard'>('map');
   const [selectedRouteForSurvey, setSelectedRouteForSurvey] = useState<string | null>(null);
   const [remoteObservations, setRemoteObservations] = useState<MapObservationRow[]>([]);
   const lastSyncedAt = useSyncStore((s) => s.lastSyncedAt);
@@ -310,13 +309,23 @@ export function AppStateProvider({ children }: { children: React.ReactNode }) {
     setConsentAccepted(true);
   };
 
-  const saveAccount = async (account: UserAccount) => {
-    setUserAccount(account);
+  const saveAccount = async (input: UserAccount) => {
+    let account = input;
     try {
-      await AsyncStorage.setItem('hawem_account_v1', JSON.stringify(account));
       const {
         data: { session },
       } = await supabase.auth.getSession();
+      // A new profile gets an observer ID derived from the auth user, once
+      if (!account.surveyorId) {
+        account = {
+          ...account,
+          surveyorId: session?.user?.id
+            ? `OBS-${session.user.id.slice(0, 6).toUpperCase()}`
+            : `OBS-${Math.floor(100000 + Math.random() * 900000)}`,
+        };
+      }
+      setUserAccount(account);
+      await AsyncStorage.setItem('hawem_account_v1', JSON.stringify(account));
       if (session?.user?.id) {
         await AsyncStorage.setItem(`hawem_account_${session.user.id}`, JSON.stringify(account));
         supabase.auth
@@ -338,6 +347,7 @@ export function AppStateProvider({ children }: { children: React.ReactNode }) {
         useGamificationStore.getState().loadGamification(session.user.id);
       }
     } catch (err) {
+      setUserAccount(account);
       console.warn('Error saving account:', err);
     }
   };
@@ -384,6 +394,8 @@ export function AppStateProvider({ children }: { children: React.ReactNode }) {
       console.warn('Opportunistic sighting without coordinates was not saved');
       return;
     }
+    // One photo per observation: the quick sighting passes it directly
+    const photosToSave: any[] = observation.photos ?? capturedPhotos;
     const newItem: SightingItem = {
       id: generateUUID(),
       species: observation.species,
@@ -396,7 +408,7 @@ export function AppStateProvider({ children }: { children: React.ReactNode }) {
       body_condition_score: observation.body_condition_score,
       protocol: 'incidental',
       notes: observation.notes,
-      photos: capturedPhotos.map((p) => p.uri),
+      photos: photosToSave.map((p) => p.uri),
     };
 
     persistSightings([newItem, ...sightings]);
@@ -434,9 +446,20 @@ export function AppStateProvider({ children }: { children: React.ReactNode }) {
           location: point,
           observer_location: point,
           notes: newItem.notes,
+          // Details from the sighting form; the server defaults any left out
+          // to 'unknown' rather than guessing
+          sex: observation.sex,
+          age_class: observation.age_class,
+          reproductive_status: observation.reproductive_status,
+          visible_health_issues: observation.visible_health_issues,
+          ear_tip_or_notch: observation.ear_tip_or_notch,
+          collar_or_tag: observation.collar_or_tag,
+          behaviour: observation.behaviour,
+          habitat_type: observation.habitat_type,
+          gps_accuracy_m: observation.gps_accuracy_m,
         },
       ],
-      photos: capturedPhotos.map((p) => ({
+      photos: photosToSave.map((p) => ({
         id: generateUUID(),
         observation_id: newItem.id,
         storage_path: p.uri,
@@ -447,10 +470,16 @@ export function AppStateProvider({ children }: { children: React.ReactNode }) {
 
     useSyncStore.getState().enqueueSurvey(bundle);
     useGamificationStore.getState().awardXp(10, 'Incidental field observation logged');
+    useToast.getState().show({
+      title: i18n.t('ui_quick.saved'),
+      detail: i18n.t('ui_quick.saved_detail'),
+      xp: quickSightingXp({ animals: newItem.group_size || 1, hasPhoto: photosToSave.length > 0 }),
+      icon: 'paw',
+    });
 
     setCapturedPhotos([]);
     router.dismissAll();
-    router.navigate('/animals');
+    router.navigate('/activity');
   };
 
   const logAnimalInSurvey = (animal: any) => {
@@ -513,10 +542,8 @@ export function AppStateProvider({ children }: { children: React.ReactNode }) {
     refreshMapObservations,
     capturedPhotos,
     stats,
-    primaryViewMode,
     selectedRouteForSurvey,
     setCapturedPhotos,
-    setPrimaryViewMode,
     setSelectedRouteForSurvey,
     closeModal,
     acceptConsent,

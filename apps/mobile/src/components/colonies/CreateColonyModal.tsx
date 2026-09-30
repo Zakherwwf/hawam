@@ -35,8 +35,8 @@ interface CreateColonyModalProps {
 export const CreateColonyModal: React.FC<CreateColonyModalProps> = ({
   visible,
   onClose,
-  initialLat = 36.8065,
-  initialLon = 10.1815,
+  initialLat,
+  initialLon,
 }) => {
   const { t } = useTranslation();
   const { addColony } = useColoniesStore();
@@ -45,8 +45,8 @@ export const CreateColonyModal: React.FC<CreateColonyModalProps> = ({
   const [name, setName] = useState('');
   const [nameAr, setNameAr] = useState('');
   const [zone, setZone] = useState('');
-  const [latitude, setLatitude] = useState(initialLat.toFixed(6));
-  const [longitude, setLongitude] = useState(initialLon.toFixed(6));
+  const [latitude, setLatitude] = useState(initialLat != null ? initialLat.toFixed(6) : '');
+  const [longitude, setLongitude] = useState(initialLon != null ? initialLon.toFixed(6) : '');
   const [estimatedPopulation, setEstimatedPopulation] = useState('6');
   const [tnrSterilizedCount, setTnrSterilizedCount] = useState('2');
   const [hasWaterStation, setHasWaterStation] = useState(false);
@@ -58,8 +58,9 @@ export const CreateColonyModal: React.FC<CreateColonyModalProps> = ({
 
   useEffect(() => {
     if (visible) {
-      setLatitude(initialLat.toFixed(6));
-      setLongitude(initialLon.toFixed(6));
+      // No made-up default position: empty until the GPS or the volunteer fills it
+      setLatitude(initialLat != null ? initialLat.toFixed(6) : '');
+      setLongitude(initialLon != null ? initialLon.toFixed(6) : '');
     }
   }, [visible, initialLat, initialLon]);
 

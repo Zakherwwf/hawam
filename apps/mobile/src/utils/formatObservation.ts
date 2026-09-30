@@ -56,3 +56,18 @@ export function formatObservedAt(
   if (sameDay(d, yesterday)) return `${labels.yesterday}, ${time(d)}`;
   return `${shortDate(d, d.getFullYear() !== now.getFullYear())}, ${time(d)}`;
 }
+
+/** The day heading for a list of sightings: "Today", "Yesterday" or "3 Sep". */
+export function formatDay(
+  iso: string,
+  labels: { today: string; yesterday: string },
+  now: Date = new Date()
+): string {
+  const d = new Date(iso);
+  if (Number.isNaN(d.getTime())) return '';
+  const yesterday = new Date(now);
+  yesterday.setDate(now.getDate() - 1);
+  if (sameDay(d, now)) return labels.today;
+  if (sameDay(d, yesterday)) return labels.yesterday;
+  return shortDate(d, d.getFullYear() !== now.getFullYear());
+}

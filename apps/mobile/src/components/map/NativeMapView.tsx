@@ -64,6 +64,7 @@ export const NativeMapView: React.FC<InteractiveMapViewProps> = ({
   onColonyPress,
   onTransectPress,
   height = '100%',
+  hideControls = false,
 }) => {
   const { t } = useTranslation();
   const cameraRef = useRef<CameraRef>(null);
@@ -190,7 +191,7 @@ export const NativeMapView: React.FC<InteractiveMapViewProps> = ({
     e.nativeEvent.features?.[0]?.properties as Record<string, any> | undefined;
 
   return (
-    <View style={[styles.container, { height }]}>
+    <View style={[styles.container, { height }, hideControls && { borderRadius: 0 }]}>
       <Map
         style={StyleSheet.absoluteFill}
         mapStyle={MAP_STYLE_URL}
@@ -374,38 +375,40 @@ export const NativeMapView: React.FC<InteractiveMapViewProps> = ({
         {showUserLocation ? <UserLocation accuracy heading /> : null}
       </Map>
 
-      <View style={styles.floatingControls}>
-        {colonyMarkers.length > 0 && (
+      {!hideControls ? (
+        <View style={styles.floatingControls}>
+          {colonyMarkers.length > 0 && (
+            <TouchableOpacity
+              style={[styles.controlPill, showColonies && styles.controlPillActive]}
+              onPress={() => setShowColonies(!showColonies)}
+              activeOpacity={0.7}
+            >
+              <IOSIcon name="shield" size={13} color={showColonies ? '#FFFFFF' : '#7C3AED'} />
+              <Text style={[styles.controlPillText, showColonies && styles.controlPillTextActive]}>
+                {t('ui_interactiveMapView.colonies', { v1: showColonies ? 'ON' : 'OFF' })}
+              </Text>
+            </TouchableOpacity>
+          )}
           <TouchableOpacity
-            style={[styles.controlPill, showColonies && styles.controlPillActive]}
-            onPress={() => setShowColonies(!showColonies)}
+            style={styles.controlCircle}
+            onPress={() => {
+              if (userLocation) {
+                cameraRef.current?.flyTo({
+                  center: [userLocation.lon, userLocation.lat],
+                  zoom: 16,
+                });
+              }
+            }}
             activeOpacity={0.7}
+            accessibilityRole="button"
+            accessibilityLabel={t('ui_interactiveMapView.center_on_me')}
           >
-            <IOSIcon name="shield" size={13} color={showColonies ? '#FFFFFF' : '#7C3AED'} />
-            <Text style={[styles.controlPillText, showColonies && styles.controlPillTextActive]}>
-              {t('ui_interactiveMapView.colonies', { v1: showColonies ? 'ON' : 'OFF' })}
-            </Text>
+            <IOSIcon name="location" size={18} color={IOSColors.systemTeal} />
           </TouchableOpacity>
-        )}
-        <TouchableOpacity
-          style={styles.controlCircle}
-          onPress={() => {
-            if (userLocation) {
-              cameraRef.current?.flyTo({
-                center: [userLocation.lon, userLocation.lat],
-                zoom: 16,
-              });
-            }
-          }}
-          activeOpacity={0.7}
-          accessibilityRole="button"
-          accessibilityLabel={t('ui_interactiveMapView.center_on_me')}
-        >
-          <IOSIcon name="location" size={18} color={IOSColors.systemTeal} />
-        </TouchableOpacity>
-      </View>
+        </View>
+      ) : null}
 
-      {userLocation ? (
+      {userLocation && !hideControls ? (
         <View style={styles.accuracyTag}>
           <View style={styles.pulseDot} />
           <Text style={styles.accuracyText}>

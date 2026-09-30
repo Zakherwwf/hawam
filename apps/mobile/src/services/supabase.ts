@@ -109,6 +109,16 @@ export interface SurveyBundlePayload {
       coordinates?: [number, number]; // [lon, lat]
     };
     notes?: string | null;
+    // Animal details (enum values of the matching database types)
+    sex?: string;
+    age_class?: string;
+    reproductive_status?: string;
+    visible_health_issues?: string[];
+    ear_tip_or_notch?: string;
+    collar_or_tag?: string;
+    behaviour?: string;
+    habitat_type?: string;
+    coat_pattern?: string;
   }>;
   photos?: Array<{
     id: string;

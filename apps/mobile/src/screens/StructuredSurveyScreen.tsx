@@ -447,14 +447,13 @@ export const StructuredSurveyScreen: React.FC<StructuredSurveyScreenProps> = ({
   };
 
   const handleAddInSurveyPhoto = async () => {
+    // One photo per observation: a new photo replaces the previous one
     const photo = await promptPhotoCaptureChoice(
-      `Capture ${sightingSpecies === 'cat' ? 'Cat' : 'Dog'} Photo`,
-      groupSize > 1
-        ? `Take photo of animal #${attachedPhotos.length + 1} in the group, or a wide shot.`
-        : 'Take a clear photo for identification.'
+      t('ui_quick.take_photo'),
+      t('ui_quick.photo_hint')
     );
     if (photo?.uri) {
-      setAttachedPhotos((prev) => [...prev, photo.uri]);
+      setAttachedPhotos([photo.uri]);
     }
   };
 
@@ -1633,12 +1632,8 @@ export const StructuredSurveyScreen: React.FC<StructuredSurveyScreenProps> = ({
                           onPress={handleAddInSurveyPhoto}
                           style={styles.addMorePhotoBtn}
                         >
-                          <IOSIcon name="plus" size={18} color={IOSColors.systemTeal} />
-                          <Text style={styles.addMorePhotoText}>
-                            {groupSize > 1
-                              ? t('ui_structuredSurvey.add_animal')
-                              : t('ui_structuredSurvey.add_photo')}
-                          </Text>
+                          <IOSIcon name="camera" size={18} color={IOSColors.systemTeal} />
+                          <Text style={styles.addMorePhotoText}>{t('ui_quick.retake')}</Text>
                         </TouchableOpacity>
                       </ScrollView>
                     </View>

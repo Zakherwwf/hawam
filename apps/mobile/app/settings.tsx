@@ -1,22 +1,17 @@
 import React from 'react';
-import { SettingsScreen } from '../src/screens/SettingsScreen';
-import { ModalFrame } from '../src/components/common/ModalFrame';
+import { SettingsView } from '../src/screens/SettingsView';
 import { useAppState } from '../src/app-state/AppStateProvider';
 
 export default function SettingsRoute() {
-  const { closeModal, changeLanguage, sightings, userAccount, signOut } = useAppState();
+  const { closeModal, changeLanguage, signOut } = useAppState();
   return (
-    <ModalFrame>
-      <SettingsScreen
-        onBack={closeModal}
-        onLanguageChange={changeLanguage}
-        sightings={sightings}
-        userAccount={userAccount}
-        onAccountDeleted={() => {
-          closeModal();
-          signOut();
-        }}
-      />
-    </ModalFrame>
+    <SettingsView
+      onBack={closeModal}
+      onLanguageChange={changeLanguage}
+      onAccountDeleted={() => {
+        closeModal();
+        signOut();
+      }}
+    />
   );
 }

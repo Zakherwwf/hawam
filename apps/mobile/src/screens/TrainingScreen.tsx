@@ -1,20 +1,12 @@
+/**
+ * Training (v3): five short lessons, each with a one-question check. Passing
+ * all five marks the volunteer as trained on this phone.
+ */
 import React, { useState } from 'react';
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Platform } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
+import { View } from 'react-native';
 import { useTranslation } from 'react-i18next';
-import { IOSColors, IOSTypography } from '../theme/ios';
-import { IOSNavigationBar, IOSButton, IOSIcon, IconName } from '../components/ios';
 import { useGamificationStore } from '../features/gamification/gamificationStore';
-import {
-  hapticButtonPress,
-  hapticSuccess,
-  hapticWarning,
-  hapticModalClose,
-} from '../utils/haptics';
-
-interface TrainingScreenProps {
-  onBack: () => void;
-}
+import { Button, Card, Press, Screen, Symbol, Text, useTheme, type SymbolName } from '../ui';
 
 interface QuizQuestion {
   question: string;
@@ -26,17 +18,17 @@ interface QuizQuestion {
 interface TrainingModule {
   id: string;
   title: string;
-  icon: IconName;
+  icon: SymbolName;
   subtitle: string;
   keyConcepts: string[];
   referenceGuide?: { label: string; value: string }[];
   quiz: QuizQuestion;
 }
 
-export const TrainingScreen: React.FC<TrainingScreenProps> = ({ onBack }) => {
+export const TrainingScreen: React.FC<{ onBack: () => void }> = ({ onBack }) => {
   const { t } = useTranslation();
+  const { c, radius } = useTheme();
   const { isAcademyCertified, completeAcademyCertification } = useGamificationStore();
-
   const [currentStep, setCurrentStep] = useState(0);
   const [selectedAnswer, setSelectedAnswer] = useState<number | null>(null);
   const [answeredCorrectly, setAnsweredCorrectly] = useState<boolean[]>(new Array(5).fill(false));
@@ -46,7 +38,7 @@ export const TrainingScreen: React.FC<TrainingScreenProps> = ({ onBack }) => {
     {
       id: 'pace',
       title: t('ui_training.effort_search_pace'),
-      icon: 'compass',
+      icon: 'walk',
       subtitle: t('ui_training.scientific_density_modeling_requires_constant_st'),
       keyConcepts: [
         t('ui_training.maintain_a_steady_walking_pace_3'),
@@ -55,7 +47,7 @@ export const TrainingScreen: React.FC<TrainingScreenProps> = ({ onBack }) => {
       ],
       referenceGuide: [
         { label: t('ui_training.recommended_speed'), value: t('ui_training.3_0_4_0_km_h') },
-        { label: t('ui_training.gps_accuracy_threshold'), value: t('ui_training.20_meters') },
+        { label: t('ui_training.gps_accuracy_threshold'), value: t('ui_training_v3.gps_30') },
         { label: t('ui_training.minimum_transect_length'), value: t('ui_training.1_0_km') },
       ],
       quiz: {
@@ -129,38 +121,40 @@ export const TrainingScreen: React.FC<TrainingScreenProps> = ({ onBack }) => {
     },
     {
       id: 'photos',
-      title: t('ui_training.photographic_mark_resight'),
+      title: t('ui_training_v3.photo_title'),
       icon: 'camera',
-      subtitle: t('ui_training.individual_identification_requires_capturing_uni'),
+      subtitle: t('ui_training_v3.photo_sub'),
       keyConcepts: [
-        t('ui_training.left_and_right_flanks_of_cats'),
-        t('ui_training.a_full_id_set_requires_3'),
+        t('ui_training_v3.photo_1'),
+        t('ui_training_v3.photo_2'),
         t('ui_training.note_ear_tipping_a_straight_horizontal'),
       ],
       referenceGuide: [
-        { label: t('ui_training.angle_1'), value: t('ui_training.left_flank_lateral_profile') },
-        { label: t('ui_training.angle_2'), value: t('ui_training.right_flank_lateral_profile') },
         {
-          label: t('ui_training.angle_3'),
-          value: t('ui_training.frontal_face_facial_mask_whiskers'),
+          label: t('ui_training_v3.photo_ref_angle'),
+          value: t('ui_training_v3.photo_ref_angle_v'),
+        },
+        {
+          label: t('ui_training_v3.photo_ref_count'),
+          value: t('ui_training_v3.photo_ref_count_v'),
         },
         { label: t('ui_training.tnr_mark'), value: t('ui_training.ear_tip_notch_sterilized') },
       ],
       quiz: {
-        question: t('ui_training.why_is_a_single_flank_photograph'),
+        question: t('ui_training_v3.photo_q'),
         options: [
-          t('ui_training.because_coat_pigmentation_and_tabby_stripes'),
-          t('ui_training.because_the_camera_sensor_cannot_process'),
-          t('ui_training.because_free_roaming_animals_change_coat'),
+          t('ui_training_v3.photo_q_a'),
+          t('ui_training_v3.photo_q_b'),
+          t('ui_training_v3.photo_q_c'),
         ],
-        correctIndex: 0,
-        explanation: t('ui_training.mammalian_coat_patterns_develop_through_complex'),
+        correctIndex: 1,
+        explanation: t('ui_training_v3.photo_q_expl'),
       },
     },
     {
       id: 'zerodata',
       title: t('ui_training.complete_checklists_non_detections'),
-      icon: 'check',
+      icon: 'checkCircle',
       subtitle: t('ui_training.in_population_ecology_recording_zero_animals'),
       keyConcepts: [
         t('ui_training.if_you_walk_2_km_along'),
@@ -176,7 +170,7 @@ export const TrainingScreen: React.FC<TrainingScreenProps> = ({ onBack }) => {
           label: t('ui_training.reward'),
           value: t('ui_training.full_completion_xp_awarded_for_zero'),
         },
-        { label: t('ui_training.badge'), value: t('ui_training.unlocks_the_zero_hero_badge') },
+        { label: t('ui_training.badge'), value: t('ui_training_v3.zero_badge') },
       ],
       quiz: {
         question: t('ui_training.you_walked_a_2_5_km'),
@@ -199,7 +193,6 @@ export const TrainingScreen: React.FC<TrainingScreenProps> = ({ onBack }) => {
     setSelectedAnswer(index);
 
     if (index === currentModule.quiz.correctIndex) {
-      hapticSuccess();
       const updated = [...answeredCorrectly];
       updated[currentStep] = true;
       setAnsweredCorrectly(updated);
@@ -207,18 +200,12 @@ export const TrainingScreen: React.FC<TrainingScreenProps> = ({ onBack }) => {
       // Check if all 5 completed
       if (updated.every((val) => val)) {
         completeAcademyCertification();
-        setTimeout(() => {
-          hapticSuccess();
-          setShowCertificate(true);
-        }, 700);
+        setTimeout(() => setShowCertificate(true), 700);
       }
-    } else {
-      hapticWarning();
     }
   };
 
   const handleNext = () => {
-    hapticButtonPress();
     if (currentStep < modules.length - 1) {
       setCurrentStep((prev) => prev + 1);
       setSelectedAnswer(null);
@@ -228,558 +215,228 @@ export const TrainingScreen: React.FC<TrainingScreenProps> = ({ onBack }) => {
   };
 
   const handlePrevious = () => {
-    hapticButtonPress();
     if (currentStep > 0) {
       setCurrentStep((prev) => prev - 1);
       setSelectedAnswer(null);
     }
   };
 
-  const handleBack = () => {
-    hapticModalClose();
-    onBack();
-  };
-
   if (showCertificate) {
     return (
-      <SafeAreaView style={styles.safeArea} edges={['top', 'left', 'right']}>
-        <IOSNavigationBar
-          title={t('ui_training.field_academy_certificate')}
-          onBack={handleBack}
-          backTitle={t('nav.profile')}
+      <Screen title={t('ui_training_v3.done_title')} onBack={onBack} inTabs={false}>
+        <Card style={{ alignItems: 'center', gap: 12, paddingVertical: 32 }}>
+          <View
+            style={{
+              width: 80,
+              height: 80,
+              borderRadius: 40,
+              borderWidth: 4,
+              borderColor: c.gold,
+              alignItems: 'center',
+              justifyContent: 'center',
+            }}
+          >
+            <Symbol name="academy" size={36} color={c.gold} weight="semibold" />
+          </View>
+          <Text variant="title2" align="center">
+            {t('ui_training.certified_field_surveyor')}
+          </Text>
+          <Text variant="subhead" tone="ink2" align="center">
+            {t('ui_training_v3.done_body')}
+          </Text>
+        </Card>
+        <Button
+          title={t('ui_training_v3.review')}
+          kind="secondary"
+          onPress={() => {
+            setShowCertificate(false);
+            setCurrentStep(0);
+            setSelectedAnswer(null);
+          }}
+          style={{ marginTop: 20 }}
         />
-
-        <ScrollView
-          contentContainerStyle={styles.scrollContent}
-          showsVerticalScrollIndicator={false}
-        >
-          {/* Certificate Card */}
-          <View style={styles.certCard}>
-            <View style={styles.certBadgeCircle}>
-              <IOSIcon name="paw" size={40} color={IOSColors.systemTeal} />
-            </View>
-
-            <Text style={styles.certSuperTitle}>{t('ui_training.certificate_issuer')}</Text>
-            <Text style={styles.certTitle}>{t('ui_training.certified_field_surveyor')}</Text>
-            <Text style={styles.certSubtitle}>
-              {t('ui_training.fauna_observatory_free_roaming_animal_population')}
-            </Text>
-
-            <View style={styles.certDivider} />
-
-            <Text style={styles.certBody}>
-              {t('ui_training.this_credential_certifies_that_the_surveyor')}
-            </Text>
-
-            <View style={styles.certMetaRow}>
-              <View style={styles.certMetaItem}>
-                <Text style={styles.certMetaLabel}>{t('ui_training.credential')}</Text>
-                <Text style={styles.certMetaValue}>{t('ui_training.trained_surveyor')}</Text>
-              </View>
-              <View style={styles.certMetaItem}>
-                <Text style={styles.certMetaLabel}>{t('ui_training.xp_award')}</Text>
-                <Text style={styles.certMetaValue}>{t('ui_training.25_xp_awarded')}</Text>
-              </View>
-              <View style={styles.certMetaItem}>
-                <Text style={styles.certMetaLabel}>{t('ui_training.badge')}</Text>
-                <Text style={styles.certMetaValue}>{t('ui_training.academy_graduate')}</Text>
-              </View>
-            </View>
-          </View>
-
-          <View style={{ marginTop: 24 }}>
-            <IOSButton
-              title={t('ui_training.return_to_profile')}
-              variant="primary"
-              onPress={handleBack}
-            />
-          </View>
-        </ScrollView>
-      </SafeAreaView>
+        <Button title={t('ui_training_v3.done')} onPress={onBack} style={{ marginTop: 12 }} />
+      </Screen>
     );
   }
 
+  const m = currentModule;
+  const last = currentStep === modules.length - 1;
   return (
-    <SafeAreaView style={styles.safeArea} edges={['top', 'left', 'right']}>
-      <IOSNavigationBar
-        title={t('ui_training.field_academy_5', { v0: currentStep + 1 })}
-        onBack={handleBack}
-        backTitle={t('nav.profile')}
-      />
+    <Screen
+      title={t('ui_profile.training')}
+      subtitle={t('ui_training_v3.lesson', { n: currentStep + 1, total: modules.length })}
+      onBack={onBack}
+      inTabs={false}
+    >
+      <View style={{ flexDirection: 'row', gap: 6, marginBottom: 20 }}>
+        {modules.map((mod, i) => (
+          <Press
+            key={mod.id}
+            haptic={false}
+            onPress={() => {
+              setCurrentStep(i);
+              setSelectedAnswer(null);
+            }}
+            accessibilityLabel={t('ui_training_v3.lesson', { n: i + 1, total: modules.length })}
+            accessibilityState={{ selected: i === currentStep }}
+            style={{ flex: 1, height: 44, justifyContent: 'center' }}
+          >
+            <View
+              style={{
+                height: 6,
+                borderRadius: 3,
+                backgroundColor: answeredCorrectly[i]
+                  ? c.accent
+                  : i === currentStep
+                    ? c.ink2
+                    : c.fill,
+              }}
+            />
+          </Press>
+        ))}
+      </View>
 
-      <ScrollView contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
-        {/* Step Capsule Progress Bar */}
-        <View style={styles.stepCapsulesRow}>
-          {modules.map((m, idx) => (
-            <TouchableOpacity
-              key={m.id}
-              style={[
-                styles.stepCapsule,
-                idx === currentStep && styles.stepCapsuleActive,
-                answeredCorrectly[idx] && styles.stepCapsuleCompleted,
-              ]}
-              onPress={() => {
-                hapticButtonPress();
-                setCurrentStep(idx);
-                setSelectedAnswer(null);
+      <View style={{ flexDirection: 'row', gap: 14, alignItems: 'center', marginBottom: 12 }}>
+        <View
+          style={{
+            width: 48,
+            height: 48,
+            borderRadius: 24,
+            backgroundColor: c.accentSoft,
+            alignItems: 'center',
+            justifyContent: 'center',
+          }}
+        >
+          <Symbol name={m.icon} size={24} color={c.accent} weight="semibold" />
+        </View>
+        <Text variant="title2" style={{ flex: 1 }}>
+          {m.title}
+        </Text>
+      </View>
+      <Text variant="body" tone="ink2" style={{ marginBottom: 20 }}>
+        {m.subtitle}
+      </Text>
+
+      <Card style={{ gap: 12, marginBottom: 16 }}>
+        {m.keyConcepts.map((k, i) => (
+          <View key={i} style={{ flexDirection: 'row', gap: 10 }}>
+            <Symbol name="check" size={16} color={c.accent} weight="semibold" />
+            <Text variant="subhead" style={{ flex: 1 }}>
+              {k}
+            </Text>
+          </View>
+        ))}
+      </Card>
+
+      {m.referenceGuide ? (
+        <Card padded={false} style={{ marginBottom: 28 }}>
+          {m.referenceGuide.map((r, i) => (
+            <View
+              key={i}
+              style={{
+                flexDirection: 'row',
+                gap: 12,
+                paddingHorizontal: 16,
+                paddingVertical: 12,
+                borderTopWidth: i ? 0.5 : 0,
+                borderTopColor: c.hairline,
+              }}
+            >
+              <Text variant="subhead" tone="ink2" style={{ flex: 1 }}>
+                {r.label}
+              </Text>
+              <Text variant="subhead" weight="600" style={{ flexShrink: 1, textAlign: 'right' }}>
+                {r.value}
+              </Text>
+            </View>
+          ))}
+        </Card>
+      ) : null}
+
+      <Text
+        variant="footnote"
+        tone="ink2"
+        style={{ textTransform: 'uppercase', marginBottom: 8, marginHorizontal: 4 }}
+      >
+        {t('ui_training_v3.check')}
+      </Text>
+      <Text variant="headline" style={{ marginBottom: 12 }}>
+        {m.quiz.question}
+      </Text>
+      <View style={{ gap: 10 }}>
+        {m.quiz.options.map((opt, i) => {
+          const isCorrect = i === m.quiz.correctIndex;
+          const show = isCurrentQuizAnswered || selectedAnswer === i;
+          const good = show && isCorrect;
+          const bad = show && selectedAnswer === i && !isCorrect;
+          return (
+            <Press
+              key={i}
+              onPress={() => handleSelectOption(i)}
+              accessibilityRole="radio"
+              accessibilityState={{ selected: selectedAnswer === i }}
+              accessibilityLabel={opt}
+              style={{
+                flexDirection: 'row',
+                gap: 12,
+                alignItems: 'center',
+                padding: 14,
+                minHeight: 52,
+                borderRadius: radius.lg,
+                backgroundColor: good ? c.accentSoft : bad ? c.dangerSoft : c.surface,
+                borderWidth: 2,
+                borderColor: good ? c.accent : bad ? c.danger : 'transparent',
               }}
             >
               <Text
-                style={[
-                  styles.stepCapsuleText,
-                  idx === currentStep && styles.stepCapsuleTextActive,
-                ]}
+                variant="headline"
+                style={{ width: 20, color: good ? c.accent : bad ? c.danger : c.ink3 }}
               >
-                {idx + 1}
+                {String.fromCharCode(65 + i)}
               </Text>
-            </TouchableOpacity>
-          ))}
-        </View>
-
-        {/* Hero Card */}
-        <View style={styles.heroCard}>
-          <View style={styles.iconCircle}>
-            <IOSIcon name={currentModule.icon} size={28} color={IOSColors.systemTeal} />
-          </View>
-          <Text style={styles.heroTitle}>{currentModule.title}</Text>
-          <Text style={styles.heroSubtitle}>{currentModule.subtitle}</Text>
-        </View>
-
-        {/* Scientific Concepts List */}
-        <View style={styles.sectionCard}>
-          <Text style={styles.sectionHeader}>{t('ui_training.core_protocol_standards')}</Text>
-          {currentModule.keyConcepts.map((concept, index) => (
-            <View key={index} style={styles.bulletRow}>
-              <View style={styles.bulletDot} />
-              <Text style={styles.bulletText}>{concept}</Text>
-            </View>
-          ))}
-        </View>
-
-        {/* Field Reference Metric Guide */}
-        {currentModule.referenceGuide && (
-          <View style={styles.sectionCard}>
-            <Text style={styles.sectionHeader}>{t('ui_training.field_reference_standards')}</Text>
-            <View style={styles.refGrid}>
-              {currentModule.referenceGuide.map((ref, idx) => (
-                <View key={idx} style={styles.refItem}>
-                  <Text style={styles.refLabel}>{ref.label}</Text>
-                  <Text style={styles.refValue}>{ref.value}</Text>
-                </View>
-              ))}
-            </View>
-          </View>
-        )}
-
-        {/* Interactive Knowledge Check Card */}
-        <View style={styles.quizCard}>
-          <View style={styles.quizHeaderRow}>
-            <IOSIcon name="shield" size={16} color={IOSColors.systemTeal} />
-            <Text style={styles.quizHeader}>{t('ui_training.competency_verification_quiz')}</Text>
-          </View>
-
-          <Text style={styles.quizQuestion}>{currentModule.quiz.question}</Text>
-
-          <View style={styles.optionsList}>
-            {currentModule.quiz.options.map((opt, optIdx) => {
-              const isSelected = selectedAnswer === optIdx;
-              const isCorrect = optIdx === currentModule.quiz.correctIndex;
-              const showResult = isCurrentQuizAnswered || isSelected;
-
-              let cardStyle: any = styles.optionItem;
-              let textStyle: any = styles.optionText;
-
-              if (showResult && isCorrect) {
-                cardStyle = styles.optionItemCorrect;
-                textStyle = styles.optionTextCorrect;
-              } else if (showResult && isSelected && !isCorrect) {
-                cardStyle = styles.optionItemIncorrect;
-                textStyle = styles.optionTextIncorrect;
-              }
-
-              return (
-                <TouchableOpacity
-                  key={optIdx}
-                  style={cardStyle}
-                  onPress={() => handleSelectOption(optIdx)}
-                  activeOpacity={0.7}
-                >
-                  <View style={styles.optionLetterBox}>
-                    <Text style={styles.optionLetter}>{String.fromCharCode(65 + optIdx)}</Text>
-                  </View>
-                  <Text style={textStyle}>{opt}</Text>
-                </TouchableOpacity>
-              );
-            })}
-          </View>
-
-          {/* Feedback Explanation */}
-          {selectedAnswer !== null && (
-            <View
-              style={[
-                styles.feedbackBox,
-                selectedAnswer === currentModule.quiz.correctIndex
-                  ? styles.feedbackBoxCorrect
-                  : styles.feedbackBoxIncorrect,
-              ]}
-            >
-              <Text style={styles.feedbackTitle}>
-                {selectedAnswer === currentModule.quiz.correctIndex
-                  ? t('ui_training.correct_assessment')
-                  : t('ui_training.needs_review')}
+              <Text
+                variant="subhead"
+                style={{ flex: 1, color: good ? c.accent : bad ? c.danger : c.ink }}
+              >
+                {opt}
               </Text>
-              <Text style={styles.feedbackExplanation}>{currentModule.quiz.explanation}</Text>
-            </View>
-          )}
-        </View>
+            </Press>
+          );
+        })}
+      </View>
+      {selectedAnswer !== null ? (
+        <Card style={{ marginTop: 12, gap: 4 }}>
+          <Text
+            variant="headline"
+            style={{ color: selectedAnswer === m.quiz.correctIndex ? c.accent : c.danger }}
+          >
+            {selectedAnswer === m.quiz.correctIndex
+              ? t('ui_training_v3.right')
+              : t('ui_training_v3.try_again')}
+          </Text>
+          <Text variant="subhead" tone="ink2">
+            {m.quiz.explanation}
+          </Text>
+        </Card>
+      ) : null}
 
-        {/* Navigation Actions */}
-        <View style={styles.actionRow}>
-          {currentStep > 0 && (
-            <View style={{ flex: 1, marginRight: 8 }}>
-              <IOSButton
-                title={t('ui_training.previous')}
-                variant="secondary"
-                onPress={handlePrevious}
-              />
-            </View>
-          )}
-          <View style={{ flex: 1 }}>
-            <IOSButton
-              title={
-                currentStep === modules.length - 1
-                  ? isCurrentQuizAnswered
-                    ? t('ui_training.view_certificate')
-                    : t('ui_training.finish_quiz')
-                  : isCurrentQuizAnswered
-                    ? t('ui_training.next_module')
-                    : t('ui_training.continue')
-              }
-              variant="primary"
-              disabled={!isCurrentQuizAnswered}
-              onPress={handleNext}
-            />
-          </View>
-        </View>
-      </ScrollView>
-    </SafeAreaView>
+      <View style={{ flexDirection: 'row', gap: 12, marginTop: 24 }}>
+        {currentStep > 0 ? (
+          <Button
+            kind="secondary"
+            title={t('ui_training.previous')}
+            onPress={handlePrevious}
+            style={{ flex: 1 }}
+          />
+        ) : null}
+        <Button
+          title={last ? t('ui_training_v3.finish') : t('ui_training.next_module')}
+          disabled={!isCurrentQuizAnswered}
+          onPress={handleNext}
+          style={{ flex: 1 }}
+        />
+      </View>
+    </Screen>
   );
 };
-
-const styles = StyleSheet.create({
-  safeArea: {
-    flex: 1,
-    backgroundColor: IOSColors.systemGroupedBackground,
-  },
-  scrollContent: {
-    padding: 16,
-    paddingBottom: 40,
-  },
-  stepCapsulesRow: {
-    flexDirection: 'row',
-    gap: 8,
-    marginBottom: 16,
-  },
-  stepCapsule: {
-    flex: 1,
-    height: 32,
-    borderRadius: 8,
-    backgroundColor: IOSColors.secondarySystemGroupedBackground,
-    borderWidth: 1,
-    borderColor: IOSColors.separator,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  stepCapsuleActive: {
-    borderColor: IOSColors.systemTeal,
-    backgroundColor: 'rgba(48, 176, 199, 0.12)',
-  },
-  stepCapsuleCompleted: {
-    backgroundColor: IOSColors.systemTeal,
-    borderColor: IOSColors.systemTeal,
-  },
-  stepCapsuleText: {
-    ...IOSTypography.caption1,
-    fontWeight: '700',
-    color: IOSColors.secondaryLabel,
-  },
-  stepCapsuleTextActive: {
-    color: IOSColors.systemTeal,
-  },
-  heroCard: {
-    backgroundColor: IOSColors.secondarySystemGroupedBackground,
-    borderRadius: 16,
-    padding: 20,
-    alignItems: 'center',
-    marginBottom: 16,
-    borderWidth: StyleSheet.hairlineWidth,
-    borderColor: IOSColors.separator,
-  },
-  iconCircle: {
-    width: 60,
-    height: 60,
-    borderRadius: 30,
-    backgroundColor: 'rgba(48, 176, 199, 0.1)',
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginBottom: 12,
-  },
-  heroTitle: {
-    ...IOSTypography.title2,
-    fontWeight: '800',
-    color: IOSColors.label,
-    textAlign: 'center',
-    marginBottom: 6,
-  },
-  heroSubtitle: {
-    ...IOSTypography.subheadline,
-    color: IOSColors.secondaryLabel,
-    textAlign: 'center',
-    lineHeight: 20,
-  },
-  sectionCard: {
-    backgroundColor: IOSColors.secondarySystemGroupedBackground,
-    borderRadius: 14,
-    padding: 16,
-    marginBottom: 16,
-    borderWidth: StyleSheet.hairlineWidth,
-    borderColor: IOSColors.separator,
-  },
-  sectionHeader: {
-    ...IOSTypography.headline,
-    color: IOSColors.label,
-    fontWeight: '700',
-    marginBottom: 12,
-  },
-  bulletRow: {
-    flexDirection: 'row',
-    alignItems: 'flex-start',
-    marginBottom: 10,
-  },
-  bulletDot: {
-    width: 6,
-    height: 6,
-    borderRadius: 3,
-    backgroundColor: IOSColors.systemTeal,
-    marginTop: 7,
-    marginRight: 10,
-  },
-  bulletText: {
-    ...IOSTypography.body,
-    fontSize: 14,
-    lineHeight: 20,
-    color: IOSColors.label,
-    flex: 1,
-  },
-  refGrid: {
-    gap: 8,
-  },
-  refItem: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    paddingVertical: 8,
-    borderBottomWidth: StyleSheet.hairlineWidth,
-    borderBottomColor: IOSColors.separator,
-  },
-  refLabel: {
-    ...IOSTypography.subheadline,
-    fontWeight: '600',
-    color: IOSColors.secondaryLabel,
-  },
-  refValue: {
-    ...IOSTypography.subheadline,
-    fontWeight: '700',
-    color: IOSColors.label,
-  },
-  quizCard: {
-    backgroundColor: IOSColors.secondarySystemGroupedBackground,
-    borderRadius: 16,
-    padding: 18,
-    marginBottom: 20,
-    borderWidth: 1.5,
-    borderColor: 'rgba(48, 176, 199, 0.3)',
-  },
-  quizHeaderRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 6,
-    marginBottom: 8,
-  },
-  quizHeader: {
-    ...IOSTypography.caption1,
-    fontWeight: '700',
-    color: IOSColors.systemTeal,
-    textTransform: 'uppercase',
-    letterSpacing: 0.5,
-  },
-  quizQuestion: {
-    ...IOSTypography.headline,
-    color: IOSColors.label,
-    fontWeight: '700',
-    marginBottom: 14,
-    lineHeight: 22,
-  },
-  optionsList: {
-    gap: 10,
-  },
-  optionItem: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    padding: 12,
-    borderRadius: 12,
-    backgroundColor: IOSColors.systemBackground,
-    borderWidth: 1,
-    borderColor: IOSColors.separator,
-  },
-  optionItemCorrect: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    padding: 12,
-    borderRadius: 12,
-    backgroundColor: 'rgba(52, 199, 89, 0.08)',
-    borderWidth: 1.5,
-    borderColor: IOSColors.systemGreen,
-  },
-  optionItemIncorrect: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    padding: 12,
-    borderRadius: 12,
-    backgroundColor: 'rgba(255, 59, 48, 0.08)',
-    borderWidth: 1.5,
-    borderColor: IOSColors.systemRed,
-  },
-  optionLetterBox: {
-    width: 24,
-    height: 24,
-    borderRadius: 12,
-    backgroundColor: 'rgba(142, 142, 147, 0.15)',
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginRight: 10,
-  },
-  optionLetter: {
-    ...IOSTypography.caption2,
-    fontWeight: '800',
-    color: IOSColors.label,
-  },
-  optionText: {
-    ...IOSTypography.subheadline,
-    color: IOSColors.label,
-    flex: 1,
-    lineHeight: 18,
-  },
-  optionTextCorrect: {
-    ...IOSTypography.subheadline,
-    color: IOSColors.successText,
-    fontWeight: '700',
-    flex: 1,
-    lineHeight: 18,
-  },
-  optionTextIncorrect: {
-    ...IOSTypography.subheadline,
-    color: IOSColors.systemRed,
-    flex: 1,
-    lineHeight: 18,
-  },
-  feedbackBox: {
-    marginTop: 14,
-    padding: 12,
-    borderRadius: 10,
-  },
-  feedbackBoxCorrect: {
-    backgroundColor: 'rgba(52, 199, 89, 0.1)',
-  },
-  feedbackBoxIncorrect: {
-    backgroundColor: 'rgba(255, 59, 48, 0.1)',
-  },
-  feedbackTitle: {
-    ...IOSTypography.caption1,
-    fontWeight: '800',
-    marginBottom: 4,
-    textTransform: 'uppercase',
-  },
-  feedbackExplanation: {
-    ...IOSTypography.caption2,
-    color: IOSColors.label,
-    lineHeight: 16,
-  },
-  actionRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginTop: 8,
-  },
-  certCard: {
-    backgroundColor: IOSColors.secondarySystemGroupedBackground,
-    borderRadius: 20,
-    padding: 24,
-    alignItems: 'center',
-    borderWidth: 2,
-    borderColor: IOSColors.systemTeal,
-  },
-  certBadgeCircle: {
-    width: 80,
-    height: 80,
-    borderRadius: 40,
-    backgroundColor: 'rgba(48, 176, 199, 0.12)',
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginBottom: 16,
-  },
-  certSuperTitle: {
-    ...IOSTypography.caption2,
-    fontWeight: '800',
-    color: IOSColors.secondaryLabel,
-    letterSpacing: 1.5,
-    marginBottom: 4,
-  },
-  certTitle: {
-    ...IOSTypography.title1,
-    fontWeight: '900',
-    color: IOSColors.label,
-    marginBottom: 6,
-    textAlign: 'center',
-  },
-  certSubtitle: {
-    ...IOSTypography.caption1,
-    color: IOSColors.systemTeal,
-    fontWeight: '700',
-    textAlign: 'center',
-    marginBottom: 16,
-  },
-  certDivider: {
-    width: '60%',
-    height: 1,
-    backgroundColor: IOSColors.separator,
-    marginBottom: 16,
-  },
-  certBody: {
-    ...IOSTypography.body,
-    fontSize: 14,
-    lineHeight: 22,
-    color: IOSColors.label,
-    textAlign: 'center',
-    marginBottom: 20,
-  },
-  certMetaRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-around',
-    width: '100%',
-    paddingTop: 16,
-    borderTopWidth: StyleSheet.hairlineWidth,
-    borderTopColor: IOSColors.separator,
-  },
-  certMetaItem: {
-    alignItems: 'center',
-  },
-  certMetaLabel: {
-    ...IOSTypography.caption2,
-    color: IOSColors.secondaryLabel,
-    marginBottom: 4,
-  },
-  certMetaValue: {
-    ...IOSTypography.caption1,
-    fontWeight: '800',
-    color: IOSColors.systemTeal,
-  },
-});

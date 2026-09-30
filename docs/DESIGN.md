@@ -1,0 +1,91 @@
+# Hawem design system (v3)
+
+**Design read.** A field instrument for volunteers counting free-roaming cats and
+dogs outdoors, in a calm Apple-native language, with a motivating progress layer.
+Dials (taste-skill): variance 4, motion 4, density 3. Readable in sunlight beats
+decorative. Mode: overhaul of the visuals; content, data and science rules kept.
+
+Sources: `CLAUDE.md` (HIG, SF Pro, zero emoji, effort-over-count gamification),
+taste-skill and redesign-skill (anti-slop, states, copy), imagegen-frontend-mobile
+(iOS-native premium, navigation, readability, spacing, anti-AI tells),
+awesome-design-md `apple` (single action colour, SF type ladder, flat surfaces),
+Vercel web-interface-guidelines (dashboard), image-to-code (render, screenshot,
+analyse, correct; no image generator is available, so screenshots of the built
+screens are the reference images), playwright-cli (the screenshot loop).
+
+## Colour
+
+One action colour. Everything tappable that is a primary action uses it; nothing
+decorative does. Species colours are data encoding (map pins, species marks),
+never UI chrome.
+
+| Token         | Light              | Dark                     | Use                                 |
+| ------------- | ------------------ | ------------------------ | ----------------------------------- |
+| canvas        | `#F5F5F7`          | `#0B0B0D`                | screen background                   |
+| surface       | `#FFFFFF`          | `#1C1C1E`                | grouped rows, sheets                |
+| surfaceRaised | `#FFFFFF`          | `#2C2C2E`                | inputs on surface                   |
+| ink           | `#1D1D1F`          | `#F5F5F7`                | primary text                        |
+| ink2          | `#56565C`          | `#AEAEB2`                | secondary text (>= 4.5:1 on canvas) |
+| ink3          | `#6E6E73`          | `#8E8E93`                | tertiary text, captions             |
+| hairline      | `rgba(0,0,0,0.08)` | `rgba(255,255,255,0.10)` | separators                          |
+| accent        | `#0B6E4F`          | `#3DD68C`                | the action colour                   |
+| accentSoft    | `#E4F2EC`          | `#0F2E23`                | selected states, progress tracks    |
+| onAccent      | `#FFFFFF`          | `#0B0B0D`                | text on accent                      |
+| danger        | `#C62828`          | `#FF6B6B`                | destructive only                    |
+| warning       | `#8A5A00`          | `#F5B544`                | sync waiting, low GPS               |
+| cat           | `#3F5BD8`          | `#8EA2FF`                | data: cats                          |
+| dog           | `#C2410C`          | `#FF9A62`                | data: dogs                          |
+
+No gradients on UI. No pure black. No shadows on cards or buttons; the only
+shadow belongs to the photo on the sighting screen and to map pins.
+
+## Type (SF Pro via the system font; Android maps to the same ladder)
+
+| Style      | Size / line | Weight |
+| ---------- | ----------- | ------ |
+| largeTitle | 34 / 41     | 700    |
+| title1     | 28 / 34     | 700    |
+| title2     | 22 / 28     | 700    |
+| title3     | 20 / 25     | 600    |
+| headline   | 17 / 22     | 600    |
+| body       | 17 / 22     | 400    |
+| callout    | 16 / 21     | 400    |
+| subhead    | 15 / 20     | 400    |
+| footnote   | 13 / 18     | 400    |
+| caption    | 12 / 16     | 400    |
+
+Numbers that change or compare use tabular figures. Sentence case everywhere;
+no ALL-CAPS labels except the grouped-list section headers iOS itself uses.
+Minimum text size 12.
+
+## Space, shape, touch
+
+8-point grid: 4, 8, 12, 16, 20, 24, 32, 48. Screen side margin 20.
+Radii: `sm` 10 (inputs, small controls), `lg` 18 (grouped sections, sheets),
+`pill` (primary buttons, chips). Nothing else. Touch targets >= 44 x 44.
+
+## Components
+
+Screen (large title, safe areas, tab-bar clearance) - Section (grouped list,
+optional footnote) - Row (icon, title, detail, chevron) - Button (primary pill,
+secondary tinted, plain text) - Chip (filter, one selected state) - Stat
+(number + label, no card) - ProgressBar / ProgressRing - Badge medallion -
+EmptyState (icon, one line, one action) - Toast (XP celebration) - Sheet.
+
+Press feedback: scale to 0.97 with a light haptic. Motion under 250 ms, and none
+when the system asks for reduced motion.
+
+## Navigation
+
+Tab bar with icons and labels, translucent: Map, Sightings, record (+), Progress,
+Profile. The + opens a sheet with three large choices. Drill-downs push; short
+tasks (details, filters) use sheets.
+
+## Gamification (CLAUDE.md section 2)
+
+XP is the server's (`user_stats.xp`), never a device counter. Effort earns more
+than counts: distance, complete checklists (zero-animal ones included), photos,
+new 1 km cells. Leaderboards rank by kilometres walked and by complete
+checklists, never by animals counted. Streaks count weeks with at least one
+survey. Weekly quests reset on Monday and are computed from synced data.
+Badges are earned from real totals and always show progress towards the next.
