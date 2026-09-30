@@ -81,3 +81,16 @@ export function nearbyTags(
     .slice(0, limit)
     .map(([t]) => t);
 }
+
+/** The session's time of day (public.time_of_day), from the local start hour. */
+export function timeOfDay(
+  startedAt: string | Date
+): 'dawn' | 'morning' | 'midday' | 'afternoon' | 'dusk' | 'night' {
+  const h = new Date(startedAt).getHours();
+  if (h >= 5 && h < 7) return 'dawn';
+  if (h >= 7 && h < 11) return 'morning';
+  if (h >= 11 && h < 14) return 'midday';
+  if (h >= 14 && h < 17) return 'afternoon';
+  if (h >= 17 && h < 20) return 'dusk';
+  return 'night';
+}

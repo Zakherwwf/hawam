@@ -1625,7 +1625,18 @@
     "waiting_title": "Getting a GPS fix",
     "waiting_body": "Stand in the open for a moment. The walk starts as soon as your position is accurate to 30 m.",
     "waiting_acc": "Accuracy {{m}} m. Starting at 30 m or better.",
-    "xp_preview": "About +{{xp}} XP once synced, plus 30 for each new 1 km cell"
+    "xp_preview": "About +{{xp}} XP once synced, plus 30 for each new 1 km cell",
+    "weather_q": "What was the weather?",
+    "weather_clear": "Clear",
+    "weather_cloudy": "Cloudy",
+    "weather_rain": "Rain",
+    "weather_wind": "Windy",
+    "observers_q": "People counting",
+    "observers_hint": "Including you, if others walked with you",
+    "fewer_people": "One person fewer",
+    "more_people": "One person more",
+    "observers_value_one": "{{count}} person",
+    "observers_value_other": "{{count}} people"
   },
   "ui_routes_v3": {
     "title": "Routes",

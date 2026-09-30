@@ -27,7 +27,7 @@ test('routesStore: sample routes have valid trajectories', () => {
   }
 });
 
-test('routesStore: toggleAdoptRoute toggles adoption status and awards XP when adopting', () => {
+test('routesStore: toggleAdoptRoute toggles adoption; XP stays server-side', () => {
   const store = useRoutesStore.getState();
   const gamificationStore = useGamificationStore.getState();
 
@@ -44,8 +44,8 @@ test('routesStore: toggleAdoptRoute toggles adoption status and awards XP when a
   assert.equal(adoptedRoute?.isAdopted, true, 'Route should now be adopted');
   assert.equal(
     useGamificationStore.getState().xpTotal,
-    xpBefore + 30,
-    'Should award +30 XP for adopting a route'
+    xpBefore,
+    'No XP on the phone; the server awards it'
   );
 
   // Un-adopt route

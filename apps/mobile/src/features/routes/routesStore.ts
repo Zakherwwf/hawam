@@ -49,6 +49,8 @@ interface RoutesState {
   toggleAdoptRoute: (routeId: string) => void;
   recordSurveyCompletion: (routeId: string) => void;
   getRouteById: (routeId: string) => FixedRoute | undefined;
+  /** Replace the list with the server's routes, keeping this phone's adoption and counts */
+  mergeServerRoutes: (routes: FixedRoute[]) => void;
   checkOffRoute: (
     lat: number,
     lon: number,
@@ -79,17 +81,10 @@ export const useRoutesStore = create<RoutesState>((set, get) => ({
 
   toggleAdoptRoute: (routeId: string) => {
     const { routes } = get();
-    const route = routes.find((r) => r.id === routeId);
-    const becomingAdopted = route ? !route.isAdopted : false;
-
     const updated = routes.map((r) => (r.id === routeId ? { ...r, isAdopted: !r.isAdopted } : r));
     set({ routes: updated });
     if (AsyncStorage && typeof AsyncStorage.setItem === 'function') {
       AsyncStorage.setItem(STORAGE_KEY, JSON.stringify(updated)).catch(() => {});
-    }
-
-    if (becomingAdopted) {
-      useGamificationStore.getState().awardXp(30, 'Adopted a fixed transect');
     }
   },
 
@@ -118,6 +113,13 @@ export const useRoutesStore = create<RoutesState>((set, get) => ({
     // Check if Surveyor unlocked the Route Guardian badge (5 surveys on fixed transect)
     if (updatedTimes >= 5) {
       useGamificationStore.getState().unlockBadge('route_guardian');
+    }
+  },
+
+  mergeServerRoutes: (serverRoutes: FixedRoute[]) => {
+    set({ routes: serverRoutes });
+    if (AsyncStorage && typeof AsyncStorage.setItem === 'function') {
+      AsyncStorage.setItem(STORAGE_KEY, JSON.stringify(serverRoutes)).catch(() => {});
     }
   },
 

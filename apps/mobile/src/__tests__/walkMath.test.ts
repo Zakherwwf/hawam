@@ -34,3 +34,11 @@ test('nearbyTags: own tags for the species, nearest first, codes excluded', () =
   ];
   assert.deepEqual(nearbyTags(s, 'cat', 36.8, 10.18), ['Ginger', 'Patch']);
 });
+
+test('timeOfDay: local start hour to the database enum', async () => {
+  const { timeOfDay } = await import('../features/survey/walkMath.ts');
+  assert.equal(timeOfDay(new Date(2026, 8, 30, 6, 30)), 'dawn');
+  assert.equal(timeOfDay(new Date(2026, 8, 30, 12)), 'midday');
+  assert.equal(timeOfDay(new Date(2026, 8, 30, 18, 59)), 'dusk');
+  assert.equal(timeOfDay(new Date(2026, 8, 30, 23)), 'night');
+});

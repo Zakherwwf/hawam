@@ -9,6 +9,7 @@ import { Alert, Switch, TextInput, View } from 'react-native';
 import * as Location from 'expo-location';
 import { useTranslation } from 'react-i18next';
 import { useColoniesStore, type ColonySpecies } from '../../features/colonies/coloniesStore';
+import { syncSharedData } from '../../features/sync/sharedSync';
 import { formatCoordinates } from '../../utils/formatObservation';
 import { Button, Card, PageSheet, Segmented, Symbol, Text, useTheme, useToast } from '../../ui';
 
@@ -103,13 +104,12 @@ export function CreateColonyModal({
       feedingSchedule: feeding.trim() || undefined,
       notes: notes.trim() || undefined,
     });
-    useToast
-      .getState()
-      .show({
-        title: t('ui_colonies_v3.saved', { name: name.trim() }),
-        detail: t('ui_colonies_v3.saved_detail'),
-        icon: 'pin',
-      });
+    syncSharedData();
+    useToast.getState().show({
+      title: t('ui_colonies_v3.saved', { name: name.trim() }),
+      detail: t('ui_colonies_v3.saved_detail'),
+      icon: 'pin',
+    });
     reset();
     onClose();
   };

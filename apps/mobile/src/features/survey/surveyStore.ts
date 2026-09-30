@@ -53,6 +53,8 @@ export interface RawTrackPoint {
   longitude: number;
   accuracy_m?: number;
   speed_mps?: number;
+  /** Android reported the fix as mocked (fake GPS) */
+  is_mock?: boolean;
 }
 
 interface SurveyState {
@@ -227,6 +229,7 @@ export const useSurveyStore = create<SurveyState>((set, get) => ({
       longitude: lon,
       accuracy_m: accuracy,
       speed_mps: speed,
+      is_mock: Boolean(mocked) || undefined,
     };
 
     // CLAUDE.md §2.2: Strict speed limit 15 km/h (4.17 m/s)

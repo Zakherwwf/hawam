@@ -27,6 +27,9 @@ export function buildWalkBundle({
   rawTrackPoints,
   appVersion,
   newId,
+  weather,
+  observers = 1,
+  timeOfDay,
 }: {
   sessionId: string;
   protocol: 'transect' | 'stationary_point';
@@ -40,6 +43,9 @@ export function buildWalkBundle({
   rawTrackPoints: RawTrackPoint[];
   appVersion: string;
   newId: () => string;
+  weather?: 'clear' | 'cloudy' | 'rain' | 'wind' | null;
+  observers?: number;
+  timeOfDay?: string | null;
 }): SurveyBundlePayload {
   const accuracies = rawTrackPoints.map((p) => p.accuracy_m).filter((a): a is number => a != null);
   const simplified = activeTrack.length >= 2 ? simplifyGpsTrack(activeTrack, 2.0) : [];
@@ -105,7 +111,9 @@ export function buildWalkBundle({
       end_time: endedAt,
       distance_km: protocol === 'transect' ? Math.round(distanceKm * 1000) / 1000 : 0,
       complete_session: completeChecklist,
-      number_of_observers: 1,
+      number_of_observers: Math.min(50, Math.max(1, Math.round(observers))),
+      weather: weather ?? null,
+      time_of_day: timeOfDay ?? null,
       app_version: appVersion,
       device_gps_accuracy_avg: accuracies.length
         ? Math.round((accuracies.reduce((a, b) => a + b, 0) / accuracies.length) * 10) / 10
@@ -124,6 +132,8 @@ export function buildWalkBundle({
       longitude: p.longitude,
       accuracy_m: p.accuracy_m ?? null,
       speed_mps: p.speed_mps ?? null,
+      // Sent as recorded; the server flags the session, never the phone
+      is_mock: Boolean(p.is_mock),
     })),
     observations,
     photos,

@@ -11,6 +11,9 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 
 import i18n, { setAppLanguage } from '../i18n';
 import { useToast } from '../ui/Toast';
+import { useRoutesStore } from '../features/routes/routesStore';
+import { useColoniesStore } from '../features/colonies/coloniesStore';
+import { syncSharedData } from '../features/sync/sharedSync';
 import { quickSightingXp } from '../features/gamification/progress';
 import { CURRENT_CONSENT_VERSION } from '../screens/ConsentScreen';
 import type { SightingItem } from './types';
@@ -144,6 +147,15 @@ export function AppStateProvider({ children }: { children: React.ReactNode }) {
     if (userAccount) refreshMapObservations();
     else setRemoteObservations([]);
   }, [userAccount?.email, lastSyncedAt, refreshMapObservations]);
+
+  // Routes and colonies: restore what the phone holds, then share with the server
+  useEffect(() => {
+    useRoutesStore.getState().loadRoutes();
+    useColoniesStore.getState().loadColonies();
+  }, []);
+  useEffect(() => {
+    if (userAccount && !PREVIEW_MODE) syncSharedData();
+  }, [userAccount?.email, lastSyncedAt]);
 
   // Preview sample data already carries its codes; there is no server to label from
   const ownSightings = useMemo(

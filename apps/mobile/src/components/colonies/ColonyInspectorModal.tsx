@@ -7,6 +7,7 @@ import React, { useEffect, useState } from 'react';
 import { TextInput, View } from 'react-native';
 import { useTranslation } from 'react-i18next';
 import { useColoniesStore, type CatColony } from '../../features/colonies/coloniesStore';
+import { syncSharedData } from '../../features/sync/sharedSync';
 import { formatCoordinates, formatObservedAt } from '../../utils/formatObservation';
 import {
   AnimalFace,
@@ -65,9 +66,8 @@ export function ColonyInspectorModal({
         : t('ui_colonies_v3.colony');
 
   const saveCheck = () => {
-    const summary = tags.map((k) => t(`ui_colonies_v3.check_${k}`)).join(', ');
-    const full = [summary, notes.trim()].filter(Boolean).join(' | ');
-    recordInspection(colony.id, full || undefined);
+    recordInspection(colony.id, notes.trim() || undefined, [...tags]);
+    syncSharedData();
     useToast
       .getState()
       .show({ title: t('ui_colonies_v3.check_saved'), detail: colony.name, icon: 'checkCircle' });

@@ -620,7 +620,18 @@
     "waiting_title": "Recherche du signal GPS",
     "waiting_body": "Restez à découvert un instant. Le relevé démarre dès que la précision atteint 30 m.",
     "waiting_acc": "Précision {{m}} m. Démarrage à 30 m ou mieux.",
-    "xp_preview": "Environ +{{xp}} XP après synchronisation, plus 30 par nouvelle maille de 1 km"
+    "xp_preview": "Environ +{{xp}} XP après synchronisation, plus 30 par nouvelle maille de 1 km",
+    "weather_q": "Quel temps faisait-il ?",
+    "weather_clear": "Dégagé",
+    "weather_cloudy": "Nuageux",
+    "weather_rain": "Pluie",
+    "weather_wind": "Venteux",
+    "observers_q": "Personnes qui comptent",
+    "observers_hint": "Vous compris, si d'autres marchaient avec vous",
+    "fewer_people": "Une personne de moins",
+    "more_people": "Une personne de plus",
+    "observers_value_one": "{{count}} personne",
+    "observers_value_other": "{{count}} personnes"
   },
   "ui_routes_v3": {
     "title": "Itinéraires",

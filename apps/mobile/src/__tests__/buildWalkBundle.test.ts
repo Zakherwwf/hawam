@@ -100,3 +100,30 @@ test('buildWalkBundle: estimates, tag, details and the single photo are carried'
   assert.equal(b.photos?.[0].angle, 'other');
   assert.equal(b.photos?.[0].observation_id, o.id);
 });
+
+test('buildWalkBundle: effort metadata and fake-GPS flags are sent', () => {
+  const b = buildWalkBundle({
+    ...base,
+    completeChecklist: true,
+    detections: [],
+    activeTrack: [],
+    rawTrackPoints: [
+      {
+        recorded_at: '2026-09-30T08:00:01Z',
+        latitude: 36.8,
+        longitude: 10.18,
+        accuracy_m: 5,
+        is_mock: true,
+      },
+      { recorded_at: '2026-09-30T08:00:02Z', latitude: 36.8, longitude: 10.18, accuracy_m: 5 },
+    ],
+    weather: 'rain',
+    observers: 3,
+    timeOfDay: 'morning',
+  });
+  assert.equal(b.session.weather, 'rain');
+  assert.equal(b.session.number_of_observers, 3);
+  assert.equal(b.session.time_of_day, 'morning');
+  assert.equal(b.track_points?.[0].is_mock, true);
+  assert.equal(b.track_points?.[1].is_mock, false);
+});

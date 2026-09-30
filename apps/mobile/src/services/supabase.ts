@@ -3,6 +3,7 @@
  * Hawem (حايم) Citizen-Science Platform
  */
 
+import type { ColonyRow, RouteRow, colonyToServer } from '../features/sync/serverMapping';
 import { createClient } from '@supabase/supabase-js';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
@@ -85,6 +86,7 @@ export interface SurveyBundlePayload {
     longitude: number;
     accuracy_m?: number | null;
     speed_mps?: number | null;
+    is_mock?: boolean;
   }>;
   observations: Array<{
     id: string;
@@ -267,35 +269,64 @@ export async function pullMapObservations(limit = 5000): Promise<MapObservationR
 /**
  * Pulls active official fixed routes from PostgreSQL
  */
-export async function pullActiveRoutes() {
+/** Active routes with GeoJSON geometry (routes_app); null when offline or on error. */
+export async function pullRoutes(): Promise<RouteRow[] | null> {
   try {
-    const { data, error } = await supabase.from('routes').select('*').eq('is_active', true);
-
+    const { data, error } = await supabase.from('routes_app').select('*').limit(500);
     if (error) {
-      console.warn('Error fetching routes from Supabase:', error);
-      return [];
+      console.warn('Error fetching routes:', error.message);
+      return null;
     }
-    return data || [];
-  } catch (err) {
-    console.warn('Network error fetching routes:', err);
-    return [];
+    return (data ?? []) as RouteRow[];
+  } catch {
+    return null;
   }
 }
 
-/**
- * Pulls persistent cat colonies from PostgreSQL
- */
-export async function pullColonies() {
+/** Everyone's colonies with visit totals (colonies_app); null when offline or on error. */
+export async function pullSharedColonies(): Promise<ColonyRow[] | null> {
   try {
-    const { data, error } = await supabase.from('colonies').select('*');
+    const { data, error } = await supabase.from('colonies_app').select('*').limit(5000);
     if (error) {
-      console.warn('Error fetching colonies from Supabase:', error);
-      return [];
+      console.warn('Error fetching colonies:', error.message);
+      return null;
     }
-    return data || [];
-  } catch (err) {
-    console.warn('Network error fetching colonies:', err);
-    return [];
+    return (data ?? []) as ColonyRow[];
+  } catch {
+    return null;
+  }
+}
+
+/** Insert one colony; an existing id counts as success (a retried upload). */
+export async function pushColony(row: ReturnType<typeof colonyToServer>): Promise<boolean> {
+  try {
+    const { error } = await supabase.from('colonies').insert(row);
+    return !error || error.code === '23505';
+  } catch {
+    return false;
+  }
+}
+
+export async function pushColonyVisit(v: {
+  id: string;
+  colonyId: string;
+  visitedAt: string;
+  tags: string[];
+  notes?: string;
+}): Promise<boolean> {
+  try {
+    const { error } = await supabase
+      .from('colony_visits')
+      .insert({
+        id: v.id,
+        colony_id: v.colonyId,
+        visited_at: v.visitedAt,
+        tags: v.tags,
+        notes: v.notes ?? null,
+      });
+    return !error || error.code === '23505';
+  } catch {
+    return false;
   }
 }
 

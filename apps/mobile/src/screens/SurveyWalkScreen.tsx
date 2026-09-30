@@ -18,13 +18,13 @@ import { useTranslation } from 'react-i18next';
 import { InteractiveMap } from '../components/map/InteractiveMap';
 import type { FocusCoordinate, MapMarker } from '../components/map/mapTypes';
 import { LogAnimalSheet } from '../components/survey/LogAnimalSheet';
-import { FinishWalkSheet } from '../components/survey/FinishWalkSheet';
+import { FinishWalkSheet, type WalkConditions } from '../components/survey/FinishWalkSheet';
 import { RoutePickerModal } from '../components/routes/RoutePickerModal';
 import { useSurveyStore, type InSurveyDetection } from '../features/survey/surveyStore';
 import { useRoutesStore } from '../features/routes/routesStore';
 import { useSyncStore } from '../features/sync/syncStore';
 import { buildWalkBundle } from '../features/survey/buildWalkBundle';
-import { nearbyTags, surveyXpPreview } from '../features/survey/walkMath';
+import { nearbyTags, surveyXpPreview, timeOfDay } from '../features/survey/walkMath';
 import { computeAnimalLocation } from '../services/georef/geoUtils';
 import { generateUUID } from '../utils/uuid';
 import { PREVIEW_MODE } from '../app-state/previewData';
@@ -230,7 +230,7 @@ export function SurveyWalkScreen({
     setEditing(null);
   };
 
-  const saveWalk = (complete: boolean) => {
+  const saveWalk = (complete: boolean, conditions: WalkConditions) => {
     const st = useSurveyStore.getState();
     st.setCompleteChecklist(complete);
     const dets = st.detections;
@@ -247,6 +247,9 @@ export function SurveyWalkScreen({
       rawTrackPoints: st.rawTrackPoints,
       appVersion: Constants.expoConfig?.version ?? '3.0.0',
       newId: generateUUID,
+      weather: conditions.weather,
+      observers: conditions.observers,
+      timeOfDay: timeOfDay(st.startedAt ?? new Date()),
     });
     useSyncStore.getState().enqueueSurvey(bundle);
     if (st.selectedRouteId) recordSurveyCompletion(st.selectedRouteId);
