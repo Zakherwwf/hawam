@@ -3,11 +3,11 @@ import { Alert, Modal, Platform, View } from 'react-native';
 import { Tabs, router } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import { BlurView } from 'expo-blur';
-import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useTranslation } from 'react-i18next';
 
 import { RecordSheet } from '../../src/components/survey/RecordSheet';
-import { StructuredSurveyScreen } from '../../src/screens/StructuredSurveyScreen';
+import { SurveyWalkScreen } from '../../src/screens/SurveyWalkScreen';
 import { useAppState } from '../../src/app-state/AppStateProvider';
 import { useSyncStore } from '../../src/features/sync/syncStore';
 import { useSurveyStore } from '../../src/features/survey/surveyStore';
@@ -170,13 +170,8 @@ export default function TabsLayout() {
   const { t } = useTranslation();
   const { c, dark } = useTheme();
   const insets = useSafeAreaInsets();
-  const {
-    logAnimalInSurvey,
-    finishStructuredSurvey,
-    stats,
-    selectedRouteForSurvey,
-    setSelectedRouteForSurvey,
-  } = useAppState();
+  const { finishStructuredSurvey, logSurveySightings, sightings, setSelectedRouteForSurvey } =
+    useAppState();
   const [recordOpen, setRecordOpen] = useState(false);
   const surveyStatus = useSurveyStore((s) => s.status);
   const isSurveyActive = surveyStatus === 'recording' || surveyStatus === 'acquiring_fix';
@@ -247,18 +242,12 @@ export default function TabsLayout() {
             ]);
           }}
         >
-          <SafeAreaView
-            style={{ flex: 1, backgroundColor: c.canvas }}
-            edges={['top', 'left', 'right', 'bottom']}
-          >
-            <StructuredSurveyScreen
-              onBack={() => useSurveyStore.getState().pauseSurvey()}
-              onFinishSurvey={finishStructuredSurvey}
-              onLogAnimal={logAnimalInSurvey}
-              loggedAnimalsCount={stats.animalsRecorded}
-              initialRouteId={selectedRouteForSurvey}
-            />
-          </SafeAreaView>
+          <SurveyWalkScreen
+            sightings={sightings}
+            onPause={() => useSurveyStore.getState().pauseSurvey()}
+            logSightings={logSurveySightings}
+            onSaved={finishStructuredSurvey}
+          />
         </Modal>
       ) : null}
 

@@ -31,7 +31,8 @@ export interface InSurveyDetection {
   animal_lat: number;
   animal_lon: number;
   bearing_deg?: number;
-  distance_estimate_m: number;
+  /** Observer's estimate; undefined until they give one (never a default) */
+  distance_estimate_m?: number;
   perpendicular_distance_m?: number;
   h3_res9: string;
   body_condition_score?: number;
@@ -40,6 +41,10 @@ export interface InSurveyDetection {
   photoUris?: string[];
   is_welfare_alert?: boolean;
   gps_accuracy_m?: number;
+  sex?: 'male' | 'female' | 'unknown';
+  age_class?: 'juvenile' | 'adult' | 'unknown';
+  ear_tip_or_notch?: 'yes' | 'no' | 'unknown';
+  visible_health_issues?: string[];
 }
 
 export interface RawTrackPoint {
@@ -225,8 +230,15 @@ export const useSurveyStore = create<SurveyState>((set, get) => ({
     };
 
     // CLAUDE.md §2.2: Strict speed limit 15 km/h (4.17 m/s)
-    const isSpeedAcceptable = speed !== undefined ? speed <= 4.17 : true;
-    const rejectedReason = !isSpeedAcceptable ? 'speed_exceeded_15kmh' : undefined;
+    const isSpeedAcceptable = speed !== undefined && speed !== null ? speed <= 4.17 : true;
+    // CLAUDE.md 1.5: fixes worse than 30 m are kept, flagged, and never
+    // counted towards distance
+    const isAccurate = accuracy === undefined || accuracy === null || accuracy <= 30;
+    const rejectedReason = !isAccurate
+      ? 'low_accuracy'
+      : !isSpeedAcceptable
+        ? 'speed_exceeded_15kmh'
+        : undefined;
 
     if (sessionId) {
       localDb
@@ -245,6 +257,10 @@ export const useSurveyStore = create<SurveyState>((set, get) => ({
     }
 
     if (activeTrack.length === 0) {
+      if (!isAccurate) {
+        set({ rawTrackPoints: [...rawTrackPoints, newRawPoint] });
+        return;
+      }
       set({
         activeTrack: [[lat, lon]],
         rawTrackPoints: [...rawTrackPoints, newRawPoint],
@@ -267,7 +283,7 @@ export const useSurveyStore = create<SurveyState>((set, get) => ({
     const deltaM = R * c;
 
     // Reject micro-jitter (< 2m) and filter impossible speeds (> 15 km/h)
-    if (deltaM >= 2 && isSpeedAcceptable) {
+    if (deltaM >= 2 && isSpeedAcceptable && isAccurate) {
       const nextDistanceM = distanceMeters + deltaM;
       set({
         activeTrack: [...activeTrack, [lat, lon]],
@@ -307,7 +323,7 @@ export const useSurveyStore = create<SurveyState>((set, get) => ({
     group_size = 1,
     distance_estimate_m,
     bearing_deg,
-    body_condition_score = 3,
+    body_condition_score,
     notes = '',
     photoUri = null,
     photoUris = [],
@@ -333,10 +349,17 @@ export const useSurveyStore = create<SurveyState>((set, get) => ({
     const { currentLocation, activeTrack, detections, sessionId } = get();
     const obsLat = observer_lat ?? currentLocation?.lat ?? 0;
     const obsLon = observer_lon ?? currentLocation?.lon ?? 0;
-    const bearing = bearing_deg ?? (currentLocation?.heading || 0);
-
-    const distEst = distance_estimate_m ?? 5.0;
-    const geoResult = computeAnimalLocation(obsLat, obsLon, distEst, bearing, activeTrack);
+    // No invented values: without a distance the animal is placed at the
+    // observer and the perpendicular distance stays unknown (CLAUDE.md 1.4)
+    const bearing = bearing_deg;
+    const hasEstimate = distance_estimate_m != null && bearing != null;
+    const geoResult = computeAnimalLocation(
+      obsLat,
+      obsLon,
+      hasEstimate ? distance_estimate_m : 0,
+      bearing ?? 0,
+      activeTrack
+    );
 
     const effectivePhotos = photoUris.length > 0 ? photoUris : photoUri ? [photoUri] : [];
     const effectiveIdentifier =
@@ -353,8 +376,8 @@ export const useSurveyStore = create<SurveyState>((set, get) => ({
       animal_lat: geoResult.animalLat,
       animal_lon: geoResult.animalLon,
       bearing_deg: bearing,
-      distance_estimate_m: distEst,
-      perpendicular_distance_m: geoResult.perpendicularDistanceM,
+      distance_estimate_m,
+      perpendicular_distance_m: hasEstimate ? geoResult.perpendicularDistanceM : undefined,
       h3_res9: geoResult.h3Res9,
       body_condition_score,
       notes,
@@ -380,7 +403,7 @@ export const useSurveyStore = create<SurveyState>((set, get) => ({
           gpsAccuracyM: gps_accuracy_m,
           bearingDeg: bearing,
           distanceEstimateM: distance_estimate_m,
-          perpendicularDistanceM: geoResult.perpendicularDistanceM,
+          perpendicularDistanceM: hasEstimate ? geoResult.perpendicularDistanceM : undefined,
           h3Res9: geoResult.h3Res9,
           species,
           groupSize: group_size,
@@ -522,13 +545,20 @@ export const useSurveyStore = create<SurveyState>((set, get) => ({
           body_condition_score: o.bodyConditionScore ?? undefined,
           notes: o.notes ?? undefined,
         }));
+        // The local table stores a missing estimate as 0; without a bearing
+        // that 0 was never an estimate
+        for (const d of detections) {
+          if (d.distance_estimate_m === 0 && d.bearing_deg == null)
+            d.distance_estimate_m = undefined;
+        }
 
         const durationSeconds = Math.round((unfinished.durationMin || 0) * 60);
         const distanceMeters = Math.round((unfinished.distanceKm || 0) * 1000);
 
         set({
           sessionId: unfinished.id,
-          status: 'recovered',
+          // Paused, so the app shows "Survey paused. Tap to resume"
+          status: 'paused',
           protocol: unfinished.protocol as SurveyProtocol,
           selectedRouteId: unfinished.routeId,
           startedAt: unfinished.startedAt,
@@ -560,7 +590,7 @@ export const useSurveyStore = create<SurveyState>((set, get) => ({
         if (draft && draft.startedAt) {
           set({
             sessionId: draft.sessionId || null,
-            status: 'recovered',
+            status: 'paused',
             protocol: draft.protocol || 'transect',
             selectedRouteId: draft.selectedRouteId || null,
             startedAt: draft.startedAt,

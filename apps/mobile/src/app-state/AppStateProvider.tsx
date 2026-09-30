@@ -65,6 +65,7 @@ interface AppState {
   signOut: () => Promise<void>;
   saveOpportunistic: (observation: any) => void;
   logAnimalInSurvey: (animal: any) => void;
+  logSurveySightings: (items: SightingItem[]) => void;
   updateSighting: (updated: SightingItem) => void;
   deleteSighting: (id: string) => void;
   finishStructuredSurvey: (sessionData: any) => void;
@@ -524,6 +525,20 @@ export function AppStateProvider({ children }: { children: React.ReactNode }) {
     bumpStats((prev) => ({ ...prev, animalsRecorded: Math.max(0, prev.animalsRecorded - 1) }));
   };
 
+  /** All animals from a finished walk at once (one write, no stale list). */
+  const logSurveySightings = (items: SightingItem[]) => {
+    const valid = items.filter((i) => Number.isFinite(i.latitude) && Number.isFinite(i.longitude));
+    if (valid.length === 0) return;
+    persistSightings([
+      ...valid.map((i) => ({ ...i, observer_name: userAccount?.name || 'You' })),
+      ...sightings,
+    ]);
+    bumpStats((prev) => ({
+      ...prev,
+      animalsRecorded: prev.animalsRecorded + valid.reduce((a, i) => a + (i.group_size || 1), 0),
+    }));
+  };
+
   const finishStructuredSurvey = (sessionData: any) => {
     bumpStats((prev) => ({
       ...prev,
@@ -552,6 +567,7 @@ export function AppStateProvider({ children }: { children: React.ReactNode }) {
     signOut,
     saveOpportunistic,
     logAnimalInSurvey,
+    logSurveySightings,
     updateSighting,
     deleteSighting,
     finishStructuredSurvey,

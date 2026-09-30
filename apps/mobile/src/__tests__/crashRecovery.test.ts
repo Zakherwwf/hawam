@@ -62,7 +62,7 @@ test('crashRecovery: ungraceful termination recovers session state, track, and s
   assert.equal(recovered, true, 'Draft should be recovered from SQLite');
 
   const recoveredState = useSurveyStore.getState();
-  assert.equal(recoveredState.status, 'recovered');
+  assert.equal(recoveredState.status, 'paused', 'a recovered walk waits to be resumed');
   assert.equal(recoveredState.sessionId, preKillSessionId);
   assert.equal(recoveredState.selectedRouteId, 'route-sidi-bou-said');
   assert.equal(recoveredState.activeTrack.length, 3);
