@@ -48,6 +48,7 @@ import { useColoniesStore, CatColony } from '../features/colonies/coloniesStore'
 import { useSyncStore } from '../features/sync/syncStore';
 import { useSurveyStore } from '../features/survey/surveyStore';
 import { generateUUID } from '../utils/uuid';
+import { formatCoordinates } from '../utils/formatObservation';
 import { promptPhotoCaptureChoice } from '../services/cameraService';
 import {
   calculateDistanceKm,
@@ -809,7 +810,6 @@ export const StructuredSurveyScreen: React.FC<StructuredSurveyScreenProps> = ({
               height={290}
               variant="backgroundHero"
               scene={protocol === 'stationary_point' ? 'cat' : 'patrol'}
-              titleBadge="TERRITORIAL SURVEY RADAR"
               headline={
                 protocol === 'transect' ? 'Standardized Field Transect' : 'Stationary Point Count'
               }
@@ -1301,7 +1301,7 @@ export const StructuredSurveyScreen: React.FC<StructuredSurveyScreenProps> = ({
                         <View style={styles.detectionCoordsLine}>
                           <IOSIcon name="location" size={11} color={IOSColors.secondaryLabel} />
                           <Text style={styles.detectionCoordsText}>
-                            {det.latitude.toFixed(5)}° N, {det.longitude.toFixed(5)}° E
+                            {formatCoordinates(det.latitude, det.longitude)}
                           </Text>
                           {det.photoUri ? (
                             <View style={styles.photoAttachedBadge}>

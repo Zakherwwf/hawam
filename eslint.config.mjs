@@ -15,7 +15,7 @@ const EMOJI = '/[\\u{1F000}-\\u{1FAFF}\\u{2600}-\\u{27BF}\\u{2B50}\\u{2B55}]/u';
 const i18nMessage =
   'Hard-coded UI text: add it to apps/mobile/src/i18n/locales/en.json and use t().';
 const UI_PROPS =
-  '/^(title|subtitle|label|placeholder|accessibilityLabel|accessibilityHint|message|header|footer|backTitle|description|hint)$/';
+  '/^(title|subtitle|label|placeholder|accessibilityLabel|accessibilityHint|message|header|footer|backTitle|description|hint|titleBadge|headline|subheadline|badge|caption)$/';
 const emojiMessage =
   'Emoji are not allowed in UI (CLAUDE.md §3.3). Use an SF Symbol / lucide icon.';
 

@@ -11,7 +11,8 @@ import { supabase } from './supabase';
 export async function handleAuthUrl(url: string): Promise<boolean> {
   try {
     if (!url) return false;
-    console.log('[deepLinkAuth] Incoming Auth URL:', url);
+    // Never log the query or fragment: sign-in links carry access tokens
+    console.log('[deepLinkAuth] Incoming link:', url.split(/[?#]/)[0]);
 
     // Extract query parameters and hash fragments
     const queryPart = (url.split('#')[0] || '').split('?')[1] || '';

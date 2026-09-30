@@ -131,3 +131,15 @@ test('gamification: completeAcademyCertification triggers XP and badge unlock on
   useGamificationStore.getState().completeAcademyCertification();
   assert.equal(useGamificationStore.getState().xpTotal, xpBefore + 25);
 });
+
+test('gamification: level bar bounds use the same thresholds as the level names', async () => {
+  const { computeLevel, levelBounds, LEVEL_START_XP } =
+    await import('../features/gamification/gamificationStore.ts');
+  for (const xp of [0, 299, 300, 699, 700, 1999, 2000, 5999, 6000, 12000]) {
+    const { level } = computeLevel(xp);
+    const { start, end } = levelBounds(level);
+    assert.ok(xp >= start, `xp ${xp} below start ${start} of level ${level}`);
+    assert.ok(end === null || xp < end, `xp ${xp} not below end ${end} of level ${level}`);
+  }
+  assert.equal(levelBounds(LEVEL_START_XP.length).end, null);
+});

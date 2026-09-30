@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import {
   View,
   Text,
@@ -9,6 +9,7 @@ import {
   Modal,
   Image,
 } from 'react-native';
+import { useTabBarClearance } from '../components/common/useTabBarClearance';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useTranslation } from 'react-i18next';
 import { LinearGradient } from 'expo-linear-gradient';
@@ -20,7 +21,12 @@ import {
 } from '../utils/haptics';
 import { DesignTokens } from '../design-system/tokens';
 import { IOSIcon, IOSNavigationBar, IOSSegmentedControl } from '../components/ios';
-import { useGamificationStore, Badge } from '../features/gamification/gamificationStore';
+import {
+  useGamificationStore,
+  Badge,
+  computeLevel,
+  levelBounds,
+} from '../features/gamification/gamificationStore';
 import { UserAccount } from './AccountScreen';
 import { supabase } from '../services/supabase';
 
@@ -68,6 +74,7 @@ interface ProgressScreenProps {
 
 export const ProgressScreen: React.FC<ProgressScreenProps> = ({ userAccount, stats }) => {
   const { t } = useTranslation();
+  const tabBarClearance = useTabBarClearance();
 
   const userGov = userAccount?.governorate || 'Tunis';
   const governorateList = React.useMemo(() => {
@@ -79,9 +86,8 @@ export const ProgressScreen: React.FC<ProgressScreenProps> = ({ userAccount, sta
   }, [userGov]);
 
   const {
-    xpTotal,
-    level,
-    rankTitle,
+    xpTotal: localXp,
+    rankTitle: localRankTitle,
     rankTitleAr,
     currentStreakWeeks,
     freezesAvailable,
@@ -90,6 +96,30 @@ export const ProgressScreen: React.FC<ProgressScreenProps> = ({ userAccount, sta
     consumeStreakFreeze,
     claimQuestReward,
   } = useGamificationStore();
+  // XP is computed on the server from what actually synced; the local counter
+  // is only a fallback while offline or before the first sync.
+  const [serverXp, setServerXp] = useState<number | null>(null);
+  useEffect(() => {
+    let alive = true;
+    (async () => {
+      const {
+        data: { session },
+      } = await supabase.auth.getSession();
+      if (!session?.user) return;
+      const { data } = await supabase
+        .from('user_stats')
+        .select('xp')
+        .eq('user_id', session.user.id)
+        .maybeSingle();
+      if (alive && data && typeof data.xp === 'number') setServerXp(data.xp);
+    })().catch(() => {});
+    return () => {
+      alive = false;
+    };
+  }, []);
+  const xpTotal = serverXp ?? localXp;
+  const { level, rankTitle: computedRank } = computeLevel(xpTotal);
+  const rankTitle = serverXp === null ? localRankTitle : computedRank;
   const rankLabel = t(`ui_gamificationStore.rank_${level}`, { defaultValue: rankTitle });
 
   const [leaderboardTab, setLeaderboardTab] = useState<'km' | 'surveys'>('km');
@@ -177,13 +207,16 @@ export const ProgressScreen: React.FC<ProgressScreenProps> = ({ userAccount, sta
     );
   };
 
-  // Next level calculation
-  const nextLevelXp = level * 750;
-  const prevLevelXp = (level - 1) * 750;
-  const levelProgress = Math.min(
-    1.0,
-    Math.max(0.05, (xpTotal - prevLevelXp) / Math.max(1, nextLevelXp - prevLevelXp))
-  );
+  // Level progress uses the same thresholds as computeLevel
+  const { start: prevLevelXp, end: levelEndXp } = levelBounds(level);
+  const nextLevelXp = levelEndXp ?? xpTotal;
+  const levelProgress =
+    levelEndXp === null
+      ? 1
+      : Math.min(
+          1,
+          Math.max(0.05, (xpTotal - prevLevelXp) / Math.max(1, levelEndXp - prevLevelXp))
+        );
 
   return (
     <View style={styles.outerContainer}>
@@ -197,7 +230,7 @@ export const ProgressScreen: React.FC<ProgressScreenProps> = ({ userAccount, sta
         <IOSNavigationBar title={t('ui_progress.scientific_progress')} />
 
         <ScrollView
-          contentContainerStyle={styles.scrollContent}
+          contentContainerStyle={[styles.scrollContent, { paddingBottom: tabBarClearance }]}
           showsVerticalScrollIndicator={false}
         >
           {/* Level & Scientific Rank Hero Card */}

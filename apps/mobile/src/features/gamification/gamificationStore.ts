@@ -168,6 +168,18 @@ interface GamificationState {
   completeAcademyCertification: () => void;
 }
 
+/** XP at which each level starts; level 7 has no upper bound. Single source for level math. */
+export const LEVEL_START_XP = [0, 300, 700, 1200, 2000, 3500, 6000] as const;
+
+/** XP range of a level: [start, end) with end null for the top level. */
+export function levelBounds(level: number): { start: number; end: number | null } {
+  const i = Math.max(1, Math.min(LEVEL_START_XP.length, level)) - 1;
+  return {
+    start: LEVEL_START_XP[i],
+    end: i + 1 < LEVEL_START_XP.length ? LEVEL_START_XP[i + 1] : null,
+  };
+}
+
 export function computeLevel(xp: number): {
   level: number;
   rankTitle: string;

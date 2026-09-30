@@ -663,7 +663,7 @@ export const BearingDistanceInput: React.FC<BearingDistanceInputProps> = ({
           onPress={() => handleNudge(-15)}
           activeOpacity={0.7}
         >
-          <Text style={styles.nudgeBtnText}>–15°</Text>
+          <Text style={styles.nudgeBtnText}>−15°</Text>
         </TouchableOpacity>
 
         <TouchableOpacity
@@ -671,7 +671,7 @@ export const BearingDistanceInput: React.FC<BearingDistanceInputProps> = ({
           onPress={() => handleNudge(-5)}
           activeOpacity={0.7}
         >
-          <Text style={styles.nudgeBtnText}>–5°</Text>
+          <Text style={styles.nudgeBtnText}>−5°</Text>
         </TouchableOpacity>
 
         <View style={styles.nudgeCenterBadge}>

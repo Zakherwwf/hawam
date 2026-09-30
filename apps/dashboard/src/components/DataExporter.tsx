@@ -355,7 +355,7 @@ export const DataExporter: React.FC = () => {
               onChange={(e) => setIncludePreciseCoords(e.target.checked)}
               className="sr-only peer"
             />
-            <div className="w-11 h-6 bg-slate-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-amber-600"></div>
+            <div className="w-11 h-6 bg-slate-200 peer-focus-visible:ring-2 peer-focus-visible:ring-amber-500 peer-focus-visible:ring-offset-2 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-amber-600"></div>
           </label>
         </div>
 
@@ -371,7 +371,7 @@ export const DataExporter: React.FC = () => {
               placeholder="Indiquez le motif d'utilisation (ex: Modélisation SECR Institut Pasteur Tunis / Projet Rage)"
               value={auditReason}
               onChange={(e) => setAuditReason(e.target.value)}
-              className="w-full px-3 py-2 text-xs bg-white border border-amber-300 rounded-lg outline-none focus:ring-2 focus:ring-amber-500"
+              className="w-full px-3 py-2 text-xs bg-white border border-amber-300 rounded-lg outline-none focus-visible:ring-2 focus-visible:ring-amber-500"
             />
             <p className="text-[11px] text-amber-700">
               Chaque téléchargement comportant les coordonnées GPS réelles génère un enregistrement

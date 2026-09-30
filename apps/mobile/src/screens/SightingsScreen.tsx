@@ -11,6 +11,8 @@ import {
   Image,
   ActivityIndicator,
 } from 'react-native';
+import { formatCoordinates, formatObservedAt } from '../utils/formatObservation';
+import { useTabBarClearance } from '../components/common/useTabBarClearance';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useTranslation } from 'react-i18next';
 import { LinearGradient } from 'expo-linear-gradient';
@@ -61,6 +63,7 @@ export const SightingsScreen: React.FC<SightingsScreenProps> = ({
   embedded = false,
 }) => {
   const { t } = useTranslation();
+  const tabBarClearance = useTabBarClearance();
   const pendingCount = useSyncStore((s) => s.pendingCount);
   const isSyncing = useSyncStore((s) => s.isSyncing);
   const [filterSpecies, setFilterSpecies] = useState<'all' | 'cat' | 'dog'>('all');
@@ -147,15 +150,6 @@ export const SightingsScreen: React.FC<SightingsScreenProps> = ({
         onPress: () => onDeleteSighting(item.id),
       },
     ]);
-  };
-
-  const formatTime = (isoString: string) => {
-    try {
-      const d = new Date(isoString);
-      return d.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
-    } catch {
-      return '10:30 AM';
-    }
   };
 
   const ContainerComponent = embedded ? View : SafeAreaView;
@@ -363,7 +357,7 @@ export const SightingsScreen: React.FC<SightingsScreenProps> = ({
         </View>
 
         <ScrollView
-          contentContainerStyle={styles.scrollContent}
+          contentContainerStyle={[styles.scrollContent, { paddingBottom: tabBarClearance }]}
           showsVerticalScrollIndicator={false}
         >
           {filtered.length === 0 ? (
@@ -427,7 +421,10 @@ export const SightingsScreen: React.FC<SightingsScreenProps> = ({
                         <Text style={styles.timestampText}>
                           {isCat ? t('ui_sightings.cat') : t('ui_sightings.dog')} •{' '}
                           {item.observer_name ? `${item.observer_name} • ` : ''}
-                          {formatTime(item.observed_at)}
+                          {formatObservedAt(item.observed_at, {
+                            today: t('ui_common.today'),
+                            yesterday: t('ui_common.yesterday'),
+                          })}
                         </Text>
                       </View>
                     </View>
@@ -457,9 +454,8 @@ export const SightingsScreen: React.FC<SightingsScreenProps> = ({
                   <View style={styles.geoTag}>
                     <IOSIcon name="location" size={13} color={IOSColors.systemTeal} />
                     <Text style={styles.geoCoords}>
-                      {item.latitude.toFixed(6)}° N, {item.longitude.toFixed(6)}° E
+                      {formatCoordinates(item.latitude, item.longitude)}
                     </Text>
-                    <Text style={styles.utmBadge}>{t('ui_sightings.utm_32n')}</Text>
                   </View>
 
                   {/* Sighting Details Grid */}

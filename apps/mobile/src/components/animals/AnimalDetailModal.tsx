@@ -10,6 +10,7 @@ import {
   Image,
   Dimensions,
 } from 'react-native';
+import { formatCoordinates } from '../../utils/formatObservation';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { AnimalProfile } from '../../features/animals/animalsStore';
 import { IOSColors, IOSTypography } from '../../theme/ios';
@@ -315,7 +316,7 @@ export const AnimalDetailModal: React.FC<AnimalDetailModalProps> = ({
             <View style={styles.geoCoordsBar}>
               <IOSIcon name="location" size={13} color="#0284C7" />
               <Text style={styles.geoCoordsText}>
-                {animal.latitude.toFixed(5)}° N, {animal.longitude.toFixed(5)}° E
+                {formatCoordinates(animal.latitude, animal.longitude)}
               </Text>
             </View>
 

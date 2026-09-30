@@ -38,10 +38,16 @@ export function App() {
         </div>
 
         {/* Tab Navigation */}
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex space-x-8 border-t border-slate-100">
+        <div
+          className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex space-x-8 border-t border-slate-100"
+          role="tablist"
+          aria-label="Sections"
+        >
           <button
             onClick={() => setActiveTab('exports')}
-            className={`py-3 text-xs font-bold border-b-2 transition inline-flex items-center gap-1.5 ${
+            role="tab"
+            aria-selected={activeTab === 'exports'}
+            className={`py-3 text-xs font-bold border-b-2 transition inline-flex items-center gap-1.5 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-teal-700 ${
               activeTab === 'exports'
                 ? 'border-teal-700 text-teal-800'
                 : 'border-transparent text-slate-500 hover:text-slate-800'
@@ -53,7 +59,9 @@ export function App() {
 
           <button
             onClick={() => setActiveTab('photos')}
-            className={`py-3 text-xs font-bold border-b-2 transition inline-flex items-center gap-1.5 ${
+            role="tab"
+            aria-selected={activeTab === 'photos'}
+            className={`py-3 text-xs font-bold border-b-2 transition inline-flex items-center gap-1.5 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-teal-700 ${
               activeTab === 'photos'
                 ? 'border-teal-700 text-teal-800'
                 : 'border-transparent text-slate-500 hover:text-slate-800'
@@ -65,7 +73,9 @@ export function App() {
 
           <button
             onClick={() => setActiveTab('routes')}
-            className={`py-3 text-xs font-bold border-b-2 transition inline-flex items-center gap-1.5 ${
+            role="tab"
+            aria-selected={activeTab === 'routes'}
+            className={`py-3 text-xs font-bold border-b-2 transition inline-flex items-center gap-1.5 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-teal-700 ${
               activeTab === 'routes'
                 ? 'border-teal-700 text-teal-800'
                 : 'border-transparent text-slate-500 hover:text-slate-800'

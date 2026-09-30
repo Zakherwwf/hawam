@@ -24,6 +24,7 @@ import {
   type MapObservationRow,
 } from '../services/supabase';
 import { labelOwnSightings, mergeForMap } from './mergeSightings';
+import { PREVIEW_ACCOUNT, PREVIEW_MODE, PREVIEW_SIGHTINGS, PREVIEW_STATS } from './previewData';
 import { handleAuthUrl } from '../services/deepLinkAuth';
 import { startOutboxWorker } from '../services/sync/outboxWorker';
 import {
@@ -135,6 +136,7 @@ export function AppStateProvider({ children }: { children: React.ReactNode }) {
   const lastSyncedAt = useSyncStore((s) => s.lastSyncedAt);
 
   const refreshMapObservations = useCallback(async () => {
+    if (PREVIEW_MODE) return;
     const rows = await pullMapObservations();
     if (rows) setRemoteObservations(rows);
   }, []);
@@ -145,12 +147,13 @@ export function AppStateProvider({ children }: { children: React.ReactNode }) {
     else setRemoteObservations([]);
   }, [userAccount?.email, lastSyncedAt, refreshMapObservations]);
 
+  // Preview sample data already carries its codes; there is no server to label from
   const ownSightings = useMemo(
-    () => labelOwnSightings(sightings, remoteObservations),
+    () => (PREVIEW_MODE ? sightings : labelOwnSightings(sightings, remoteObservations)),
     [sightings, remoteObservations]
   );
   const mapSightings = useMemo(
-    () => mergeForMap(sightings, remoteObservations),
+    () => (PREVIEW_MODE ? sightings : mergeForMap(sightings, remoteObservations)),
     [sightings, remoteObservations]
   );
 
@@ -203,6 +206,15 @@ export function AppStateProvider({ children }: { children: React.ReactNode }) {
     };
 
     const loadLocalData = async () => {
+      if (PREVIEW_MODE) {
+        // Design review in a browser: signed in with sample data, no network
+        setUserAccount(PREVIEW_ACCOUNT);
+        setSightings(PREVIEW_SIGHTINGS);
+        setStats(PREVIEW_STATS);
+        setConsentAccepted(true);
+        setIsAuthChecking(false);
+        return;
+      }
       try {
         const {
           data: { session },

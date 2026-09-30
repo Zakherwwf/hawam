@@ -155,7 +155,7 @@ interface SyncState {
 
 export const useSyncStore = create<SyncState>((set, get) => ({
   isSyncing: false,
-  lastSyncedAt: 'Just now',
+  lastSyncedAt: null, // never claim a sync that has not happened
   pendingCount: 0,
   wifiOnly: false,
   outbox: [],

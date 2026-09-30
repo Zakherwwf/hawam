@@ -12,6 +12,8 @@ import {
   Switch,
   ActionSheetIOS,
 } from 'react-native';
+import { formatObservedAt } from '../utils/formatObservation';
+import { useTabBarClearance } from '../components/common/useTabBarClearance';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useTranslation } from 'react-i18next';
@@ -65,21 +67,40 @@ export const AccountScreen: React.FC<AccountScreenProps> = ({
   stats,
 }) => {
   const { t, i18n } = useTranslation();
+  const tabBarClearance = useTabBarClearance();
+  const recentSightings = [...sightings]
+    .sort((a, b) => b.observed_at.localeCompare(a.observed_at))
+    .slice(0, 3);
   const { themeMode, colors, toggleTheme } = useThemeStore();
 
   // Registration form state
-  const [isEditing, setIsEditing] = useState<boolean>(!userAccount);
+  // Editing is an explicit choice; with no account the form shows regardless.
+  // (Deriving it from userAccount at mount opened the editor for everyone when
+  // the tab mounted before the stored session had loaded.)
+  const [isEditing, setIsEditing] = useState<boolean>(false);
   const [name, setName] = useState<string>(userAccount?.name || '');
   const [email, setEmail] = useState<string>(userAccount?.email || '');
-  const [organization, setOrganization] = useState<string>(
-    userAccount?.organization || 'Institut Pasteur de Tunis'
-  );
+  const [organization, setOrganization] = useState<string>(userAccount?.organization || '');
   const [role, setRole] = useState<'surveyor' | 'volunteer' | 'researcher'>(
     userAccount?.role || 'surveyor'
   );
-  const [governorate, setGovernorate] = useState<string>(userAccount?.governorate || 'Tunis');
+  const [governorate, setGovernorate] = useState<string>(userAccount?.governorate || '');
   const [surveyorId, setSurveyorId] = useState<string>(userAccount?.surveyorId || '');
   const [avatarUri, setAvatarUri] = useState<string | undefined>(userAccount?.avatarUri);
+  // Fill the form from the account as it is now, not as it was at mount
+  const beginEdit = () => {
+    if (userAccount) {
+      setName(userAccount.name || '');
+      setEmail(userAccount.email || '');
+      setOrganization(userAccount.organization || '');
+      setRole(userAccount.role || 'surveyor');
+      setGovernorate(userAccount.governorate || '');
+      setSurveyorId(userAccount.surveyorId || '');
+      setAvatarUri(userAccount.avatarUri);
+    }
+    setIsEditing(true);
+  };
+
   // Supabase Auth Session (for profile ID / email fallback)
   const [session, setSession] = useState<Session | null>(null);
 
@@ -217,23 +238,6 @@ export const AccountScreen: React.FC<AccountScreenProps> = ({
     setIsEditing(false);
   };
 
-  const TUNISIA_GOVERNORATES = [
-    'Tunis',
-    'Ariana',
-    'Ben Arous',
-    'Manouba',
-    'Nabeul',
-    'Sousse',
-    'Monastir',
-    'Mahdia',
-    'Sfax',
-    'Bizerte',
-    'Kairouan',
-    'Gabes',
-    'Medenine',
-    'Tozeur',
-  ];
-
   // If user is creating their first account
   if (isEditing || !userAccount) {
     const editInitials = (name || userAccount?.name || 'Surveyor')
@@ -258,7 +262,7 @@ export const AccountScreen: React.FC<AccountScreenProps> = ({
           />
 
           <ScrollView
-            contentContainerStyle={styles.scrollContent}
+            contentContainerStyle={[styles.scrollContent, { paddingBottom: tabBarClearance }]}
             showsVerticalScrollIndicator={false}
           >
             {/* Avatar Picker Header */}
@@ -333,37 +337,24 @@ export const AccountScreen: React.FC<AccountScreenProps> = ({
                   style={styles.textInput}
                   value={organization}
                   onChangeText={setOrganization}
-                  placeholder={t('ui_account.e_g_institut_pasteur_de_tunis')}
+                  placeholder={t('ui_account.organization_placeholder')}
                   placeholderTextColor={IOSColors.tertiaryLabel}
                 />
               </View>
             </IOSGroupedList>
 
-            {/* Operating Governorate */}
-            <IOSGroupedList header={t('ui_account.operating_governorate')}>
+            {/* Region: free text, the app is used worldwide */}
+            <IOSGroupedList header={t('ui_account.region_header')}>
               <View style={styles.formRow}>
-                <ScrollView
-                  horizontal
-                  showsHorizontalScrollIndicator={false}
-                  contentContainerStyle={styles.govChipScroll}
-                >
-                  {TUNISIA_GOVERNORATES.map((gov) => (
-                    <TouchableOpacity
-                      key={gov}
-                      style={[styles.govChip, governorate === gov && styles.govChipActive]}
-                      onPress={() => setGovernorate(gov)}
-                    >
-                      <Text
-                        style={[
-                          styles.govChipText,
-                          governorate === gov && styles.govChipTextActive,
-                        ]}
-                      >
-                        {gov}
-                      </Text>
-                    </TouchableOpacity>
-                  ))}
-                </ScrollView>
+                <TextInput
+                  style={styles.textInput}
+                  value={governorate}
+                  onChangeText={setGovernorate}
+                  placeholder={t('ui_account.region_placeholder')}
+                  placeholderTextColor={IOSColors.tertiaryLabel}
+                  autoCapitalize="words"
+                  accessibilityLabel={t('ui_account.region_header')}
+                />
               </View>
             </IOSGroupedList>
 
@@ -423,7 +414,7 @@ export const AccountScreen: React.FC<AccountScreenProps> = ({
       />
       <SafeAreaView style={styles.safeArea} edges={['top', 'left', 'right']}>
         <ScrollView
-          contentContainerStyle={styles.scrollContent}
+          contentContainerStyle={[styles.scrollContent, { paddingBottom: tabBarClearance }]}
           showsVerticalScrollIndicator={false}
         >
           {/* Reference 3: Organic Sunset Mesh Header */}
@@ -453,7 +444,7 @@ export const AccountScreen: React.FC<AccountScreenProps> = ({
                 </TouchableOpacity>
                 <TouchableOpacity
                   style={styles.headerIconBtn}
-                  onPress={() => setIsEditing(true)}
+                  onPress={beginEdit}
                   activeOpacity={0.7}
                 >
                   <IOSIcon name="pencil" size={17} color="#0F172A" />
@@ -523,9 +514,6 @@ export const AccountScreen: React.FC<AccountScreenProps> = ({
                     {t('ui_account.field_sampling_effort')}
                   </Text>
                 </View>
-                <View style={styles.bentoAccentPillDark}>
-                  <Text style={styles.bentoAccentTextDark}>{t('ui_account.tier_1')}</Text>
-                </View>
               </View>
 
               <View style={styles.bentoHeroMainRow}>
@@ -581,9 +569,6 @@ export const AccountScreen: React.FC<AccountScreenProps> = ({
                   >
                     <IOSIcon name="paw" size={13} color="#D9F944" />
                   </View>
-                  <View style={styles.citronSmallBadge}>
-                    <Text style={styles.citronSmallBadgeText}>+40%</Text>
-                  </View>
                 </View>
                 <View style={styles.bentoSubValRow}>
                   <Text style={[styles.bentoSubNumber, { color: '#FFFFFF' }]}>
@@ -613,15 +598,13 @@ export const AccountScreen: React.FC<AccountScreenProps> = ({
                   <IOSIcon name="shield" size={14} color="#FFFFFF" />
                 </View>
                 <View>
-                  <Text style={styles.credentialOrg}>{t('ui_account.republique_tunisienne')}</Text>
-                  <Text style={styles.credentialSubOrg}>
-                    {t('ui_account.institut_pasteur_de_tunis_observatoire')}
-                  </Text>
+                  <Text style={styles.credentialOrg}>{t('app_name')}</Text>
+                  {userAccount.organization ? (
+                    <Text style={styles.credentialSubOrg} numberOfLines={1}>
+                      {userAccount.organization}
+                    </Text>
+                  ) : null}
                 </View>
-              </View>
-              <View style={styles.credentialStatusBadge}>
-                <View style={styles.credentialLiveDot} />
-                <Text style={styles.credentialStatusText}>{t('ui_account.active')}</Text>
               </View>
             </View>
 
@@ -639,74 +622,49 @@ export const AccountScreen: React.FC<AccountScreenProps> = ({
 
             <View style={styles.credentialFooter}>
               <Text style={styles.credentialFooterText}>
-                {t('ui_account.icam_woh_standards_authorized_observer')}
+                {t('ui_account.member_since', {
+                  date: new Date(userAccount.createdAt).toLocaleDateString([], {
+                    month: 'short',
+                    year: 'numeric',
+                  }),
+                })}
               </Text>
-              <Text style={styles.credentialIssueDate}>{t('ui_account.valid_2026_2027')}</Text>
             </View>
           </LinearGradient>
-
-          {/* Reference 2: About Section */}
+          {/* Recent sightings: this volunteer's own latest records */}
           <View style={styles.sectionBlock}>
-            <Text style={styles.sectionHeading}>{t('ui_account.about')}</Text>
-            <View style={styles.aboutCard}>
-              <Text style={styles.aboutText}>
-                {t('ui_account.field_observer_specialized_in_street_animal')}
-              </Text>
-            </View>
-          </View>
-
-          {/* Reference 2: Upcoming activities Section */}
-          <View style={styles.sectionBlock}>
-            <Text style={styles.sectionHeading}>{t('ui_account.upcoming_activities')}</Text>
-
-            <View style={styles.activityCard}>
-              <View style={[styles.activityIconBox, { backgroundColor: '#ECFDF5' }]}>
-                <IOSIcon name="compass" size={20} color="#059669" />
-              </View>
-              <View style={styles.activityInfo}>
-                <Text style={styles.activityTitle}>
-                  {t('ui_account.bab_souika_transect_survey')}
-                </Text>
-                <Text style={styles.activitySubtitle}>
-                  {t('ui_account.may_30_2026_icam_protocol_tier')}
-                </Text>
-              </View>
-              <View style={styles.activityArrowBtn}>
-                <IOSIcon name="chevronRight" size={13} color="#0F172A" />
-              </View>
-            </View>
-
-            <View style={styles.activityCard}>
-              <View style={[styles.activityIconBox, { backgroundColor: '#EFF6FF' }]}>
-                <IOSIcon name="paw" size={20} color="#2563EB" />
-              </View>
-              <View style={styles.activityInfo}>
-                <Text style={styles.activityTitle}>{t('ui_account.medina_cat_colony_census')}</Text>
-                <Text style={styles.activitySubtitle}>
-                  {t('ui_account.june_04_2026_tnr_ear_tipping')}
-                </Text>
-              </View>
-              <View style={styles.activityArrowBtn}>
-                <IOSIcon name="chevronRight" size={13} color="#0F172A" />
-              </View>
-            </View>
-
-            <View style={styles.activityCard}>
-              <View style={[styles.activityIconBox, { backgroundColor: '#FFFBEB' }]}>
-                <IOSIcon name="chart" size={20} color="#D97706" />
-              </View>
-              <View style={styles.activityInfo}>
-                <Text style={styles.activityTitle}>
-                  {t('ui_account.secr_distance_sampling_run')}
-                </Text>
-                <Text style={styles.activitySubtitle}>
-                  {t('ui_account.continuous_detection_matrix_logging')}
-                </Text>
-              </View>
-              <View style={styles.activityArrowBtn}>
-                <IOSIcon name="chevronRight" size={13} color="#0F172A" />
-              </View>
-            </View>
+            <Text style={styles.sectionHeading}>{t('ui_account.recent_sightings')}</Text>
+            {recentSightings.length === 0 ? (
+              <Text style={styles.activitySubtitle}>{t('ui_account.recent_sightings_empty')}</Text>
+            ) : (
+              recentSightings.map((s) => (
+                <View key={s.id} style={styles.activityCard}>
+                  <View
+                    style={[
+                      styles.activityIconBox,
+                      { backgroundColor: s.species === 'dog' ? '#FFF7ED' : '#EFF6FF' },
+                    ]}
+                  >
+                    <IOSIcon
+                      name="paw"
+                      size={20}
+                      color={s.species === 'dog' ? '#C2410C' : '#2563EB'}
+                    />
+                  </View>
+                  <View style={styles.activityInfo}>
+                    <Text style={styles.activityTitle}>
+                      {s.publicCode || t('ui_common.code_pending')}
+                    </Text>
+                    <Text style={styles.activitySubtitle}>
+                      {formatObservedAt(s.observed_at, {
+                        today: t('ui_common.today'),
+                        yesterday: t('ui_common.yesterday'),
+                      })}
+                    </Text>
+                  </View>
+                </View>
+              ))
+            )}
           </View>
 
           {/* Protocols Shortcut */}

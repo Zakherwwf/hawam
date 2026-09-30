@@ -190,12 +190,16 @@ export const TransectPathView: React.FC<TransectPathViewProps> = ({
       <View style={styles.telemetryBar}>
         <View style={styles.telemetryCol}>
           <Text style={styles.telemetryLabel}>{t('ui_transectPathView.latitude')}</Text>
-          <Text style={styles.telemetryValue}>{currentLat.toFixed(6)}° N</Text>
+          <Text style={styles.telemetryValue}>
+            {Math.abs(currentLat).toFixed(5)}° {currentLat < 0 ? 'S' : 'N'}
+          </Text>
         </View>
         <View style={styles.telemetryDivider} />
         <View style={styles.telemetryCol}>
           <Text style={styles.telemetryLabel}>{t('ui_transectPathView.longitude')}</Text>
-          <Text style={styles.telemetryValue}>{currentLon.toFixed(6)}° E</Text>
+          <Text style={styles.telemetryValue}>
+            {Math.abs(currentLon).toFixed(5)}° {currentLon < 0 ? 'W' : 'E'}
+          </Text>
         </View>
         <View style={styles.telemetryDivider} />
         <View style={styles.telemetryCol}>

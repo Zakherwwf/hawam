@@ -13,12 +13,18 @@ import { IOSColors } from '../src/theme/ios';
 function RootNavigator() {
   const { isAuthChecking, userAccount, consentAccepted } = useAppState();
   const signedIn = !!userAccount;
+  // While the stored session is being restored, keep the app routes allowed so
+  // a deep link opened from a cold start (hawem://settings) is not redirected
+  // to sign-in and lost. The loading overlay covers the screen meanwhile.
+  const appAllowed = isAuthChecking || (signedIn && consentAccepted);
+  const signInAllowed = !isAuthChecking && !signedIn;
+  const consentAllowed = !isAuthChecking && signedIn && !consentAccepted;
 
   return (
     <View style={styles.root}>
       <Stack screenOptions={{ headerShown: false }}>
         {/* Signed in and consented: the app itself */}
-        <Stack.Protected guard={signedIn && consentAccepted}>
+        <Stack.Protected guard={appAllowed}>
           <Stack.Screen name="(tabs)" />
           <Stack.Screen name="opportunistic" />
           <Stack.Screen name="guided-photo" options={{ animation: 'fade' }} />
@@ -28,11 +34,11 @@ function RootNavigator() {
         </Stack.Protected>
 
         {/* Authentication is mandatory before any map or data access */}
-        <Stack.Protected guard={!signedIn}>
+        <Stack.Protected guard={signInAllowed}>
           <Stack.Screen name="sign-in" options={{ animation: 'none' }} />
         </Stack.Protected>
 
-        <Stack.Protected guard={signedIn && !consentAccepted}>
+        <Stack.Protected guard={consentAllowed}>
           <Stack.Screen name="consent" options={{ animation: 'none' }} />
         </Stack.Protected>
       </Stack>

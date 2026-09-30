@@ -1,4 +1,7 @@
 import { useTranslation } from 'react-i18next';
+import * as Location from 'expo-location';
+import { useSyncStore } from '../features/sync/syncStore';
+import { formatCoordinates, formatObservedAt } from '../utils/formatObservation';
 import React, { useState, useMemo } from 'react';
 import {
   View,
@@ -36,30 +39,6 @@ import {
   hapticSuccess,
 } from '../utils/haptics';
 
-const GOVERNORATES = [
-  'Tunis',
-  'Ariana',
-  'Ben Arous',
-  'Manouba',
-  'Nabeul',
-  'Bizerte',
-  'Sousse',
-  'Monastir',
-  'Sfax',
-];
-
-const GOV_COORDINATES: Record<string, FocusCoordinate> = {
-  Tunis: { latitude: 36.8065, longitude: 10.1815, zoom: 13 },
-  Ariana: { latitude: 36.8665, longitude: 10.1956, zoom: 13 },
-  'Ben Arous': { latitude: 36.7533, longitude: 10.2222, zoom: 13 },
-  Manouba: { latitude: 36.808, longitude: 10.0972, zoom: 13 },
-  Nabeul: { latitude: 36.4561, longitude: 10.7376, zoom: 13 },
-  Bizerte: { latitude: 37.2746, longitude: 9.8739, zoom: 13 },
-  Sousse: { latitude: 35.8256, longitude: 10.6369, zoom: 13 },
-  Monastir: { latitude: 35.778, longitude: 10.8262, zoom: 13 },
-  Sfax: { latitude: 34.7406, longitude: 10.7603, zoom: 13 },
-};
-
 type FilterCategory = 'all' | 'transects' | 'colonies' | 'cats' | 'dogs';
 
 interface MapOverviewScreenProps {
@@ -80,8 +59,6 @@ export const MapOverviewScreen: React.FC<MapOverviewScreenProps> = ({
   onStartSurvey,
 }) => {
   const { t } = useTranslation();
-  const [selectedGovernorate, setSelectedGovernorate] = useState<string>('Tunis');
-  const [showGovPicker, setShowGovPicker] = useState<boolean>(false);
   const [searchQuery, setSearchQuery] = useState<string>('');
   const [activeFilter, setActiveFilter] = useState<FilterCategory>('all');
   const [selectedSightingId, setSelectedSightingId] = useState<string | null>(null);
@@ -97,7 +74,9 @@ export const MapOverviewScreen: React.FC<MapOverviewScreenProps> = ({
 
   // Notifications Modal State
   const [showNotificationsModal, setShowNotificationsModal] = useState<boolean>(false);
-  const [hasUnreadNotifications, setHasUnreadNotifications] = useState<boolean>(true);
+  // The bell's dot means something real: sightings still waiting to upload
+  const pendingSyncCount = useSyncStore((st) => st.pendingCount);
+  const lastSyncedAt = useSyncStore((st) => st.lastSyncedAt);
 
   const { colonies } = useColoniesStore();
   const [selectedColony, setSelectedColony] = useState<CatColony | null>(null);
@@ -212,14 +191,28 @@ export const MapOverviewScreen: React.FC<MapOverviewScreenProps> = ({
     setSelectedRouteId(null);
   };
 
-  const handleCloseGovPicker = () => {
-    hapticModalClose();
-    setShowGovPicker(false);
-  };
-
   const handleCloseFilterModal = () => {
     hapticModalClose();
     setShowFilterModal(false);
+  };
+
+  // Recenter on the phone's position (last known first: instant, no GPS wait)
+  const centerOnMe = async () => {
+    hapticButtonPress();
+    try {
+      const { status } = await Location.requestForegroundPermissionsAsync();
+      if (status !== 'granted') return;
+      const loc =
+        (await Location.getLastKnownPositionAsync()) ||
+        (await Location.getCurrentPositionAsync({ accuracy: Location.Accuracy.Balanced }));
+      setFocusCoordinate({
+        latitude: loc.coords.latitude,
+        longitude: loc.coords.longitude,
+        zoom: 15,
+      });
+    } catch {
+      // No fix available; leave the map where it is
+    }
   };
 
   const handleCloseNotifications = () => {
@@ -267,16 +260,14 @@ export const MapOverviewScreen: React.FC<MapOverviewScreenProps> = ({
           <View style={styles.locationRow}>
             <TouchableOpacity
               style={styles.locationSelector}
-              onPress={() => {
-                hapticButtonPress();
-                setShowGovPicker(true);
-              }}
+              onPress={centerOnMe}
               activeOpacity={0.7}
+              accessibilityRole="button"
+              accessibilityHint={t('ui_mapOverview.near_me_hint')}
             >
-              <Text style={styles.locationSubLabel}>{t('ui_mapOverview.location')}</Text>
               <View style={styles.locationTitleRow}>
-                <Text style={styles.locationTitleText}>{selectedGovernorate}</Text>
-                <IOSIcon name="chevronDown" size={16} color="#0F172A" />
+                <IOSIcon name="location" size={16} color="#0F172A" />
+                <Text style={styles.locationTitleText}>{t('ui_mapOverview.near_me')}</Text>
               </View>
             </TouchableOpacity>
 
@@ -306,7 +297,7 @@ export const MapOverviewScreen: React.FC<MapOverviewScreenProps> = ({
                 }}
               >
                 <IOSIcon name="bell" size={18} color="#0F172A" />
-                {hasUnreadNotifications && <View style={styles.bellDot} />}
+                {pendingSyncCount > 0 && <View style={styles.bellDot} />}
               </TouchableOpacity>
 
               {/* Profile Avatar: Navigates to Account Tab */}
@@ -359,55 +350,6 @@ export const MapOverviewScreen: React.FC<MapOverviewScreenProps> = ({
                 color={hasActiveAdvancedFilters ? '#0F172A' : '#FFFFFF'}
               />
             </TouchableOpacity>
-          </View>
-
-          {/* Fast Governorate Quick Selector Strip */}
-          <View style={styles.scrollWrapper}>
-            <ScrollView
-              horizontal
-              showsHorizontalScrollIndicator={false}
-              contentContainerStyle={styles.govScrollRow}
-            >
-              {GOVERNORATES.map((gov) => {
-                const isSelected = selectedGovernorate === gov;
-                return (
-                  <TouchableOpacity
-                    key={gov}
-                    style={[styles.govCapsule, isSelected && styles.govCapsuleActive]}
-                    onPress={() => {
-                      hapticButtonPress();
-                      setSelectedGovernorate(gov);
-                      const coords = GOV_COORDINATES[gov];
-                      if (coords) {
-                        setFocusCoordinate(coords);
-                      }
-                    }}
-                    activeOpacity={0.75}
-                  >
-                    <IOSIcon name="location" size={10} color={isSelected ? '#0F172A' : '#64748B'} />
-                    <Text
-                      style={[styles.govCapsuleText, isSelected && styles.govCapsuleTextActive]}
-                    >
-                      {gov}
-                    </Text>
-                  </TouchableOpacity>
-                );
-              })}
-            </ScrollView>
-            <LinearGradient
-              colors={['rgba(253, 242, 236, 0.95)', 'rgba(253, 242, 236, 0)']}
-              start={{ x: 0, y: 0 }}
-              end={{ x: 1, y: 0 }}
-              style={styles.fadeLeft}
-              pointerEvents="none"
-            />
-            <LinearGradient
-              colors={['rgba(251, 244, 237, 0)', 'rgba(251, 244, 237, 0.95)']}
-              start={{ x: 0, y: 0 }}
-              end={{ x: 1, y: 0 }}
-              style={styles.fadeRight}
-              pointerEvents="none"
-            />
           </View>
 
           {/* Horizontal Filter Capsule Tags */}
@@ -693,14 +635,6 @@ export const MapOverviewScreen: React.FC<MapOverviewScreenProps> = ({
             height="100%"
           />
 
-          {/* Reference 1: Weather & Survey Condition Pill */}
-          <View style={styles.weatherConditionChip}>
-            <IOSIcon name="sun" size={14} color="#D97706" />
-            <Text style={styles.weatherConditionText}>{t('ui_mapOverview.26_c_clear')}</Text>
-            <View style={styles.weatherDivider} />
-            <Text style={styles.conditionTierText}>{t('ui_mapOverview.tier_1_visibility')}</Text>
-          </View>
-
           {/* Empty state guide capsule when 0 sightings */}
           {!selectedSighting && sightings.length === 0 && (
             <View style={styles.cleanStartGuideBox}>
@@ -712,28 +646,22 @@ export const MapOverviewScreen: React.FC<MapOverviewScreenProps> = ({
           )}
 
           {/* Floating Quick Action Button */}
-          {!selectedSighting && !selectedRoute && (
+          {/* Recording a sighting lives on the tab bar's center button; this
+              button only appears for the colonies filter, where it registers a
+              colony or pack (an action the record menu does not offer). */}
+          {!selectedSighting && !selectedRoute && activeFilter === 'colonies' && (
             <TouchableOpacity
-              style={[
-                styles.floatingActionBtn,
-                activeFilter === 'colonies' && styles.floatingActionBtnColony,
-              ]}
+              style={[styles.floatingActionBtn, styles.floatingActionBtnColony]}
               onPress={() => {
-                if (activeFilter === 'colonies') {
-                  hapticButtonPress();
-                  setShowCreateColonyModal(true);
-                } else {
-                  hapticQuickLog();
-                  onQuickSighting();
-                }
+                hapticButtonPress();
+                setShowCreateColonyModal(true);
               }}
               activeOpacity={0.85}
+              accessibilityRole="button"
             >
               <IOSIcon name="plus" size={16} color="#FFFFFF" />
               <Text style={styles.floatingActionText}>
-                {activeFilter === 'colonies'
-                  ? t('ui_mapOverview.register_colony_pack')
-                  : t('ui_mapOverview.record_observation')}
+                {t('ui_mapOverview.register_colony_pack')}
               </Text>
             </TouchableOpacity>
           )}
@@ -802,17 +730,16 @@ export const MapOverviewScreen: React.FC<MapOverviewScreenProps> = ({
               {/* Observer Attribution */}
               <Text style={styles.sightingObserverText}>
                 {t('ui_mapOverview.logged_by', {
-                  v1: selectedSighting.observer_name || 'You',
-                  v3: new Date(selectedSighting.observed_at).toLocaleTimeString([], {
-                    hour: '2-digit',
-                    minute: '2-digit',
+                  v1: selectedSighting.observer_name || t('ui_common.you'),
+                  v3: formatObservedAt(selectedSighting.observed_at, {
+                    today: t('ui_common.today'),
+                    yesterday: t('ui_common.yesterday'),
                   }),
                 })}
               </Text>
 
               <Text style={styles.sightingCoords}>
-                {selectedSighting.latitude.toFixed(5)}° N, {selectedSighting.longitude.toFixed(5)}°
-                E
+                {formatCoordinates(selectedSighting.latitude, selectedSighting.longitude)}
               </Text>
 
               {selectedSighting.notes ? (
@@ -944,63 +871,6 @@ export const MapOverviewScreen: React.FC<MapOverviewScreenProps> = ({
             </View>
           ) : null}
         </View>
-
-        {/* Governorate Selector Modal */}
-        <Modal
-          visible={showGovPicker}
-          transparent
-          animationType="fade"
-          onRequestClose={handleCloseGovPicker}
-        >
-          <TouchableOpacity
-            style={styles.modalOverlay}
-            activeOpacity={1}
-            onPress={handleCloseGovPicker}
-          >
-            <View style={styles.modalSheet}>
-              <View style={styles.modalHeader}>
-                <Text style={styles.modalTitle}>
-                  {t('ui_mapOverview.select_survey_governorate')}
-                </Text>
-                <TouchableOpacity onPress={handleCloseGovPicker}>
-                  <IOSIcon name="xmark" size={20} color="#0F172A" />
-                </TouchableOpacity>
-              </View>
-
-              <ScrollView style={{ maxHeight: 320 }}>
-                {GOVERNORATES.map((gov) => (
-                  <TouchableOpacity
-                    key={gov}
-                    style={[
-                      styles.govOptionRow,
-                      selectedGovernorate === gov && styles.govOptionRowSelected,
-                    ]}
-                    onPress={() => {
-                      hapticTabSwitch();
-                      setSelectedGovernorate(gov);
-                      setShowGovPicker(false);
-                      if (GOV_COORDINATES[gov]) {
-                        setFocusCoordinate(GOV_COORDINATES[gov]);
-                      }
-                    }}
-                  >
-                    <Text
-                      style={[
-                        styles.govOptionText,
-                        selectedGovernorate === gov && styles.govOptionTextSelected,
-                      ]}
-                    >
-                      {gov}
-                    </Text>
-                    {selectedGovernorate === gov && (
-                      <IOSIcon name="check" size={18} color="#0D9488" />
-                    )}
-                  </TouchableOpacity>
-                ))}
-              </ScrollView>
-            </View>
-          </TouchableOpacity>
-        </Modal>
 
         {/* Advanced Filter Modal (Sliders Button) */}
         <Modal
@@ -1162,69 +1032,58 @@ export const MapOverviewScreen: React.FC<MapOverviewScreenProps> = ({
               <View style={styles.modalHeader}>
                 <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
                   <IOSIcon name="bell" size={18} color="#0F172A" />
-                  <Text style={styles.modalTitle}>{t('ui_mapOverview.observatory_bulletins')}</Text>
+                  <Text style={styles.modalTitle}>{t('ui_mapOverview.status_title')}</Text>
                 </View>
                 <TouchableOpacity onPress={handleCloseNotifications}>
                   <IOSIcon name="xmark" size={20} color="#0F172A" />
                 </TouchableOpacity>
               </View>
 
-              <ScrollView style={{ maxHeight: 360 }} showsVerticalScrollIndicator={false}>
-                <View style={styles.bulletinItem}>
-                  <View style={[styles.bulletinDot, { backgroundColor: '#10B981' }]} />
-                  <View style={styles.bulletinContent}>
-                    <View style={styles.bulletinTopRow}>
-                      <Text style={styles.bulletinTitle}>
-                        {t('ui_mapOverview.research_cloud_connected')}
-                      </Text>
-                      <Text style={styles.bulletinTime}>{t('ui_mapOverview.live')}</Text>
-                    </View>
-                    <Text style={styles.bulletinBody}>
-                      {t('ui_mapOverview.real_time_synchronization_active_with_supabase')}
+              {/* Real status only: what is waiting to upload and what the map shows */}
+              <View style={styles.bulletinItem}>
+                <View
+                  style={[
+                    styles.bulletinDot,
+                    { backgroundColor: pendingSyncCount > 0 ? '#D97706' : '#10B981' },
+                  ]}
+                />
+                <View style={styles.bulletinContent}>
+                  <View style={styles.bulletinTopRow}>
+                    <Text style={styles.bulletinTitle}>
+                      {t('ui_mapOverview.status_sync_title')}
+                    </Text>
+                    <Text style={styles.bulletinTime}>
+                      {pendingSyncCount > 0
+                        ? t('ui_mapOverview.status_sync_waiting', { count: pendingSyncCount })
+                        : t('ui_mapOverview.status_sync_done')}
                     </Text>
                   </View>
+                  <Text style={styles.bulletinBody}>
+                    {lastSyncedAt
+                      ? t('ui_mapOverview.status_last_synced', { when: lastSyncedAt })
+                      : t('ui_mapOverview.status_never_synced')}
+                  </Text>
                 </View>
+              </View>
 
-                <View style={styles.bulletinItem}>
-                  <View style={[styles.bulletinDot, { backgroundColor: '#0284C7' }]} />
-                  <View style={styles.bulletinContent}>
-                    <View style={styles.bulletinTopRow}>
-                      <Text style={styles.bulletinTitle}>
-                        {t('ui_mapOverview.geospatial_telemetry_engine')}
-                      </Text>
-                      <Text style={styles.bulletinTime}>{t('ui_mapOverview.active')}</Text>
-                    </View>
-                    <Text style={styles.bulletinBody}>
-                      {t('ui_mapOverview.high_precision_wgs84_gps_positioning_and')}
-                    </Text>
-                  </View>
+              <View style={styles.bulletinItem}>
+                <View style={[styles.bulletinDot, { backgroundColor: '#64748B' }]} />
+                <View style={styles.bulletinContent}>
+                  <Text style={styles.bulletinTitle}>{t('ui_mapOverview.status_map_title')}</Text>
+                  <Text style={styles.bulletinBody}>
+                    {t('ui_mapOverview.status_map_body', { count: sightings.length })}
+                  </Text>
                 </View>
-
-                <View style={styles.bulletinItem}>
-                  <View style={[styles.bulletinDot, { backgroundColor: '#64748B' }]} />
-                  <View style={styles.bulletinContent}>
-                    <View style={styles.bulletinTopRow}>
-                      <Text style={styles.bulletinTitle}>
-                        {t('ui_mapOverview.field_advisories')}
-                      </Text>
-                      <Text style={styles.bulletinTime}>{t('ui_mapOverview.normal')}</Text>
-                    </View>
-                    <Text style={styles.bulletinBody}>
-                      {t('ui_mapOverview.no_active_emergency_alerts_or_bio')}
-                    </Text>
-                  </View>
-                </View>
-              </ScrollView>
+              </View>
 
               <TouchableOpacity
                 style={styles.modalActionBtn}
                 onPress={() => {
                   hapticModalClose();
-                  setHasUnreadNotifications(false);
                   setShowNotificationsModal(false);
                 }}
               >
-                <Text style={styles.modalActionBtnText}>{t('ui_mapOverview.dismiss_clear')}</Text>
+                <Text style={styles.modalActionBtnText}>{t('ui_mapOverview.status_close')}</Text>
               </TouchableOpacity>
             </View>
           </TouchableOpacity>

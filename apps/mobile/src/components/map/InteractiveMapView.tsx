@@ -536,6 +536,12 @@ export const InteractiveMapView: React.FC<InteractiveMapViewProps> = ({
       });
     };
 
+    // Hemisphere-aware coordinates for popups ("12.04955° S, 77.04433° W")
+    function fmtCoords(lat, lon) {
+      return Math.abs(lat).toFixed(5) + '° ' + (lat < 0 ? 'S' : 'N') + ', ' +
+        Math.abs(lon).toFixed(5) + '° ' + (lon < 0 ? 'W' : 'E');
+    }
+
     window.jumpToCamera = function(lat, lon, zoom) {
       map.jumpTo({ center: [lon, lat], zoom: zoom });
     };
@@ -580,7 +586,7 @@ export const InteractiveMapView: React.FC<InteractiveMapViewProps> = ({
               displayTitle +
             '</div>' +
             (m.distance_from_path_m !== undefined ? '<div style="font-size:12px;font-weight:600;">Distance: ' + m.distance_from_path_m + 'm</div>' : '') +
-            '<div class="popup-coords">' + m.latitude.toFixed(5) + '° N, ' + m.longitude.toFixed(5) + '° E</div>';
+            '<div class=\"popup-coords\">' + fmtCoords(m.latitude, m.longitude) + '</div>';
 
           var popup = new mapboxgl.Popup({ offset: 18, closeButton: true }).setHTML(popupHtml);
 
@@ -613,7 +619,7 @@ export const InteractiveMapView: React.FC<InteractiveMapViewProps> = ({
           var popupHtml =
             '<div class="' + badgeClass + '">' + groupLabel + ': ' + c.name + '</div>' +
             '<div style="font-size:12px;font-weight:600;margin-top:2px;">Pop: ~' + c.estimatedPopulation + ' ' + animalNoun + ' (' + c.tnrPercent + '% TNR)</div>' +
-            '<div class="popup-coords">' + c.latitude.toFixed(5) + '° N, ' + c.longitude.toFixed(5) + '° E</div>';
+            '<div class=\"popup-coords\">' + fmtCoords(c.latitude, c.longitude) + '</div>';
 
           var popup = new mapboxgl.Popup({ offset: 18, closeButton: true }).setHTML(popupHtml);
 
@@ -642,7 +648,7 @@ export const InteractiveMapView: React.FC<InteractiveMapViewProps> = ({
           var popupHtml =
             '<div class="popup-transect-badge">' + (t.isAdopted ? '[Adopted] ' : '') + 'Transect: ' + t.name + '</div>' +
             '<div style="font-size:12px;font-weight:600;margin-top:2px;">Length: ' + t.distanceKm + ' km ' + (t.isAdopted ? '(Adopted)' : '') + '</div>' +
-            '<div class="popup-coords">' + t.latitude.toFixed(5) + '° N, ' + t.longitude.toFixed(5) + '° E</div>';
+            '<div class=\"popup-coords\">' + fmtCoords(t.latitude, t.longitude) + '</div>';
 
           var popup = new mapboxgl.Popup({ offset: 18, closeButton: true }).setHTML(popupHtml);
 

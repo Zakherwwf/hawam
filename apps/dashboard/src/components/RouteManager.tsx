@@ -18,7 +18,8 @@ const INITIAL_ROUTES: FixedRoute[] = [
     governorate: 'Tunis',
     delegation: 'Médina',
     lengthKm: 1.8,
-    habitatNotes: 'Dense historical urban fabric, pedestrian alleys, high food provisioning near markets.',
+    habitatNotes:
+      'Dense historical urban fabric, pedestrian alleys, high food provisioning near markets.',
     surveyCount: 14,
   },
   {
@@ -121,9 +122,12 @@ export const RouteManager: React.FC = () => {
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <div>
-          <h2 className="text-xl font-bold text-slate-900">Itinéraires Fixes de Transect (Fixed Routes)</h2>
+          <h2 className="text-xl font-bold text-slate-900">
+            Itinéraires Fixes de Transect (Fixed Routes)
+          </h2>
           <p className="text-sm text-slate-500">
-            Tracés standardisés créés par les chercheurs pour permettre la répétition temporelle (Occupancy & N-Mixture models).
+            Tracés standardisés créés par les chercheurs pour permettre la répétition temporelle
+            (Occupancy & N-Mixture models).
           </p>
         </div>
         <button
@@ -152,8 +156,12 @@ export const RouteManager: React.FC = () => {
             <p className="text-xs text-slate-600 line-clamp-2">{route.habitatNotes}</p>
 
             <div className="pt-3 border-t border-slate-100 flex items-center justify-between text-xs text-slate-500">
-              <span>Longueur : <strong>{route.lengthKm} km</strong></span>
-              <span>Répétitions : <strong>{route.surveyCount} enquêtes</strong></span>
+              <span>
+                Longueur : <strong>{route.lengthKm} km</strong>
+              </span>
+              <span>
+                Répétitions : <strong>{route.surveyCount} enquêtes</strong>
+              </span>
             </div>
           </div>
         ))}
@@ -162,27 +170,44 @@ export const RouteManager: React.FC = () => {
       {showAddModal && (
         <div className="fixed inset-0 bg-slate-900/50 backdrop-blur-sm flex items-center justify-center p-4 z-50">
           <div className="bg-white rounded-2xl max-w-md w-full p-6 shadow-xl space-y-4">
-            <h3 className="text-lg font-bold text-slate-900">Définir un nouvel itinéraire de transect</h3>
+            <h3 className="text-lg font-bold text-slate-900">
+              Définir un nouvel itinéraire de transect
+            </h3>
             <form onSubmit={handleAddRoute} className="space-y-4">
               <div>
-                <label className="block text-xs font-semibold text-slate-700 mb-1">Nom de l'itinéraire</label>
+                <label
+                  htmlFor="route-name"
+                  className="block text-xs font-semibold text-slate-700 mb-1"
+                >
+                  Nom de l'itinéraire
+                </label>
                 <input
+                  id="route-name"
+                  name="routeName"
+                  autoComplete="off"
                   type="text"
                   required
                   placeholder="ex: La Goulette - Port de Pêche"
                   value={newRouteName}
                   onChange={(e) => setNewRouteName(e.target.value)}
-                  className="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm focus:ring-2 focus:ring-teal-500 outline-none"
+                  className="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm focus-visible:ring-2 focus-visible:ring-teal-600 focus-visible:border-teal-600 outline-none"
                 />
               </div>
 
               <div className="grid grid-cols-2 gap-3">
                 <div>
-                  <label className="block text-xs font-semibold text-slate-700 mb-1">Gouvernorat</label>
+                  <label
+                    htmlFor="route-region"
+                    className="block text-xs font-semibold text-slate-700 mb-1"
+                  >
+                    Gouvernorat
+                  </label>
                   <select
+                    id="route-region"
+                    name="region"
                     value={newGov}
                     onChange={(e) => setNewGov(e.target.value)}
-                    className="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm bg-white outline-none"
+                    className="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm bg-white focus-visible:ring-2 focus-visible:ring-teal-600 focus-visible:border-teal-600 outline-none"
                   >
                     <option value="Tunis">Tunis</option>
                     <option value="Ariana">Ariana</option>
@@ -193,36 +218,59 @@ export const RouteManager: React.FC = () => {
                   </select>
                 </div>
                 <div>
-                  <label className="block text-xs font-semibold text-slate-700 mb-1">Délégation</label>
+                  <label
+                    htmlFor="route-delegation"
+                    className="block text-xs font-semibold text-slate-700 mb-1"
+                  >
+                    Délégation
+                  </label>
                   <input
+                    id="route-delegation"
+                    name="delegation"
+                    autoComplete="off"
                     type="text"
                     placeholder="ex: La Goulette"
                     value={newDelegation}
                     onChange={(e) => setNewDelegation(e.target.value)}
-                    className="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm outline-none"
+                    className="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm focus-visible:ring-2 focus-visible:ring-teal-600 focus-visible:border-teal-600 outline-none"
                   />
                 </div>
               </div>
 
               <div>
-                <label className="block text-xs font-semibold text-slate-700 mb-1">Longueur estimée (km)</label>
+                <label
+                  htmlFor="route-length"
+                  className="block text-xs font-semibold text-slate-700 mb-1"
+                >
+                  Longueur estimée (km)
+                </label>
                 <input
+                  id="route-length"
+                  name="lengthKm"
+                  inputMode="decimal"
                   type="number"
                   step="0.1"
                   value={newLength}
                   onChange={(e) => setNewLength(e.target.value)}
-                  className="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm outline-none"
+                  className="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm focus-visible:ring-2 focus-visible:ring-teal-600 focus-visible:border-teal-600 outline-none"
                 />
               </div>
 
               <div>
-                <label className="block text-xs font-semibold text-slate-700 mb-1">Notes sur l'habitat & caractéristiques</label>
+                <label
+                  htmlFor="route-habitat"
+                  className="block text-xs font-semibold text-slate-700 mb-1"
+                >
+                  Notes sur l'habitat & caractéristiques
+                </label>
                 <textarea
+                  id="route-habitat"
+                  name="habitatNotes"
                   rows={3}
-                  placeholder="Zones de déchets, points de nourrissage, types de bâtis..."
+                  placeholder="Zones de déchets, points de nourrissage, types de bâtis…"
                   value={newHabitat}
                   onChange={(e) => setNewHabitat(e.target.value)}
-                  className="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm outline-none"
+                  className="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm focus-visible:ring-2 focus-visible:ring-teal-600 focus-visible:border-teal-600 outline-none"
                 />
               </div>
 
@@ -239,7 +287,7 @@ export const RouteManager: React.FC = () => {
                   disabled={isSubmitting}
                   className="px-4 py-2 bg-teal-700 hover:bg-teal-800 disabled:opacity-50 text-white text-sm font-semibold rounded-lg shadow-sm"
                 >
-                  {isSubmitting ? 'Enregistrement...' : "Enregistrer l'itinéraire"}
+                  {isSubmitting ? 'Enregistrement…' : "Enregistrer l'itinéraire"}
                 </button>
               </div>
             </form>

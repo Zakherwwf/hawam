@@ -11,7 +11,6 @@ import {
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useTranslation } from 'react-i18next';
-import { generalizeTo1KmGrid } from '@tunisia-survey/shared';
 import { IOSColors, IOSTypography } from '../theme/ios';
 import {
   IOSNavigationBar,
@@ -49,16 +48,10 @@ export const SettingsScreen: React.FC<SettingsScreenProps> = ({
   const { themeMode, colors, toggleTheme } = useThemeStore();
 
   const [exactCoordsEnabled, setExactCoordsEnabled] = useState(true);
-  const [accuracyThreshold, setAccuracyThreshold] = useState('5m');
   const [isExporting, setIsExporting] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
 
   const currentLang = i18n.language || 'en';
-
-  // Reference georeference calculation for 1km privacy demonstration
-  const referenceLat = 36.8065;
-  const referenceLon = 10.1815;
-  const gridInfo = generalizeTo1KmGrid(referenceLon, referenceLat);
 
   const handleSelectLanguage = (lng: 'ar' | 'fr' | 'en') => {
     setAppLanguage(lng);
@@ -260,10 +253,32 @@ export const SettingsScreen: React.FC<SettingsScreenProps> = ({
           footer={t('settings.georeferencing_footer')}
         >
           <IOSListRow
-            title={t('settings.exact_coords_title')}
-            subtitle={t('settings.exact_coords_sub')}
+            title={t('ui_settings.precision_coordinates_title')}
+            subtitle={t('ui_settings.precision_coordinates_sub')}
+            icon="map"
+            iconColor={IOSColors.systemPurple}
+            value={t('ui_settings.precision_coordinates_value')}
+          />
+          <IOSListRow
+            title={t('ui_settings.precision_gps_title')}
+            subtitle={t('ui_settings.precision_gps_sub')}
+            icon="ruler"
+            iconColor={IOSColors.systemOrange}
+            value={t('ui_settings.precision_gps_value')}
+          />
+          <IOSListRow
+            title={t('ui_settings.precision_public_title')}
+            subtitle={t('ui_settings.precision_public_sub')}
+            icon="squareStack"
+            iconColor={IOSColors.systemGreen}
+            value={t('ui_settings.precision_public_value')}
+          />
+          <IOSListRow
+            title={t('ui_settings.precision_export_title')}
+            subtitle={t('ui_settings.precision_export_sub')}
             icon="location"
             iconColor={IOSColors.systemTeal}
+            isLast
             rightComponent={
               <Switch
                 value={exactCoordsEnabled}
@@ -271,37 +286,6 @@ export const SettingsScreen: React.FC<SettingsScreenProps> = ({
                 trackColor={{ false: IOSColors.systemGray5, true: IOSColors.systemTeal }}
               />
             }
-          />
-          <IOSListRow
-            title={t('settings.gps_threshold_title')}
-            subtitle={t('ui_settings.minimum_gps_lock_quality_for_waypoints')}
-            icon="ruler"
-            iconColor={IOSColors.systemOrange}
-            value={`±${accuracyThreshold}`}
-            showDisclosure
-            onPress={() => {
-              const next =
-                accuracyThreshold === '5m' ? '10m' : accuracyThreshold === '10m' ? '20m' : '5m';
-              setAccuracyThreshold(next);
-            }}
-          />
-          <IOSListRow
-            title={t('settings.datum_title')}
-            subtitle={t('ui_settings.geodetic_datum_projection_grid')}
-            icon="map"
-            iconColor={IOSColors.systemPurple}
-            value={t('settings.datum_val')}
-          />
-          <IOSListRow
-            title={t('ui_settings.generalization_grid_cell')}
-            subtitle={t('ui_settings.centroid_n_e', {
-              v0: gridInfo.centroid[1].toFixed(4),
-              v1: gridInfo.centroid[0].toFixed(4),
-            })}
-            icon="squareStack"
-            iconColor={IOSColors.systemGreen}
-            value={gridInfo.gridCellId}
-            isLast
           />
         </IOSGroupedList>
 
@@ -354,7 +338,7 @@ export const SettingsScreen: React.FC<SettingsScreenProps> = ({
           <IOSListRow
             title={t('settings.sync_status')}
             subtitle={t('ui_settings.last_sync_in_outbox', {
-              v0: lastSyncedAt || 'Never',
+              v0: lastSyncedAt || t('ui_settings.never'),
               pendingCount,
             })}
             icon="compass"

@@ -80,9 +80,9 @@ export const TrainingScreen: React.FC<TrainingScreenProps> = ({ onBack }) => {
         t('ui_training.detection_directly_on_the_centerline_is'),
       ],
       referenceGuide: [
-        { label: t('ui_training.1_standard_car_length'), value: '≈ 4.0 – 4.5 m' },
-        { label: t('ui_training.1_urban_shop_frontage'), value: '≈ 8.0 – 10.0 m' },
-        { label: t('ui_training.1_multi_story_building'), value: '≈ 15.0 – 20.0 m' },
+        { label: t('ui_training.1_standard_car_length'), value: '≈ 4.0-4.5 m' },
+        { label: t('ui_training.1_urban_shop_frontage'), value: '≈ 8.0-10.0 m' },
+        { label: t('ui_training.1_multi_story_building'), value: '≈ 15.0-20.0 m' },
       ],
       quiz: {
         question: t('ui_training.which_distance_measurement_is_mathematically_req'),

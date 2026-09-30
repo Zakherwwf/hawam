@@ -9,6 +9,7 @@ import {
   TextInput,
   ScrollView,
 } from 'react-native';
+import { formatCoordinates } from '../../utils/formatObservation';
 import { DesignTokens } from '../../design-system/tokens';
 import { IOSIcon } from '../ios';
 import { Species } from '@tunisia-survey/shared';
@@ -156,9 +157,8 @@ export const WelfareAlertModal: React.FC<WelfareAlertModalProps> = ({
             <View style={styles.coordsTag}>
               <IOSIcon name="location" size={12} color={DesignTokens.colors.secondaryLabel} />
               <Text style={styles.coordsText}>
-                {t('ui_welfareAlertModal.coordinates_n_e', {
-                  v1: latitude.toFixed(5),
-                  v3: longitude.toFixed(5),
+                {t('ui_welfareAlertModal.coordinates', {
+                  coords: formatCoordinates(latitude, longitude),
                 })}
               </Text>
             </View>

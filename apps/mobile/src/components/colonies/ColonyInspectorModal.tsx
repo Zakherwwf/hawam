@@ -11,6 +11,7 @@ import {
   Alert,
   Image,
 } from 'react-native';
+import { formatCoordinates } from '../../utils/formatObservation';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { IOSColors, IOSTypography } from '../../theme/ios';
 import { IOSIcon } from '../ios';
@@ -143,7 +144,7 @@ export const ColonyInspectorModal: React.FC<ColonyInspectorModalProps> = ({
 
             <Text style={styles.colonyName}>{colony.name}</Text>
             <Text style={styles.coordsText}>
-              {colony.latitude.toFixed(5)}° N, {colony.longitude.toFixed(5)}° E
+              {formatCoordinates(colony.latitude, colony.longitude)}
             </Text>
 
             {/* Territory Map Snippet */}

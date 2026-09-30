@@ -8,6 +8,7 @@ import {
   TouchableOpacity,
   Image,
 } from 'react-native';
+import { useTabBarClearance } from '../components/common/useTabBarClearance';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useTranslation } from 'react-i18next';
 import { LinearGradient } from 'expo-linear-gradient';
@@ -42,6 +43,7 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({
   userAccount,
 }) => {
   const { t } = useTranslation();
+  const tabBarClearance = useTabBarClearance();
   const { themeMode, colors, toggleTheme } = useThemeStore();
 
   const dateFormatted = new Date()
@@ -51,8 +53,6 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({
       month: 'short',
     })
     .toUpperCase();
-
-  const effortIndexPercent = Math.min(100, Math.max(15, stats.sessionsCompleted * 10));
 
   return (
     <View style={[styles.outerContainer, { backgroundColor: colors.screenBg }]}>
@@ -64,7 +64,7 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({
       />
       <SafeAreaView style={styles.safeArea} edges={['top', 'left', 'right']}>
         <ScrollView
-          contentContainerStyle={styles.scrollContent}
+          contentContainerStyle={[styles.scrollContent, { paddingBottom: tabBarClearance }]}
           showsVerticalScrollIndicator={false}
           bounces={false}
         >
@@ -73,7 +73,6 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({
             height={250}
             variant="backgroundHero"
             scene="patrol"
-            titleBadge="NATIONAL FAUNA OBSERVATORY"
             headline={t('app_name')}
             subheadline={t('tagline')}
           >
@@ -85,7 +84,7 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({
                 </View>
                 <View style={styles.frostedInstitutionPill}>
                   <IOSIcon name="shield" size={12} color="#D9F944" />
-                  <Text style={styles.frostedInstitutionText}>
+                  <Text style={styles.frostedInstitutionText} numberOfLines={1}>
                     {userAccount?.organization || t('ui_home.institut_pasteur')}
                   </Text>
                 </View>
@@ -144,9 +143,6 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({
                     {t('ui_home.verified_standardized_surveys')}
                   </Text>
                 </View>
-                <View style={styles.bentoCitronBadge}>
-                  <Text style={styles.bentoCitronBadgeText}>{t('ui_home.tier_1')}</Text>
-                </View>
               </View>
 
               <View style={styles.bentoMetricsRow}>
@@ -165,25 +161,11 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({
                   <Text style={styles.bentoMetricLabel}>{t('home.animals_recorded')}</Text>
                 </View>
               </View>
-
-              {/* Electric Citron Progress Bar */}
-              <View style={styles.bentoProgressContainer}>
-                <View style={styles.bentoProgressTrack}>
-                  <View style={[styles.bentoProgressFill, { width: `${effortIndexPercent}%` }]} />
-                </View>
-                <View style={styles.bentoProgressFoot}>
-                  <Text style={styles.bentoProgressFootText}>
-                    {t('ui_home.census_effort_completion')}
-                  </Text>
-                  <Text style={styles.bentoProgressFootVal}>{effortIndexPercent}%</Text>
-                </View>
-              </View>
             </View>
 
             {/* Field Operations Section Header */}
             <View style={styles.sectionHeaderRow}>
               <Text style={styles.sectionTitle}>{t('ui_home.field_operations')}</Text>
-              <Text style={styles.sectionBadge}>{t('ui_home.active_workflows')}</Text>
             </View>
 
             {/* Featured Action Bento Card: Start Standardized Transect */}
@@ -340,6 +322,8 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     gap: 6,
+    flexShrink: 1,
+    marginRight: 8,
   },
   heroTopRightRow: {
     flexDirection: 'row',
@@ -391,6 +375,7 @@ const styles = StyleSheet.create({
     letterSpacing: 0.6,
   },
   frostedInstitutionPill: {
+    flexShrink: 1,
     flexDirection: 'row',
     alignItems: 'center',
     gap: 6,

@@ -8,6 +8,7 @@ import {
   TextInput,
   Image,
 } from 'react-native';
+import { useTabBarClearance } from '../components/common/useTabBarClearance';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useTranslation } from 'react-i18next';
@@ -37,6 +38,7 @@ export const AnimalsScreen: React.FC<AnimalsScreenProps> = ({
   onSelectAnimal,
 }) => {
   const { t } = useTranslation();
+  const tabBarClearance = useTabBarClearance();
   const { animals } = useAnimalsStore();
 
   const [viewMode, setViewMode] = useState<'catalog' | 'sightings'>('catalog');
@@ -129,7 +131,7 @@ export const AnimalsScreen: React.FC<AnimalsScreenProps> = ({
           />
         ) : (
           <ScrollView
-            contentContainerStyle={styles.listContent}
+            contentContainerStyle={[styles.listContent, { paddingBottom: tabBarClearance }]}
             showsVerticalScrollIndicator={false}
             bounces={false}
           >
@@ -138,9 +140,8 @@ export const AnimalsScreen: React.FC<AnimalsScreenProps> = ({
               height={260}
               variant="backgroundHero"
               scene="cat"
-              titleBadge="COMMUNITY COLONY RADAR"
-              headline="Feline & Canine Registry"
-              subheadline="Catalog of individual street animals with ear-tips & territories"
+              headline={t('ui_animals.hero_headline')}
+              subheadline={t('ui_animals.hero_subheadline')}
             />
 
             {/* Overlapping Content Sheet (TripGlide Pattern) */}

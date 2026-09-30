@@ -135,6 +135,50 @@
     "no_gps_body": "Hawem a besoin d'un signal GPS pour enregistrer l'endroit où l'animal a été vu. Placez-vous à découvert ou autorisez la localisation, puis réessayez."
   },
   "ui_common": {
-    "code_pending": "En attente de synchro"
+    "code_pending": "En attente de synchro",
+    "back": "Retour",
+    "today": "Aujourd'hui",
+    "yesterday": "Hier",
+    "you": "Vous"
+  },
+  "ui_mapOverview": {
+    "status_title": "État",
+    "status_sync_title": "Synchronisation",
+    "status_sync_waiting_one": "{{count}} en attente",
+    "status_sync_waiting_other": "{{count}} en attente",
+    "status_sync_done": "À jour",
+    "status_last_synced": "Dernière synchro : {{when}}",
+    "status_never_synced": "Rien n'a encore été synchronisé depuis ce téléphone.",
+    "status_map_title": "Carte",
+    "status_map_body_one": "{{count}} observation sur la carte, de tous les bénévoles.",
+    "status_map_body_other": "{{count}} observations sur la carte, de tous les bénévoles.",
+    "status_close": "Fermer",
+    "near_me": "Autour de moi",
+    "near_me_hint": "Centre la carte sur votre position"
+  },
+  "ui_settings": {
+    "never": "Jamais",
+    "precision_coordinates_title": "Coordonnées",
+    "precision_coordinates_sub": "Latitude et longitude telles que fournies par le GPS",
+    "precision_coordinates_value": "WGS 84",
+    "precision_gps_title": "Précision GPS",
+    "precision_gps_sub": "Les relevés démarrent quand la précision est meilleure que 30 m. Les points moins précis sont conservés et signalés.",
+    "precision_gps_value": "30 m",
+    "precision_public_title": "Position publiée",
+    "precision_public_sub": "Les exports et cartes publiques montrent le centre d'une maille de 1 km. Les bénévoles connectés voient les positions exactes.",
+    "precision_public_value": "Maille 1 km",
+    "precision_export_title": "Coordonnées exactes dans mes exports",
+    "precision_export_sub": "S'applique aux fichiers CSV exportés depuis cet écran"
+  },
+  "ui_welfareAlertModal": {
+    "coordinates": "Coordonnées : {{coords}}"
+  },
+  "ui_account": {
+    "recent_sightings": "Observations récentes",
+    "recent_sightings_empty": "Vos observations apparaîtront ici.",
+    "region_header": "Région ou ville",
+    "region_placeholder": "ex. Tunis, Lima, Pune",
+    "organization_placeholder": "ex. votre refuge, université ou association",
+    "member_since": "Membre depuis {{date}}"
   }
 }
