@@ -1,569 +1,202 @@
-import { useTranslation } from 'react-i18next';
+/**
+ * Route picker (v3): walk freely, or follow a fixed route. Repeating the same
+ * route lets researchers compare counts over time, which is why routes can be
+ * adopted. Routes are defined by researchers; the app ships none.
+ */
+
 import React, { useState } from 'react';
-import { View, Text, StyleSheet, Modal, TouchableOpacity, ScrollView, Image } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
-import { IOSColors, IOSTypography, IOSLayout } from '../../theme/ios';
-import { IOSIcon, IOSSegmentedControl, IOSButton } from '../ios';
-import { useRoutesStore, FixedRoute } from '../../features/routes/routesStore';
+import { View } from 'react-native';
+import { useTranslation } from 'react-i18next';
+import { useRoutesStore, type FixedRoute } from '../../features/routes/routesStore';
+import { formatObservedAt } from '../../utils/formatObservation';
 import {
-  hapticModalClose,
-  hapticButtonPress,
-  hapticTabSwitch,
-  hapticSuccess,
-} from '../../utils/haptics';
+  Button,
+  Card,
+  EmptyState,
+  PageSheet,
+  Press,
+  Segmented,
+  Symbol,
+  Tag,
+  Text,
+  useCardShadow,
+  useTheme,
+} from '../../ui';
 
-interface RoutePickerModalProps {
-  visible: boolean;
-  selectedRouteId: string | null;
-  onSelectRoute: (route: FixedRoute | null) => void;
-  onClose: () => void;
-}
-
-export const RoutePickerModal: React.FC<RoutePickerModalProps> = ({
+export function RoutePickerModal({
   visible,
   selectedRouteId,
   onSelectRoute,
   onClose,
-}) => {
-  const { t } = useTranslation();
+}: {
+  visible: boolean;
+  selectedRouteId: string | null;
+  onSelectRoute: (route: FixedRoute | null) => void;
+  onClose: () => void;
+}) {
+  const { t, i18n } = useTranslation();
+  const { c, radius } = useTheme();
+  const shadow = useCardShadow();
   const { routes, toggleAdoptRoute } = useRoutesStore();
-  const [filterMode, setFilterMode] = useState<'all' | 'adopted'>('all');
+  const [filter, setFilter] = useState<'all' | 'adopted'>('all');
+  const shown = routes.filter((r) => filter === 'all' || r.isAdopted);
+  const ar = i18n.language?.startsWith('ar');
 
-  const filteredRoutes = routes.filter((r) => {
-    if (filterMode === 'adopted') return r.isAdopted;
-    return true;
-  });
-
-  const getDensityBadgeColor = (density: string) => {
-    switch (density) {
-      case 'high':
-        return { bg: 'rgba(239, 68, 68, 0.12)', text: '#DC2626' };
-      case 'medium':
-        return { bg: 'rgba(245, 158, 11, 0.12)', text: '#D97706' };
-      default:
-        return { bg: 'rgba(16, 185, 129, 0.12)', text: '#059669' };
-    }
+  const choose = (r: FixedRoute | null) => {
+    onSelectRoute(r);
+    onClose();
   };
 
+  const freeSelected = selectedRouteId === null;
+
   return (
-    <Modal
-      visible={visible}
-      animationType="slide"
-      presentationStyle="pageSheet"
-      onRequestClose={() => {
-        hapticModalClose();
-        onClose();
-      }}
-    >
-      <SafeAreaView style={styles.safeArea} edges={['top', 'left', 'right']}>
-        {/* Navigation Bar */}
-        <View style={styles.navBar}>
-          <TouchableOpacity
-            onPress={() => {
-              hapticModalClose();
-              onClose();
-            }}
-            style={styles.navBtn}
-          >
-            <Text style={styles.navBtnText}>{t('ui_routePickerModal.done')}</Text>
-          </TouchableOpacity>
-          <Text style={styles.navTitle}>{t('ui_routePickerModal.transect_catalog')}</Text>
-          <View style={styles.navRightPlaceholder} />
-        </View>
+    <PageSheet visible={visible} title={t('ui_routes_v3.title')} onClose={onClose}>
+      <Text variant="subhead" tone="ink2" style={{ marginBottom: 16 }}>
+        {t('ui_routes_v3.intro')}
+      </Text>
 
-        <ScrollView
-          contentContainerStyle={styles.scrollContent}
-          showsVerticalScrollIndicator={false}
+      <Press
+        onPress={() => choose(null)}
+        accessibilityRole="radio"
+        accessibilityState={{ selected: freeSelected }}
+        accessibilityLabel={`${t('ui_walk.free_walk')}. ${t('ui_routes_v3.free_body')}`}
+        style={[
+          {
+            flexDirection: 'row',
+            alignItems: 'center',
+            gap: 14,
+            padding: 16,
+            borderRadius: radius.lg,
+            backgroundColor: freeSelected ? c.limeSoft : c.surface,
+            borderWidth: 2,
+            borderColor: freeSelected ? c.accent : 'transparent',
+            marginBottom: 20,
+          },
+          shadow,
+        ]}
+      >
+        <View
+          style={{
+            width: 44,
+            height: 44,
+            borderRadius: 22,
+            backgroundColor: c.lime,
+            alignItems: 'center',
+            justifyContent: 'center',
+          }}
         >
-          {/* Mediterranean Transect Illustration Header */}
-          <View style={styles.catalogHeroWrapper}>
-            <Image
-              source={require('../../../assets/hero_transect_corridor.jpg')}
-              style={styles.catalogHeroImage}
-              resizeMode="cover"
-            />
-            <View style={styles.catalogHeroOverlay}>
-              <View style={styles.catalogHeroBadge}>
-                <Image
-                  source={require('../../../assets/icon_cat_white.png')}
-                  style={{ width: 14, height: 14, resizeMode: 'contain' }}
-                />
-                <Text style={styles.catalogHeroBadgeText}>
-                  {t('ui_routePickerModal.mediterranean_corridors')}
-                </Text>
-                <Image
-                  source={require('../../../assets/icon_dog_white.png')}
-                  style={{ width: 14, height: 14, resizeMode: 'contain' }}
-                />
-              </View>
-            </View>
-          </View>
+          <Symbol name="walk" size={22} color={c.onLime} weight="semibold" />
+        </View>
+        <View style={{ flex: 1 }}>
+          <Text variant="headline">{t('ui_walk.free_walk')}</Text>
+          <Text variant="footnote" tone="ink2">
+            {t('ui_routes_v3.free_body')}
+          </Text>
+        </View>
+        {freeSelected ? <Symbol name="checkCircle" size={24} color={c.accent} /> : null}
+      </Press>
 
-          {/* Header Explanation */}
-          <View style={styles.headerBox}>
-            <Text style={styles.headline}>{t('ui_routePickerModal.standardized_transects')}</Text>
-            <Text style={styles.subheadline}>
-              {t('ui_routePickerModal.surveying_recurring_routes_allows_rigorous_spati')}
-            </Text>
-          </View>
+      {routes.length > 0 ? (
+        <Segmented
+          value={filter}
+          onChange={setFilter}
+          options={[
+            { value: 'all', label: t('ui_routes_v3.all', { count: routes.length }) },
+            {
+              value: 'adopted',
+              label: t('ui_routes_v3.adopted_tab', {
+                count: routes.filter((r) => r.isAdopted).length,
+              }),
+            },
+          ]}
+          style={{ marginBottom: 16 }}
+        />
+      ) : null}
 
-          {/* Filter Segment */}
-          <View style={styles.filterSegment}>
-            <IOSSegmentedControl<'all' | 'adopted'>
-              selectedValue={filterMode}
-              onValueChange={(val) => {
-                hapticTabSwitch();
-                setFilterMode(val);
-              }}
-              values={[
-                { label: `All Transects (${routes.length})`, value: 'all' },
-                {
-                  label: `Adopted (${routes.filter((r) => r.isAdopted).length})`,
-                  value: 'adopted',
-                },
-              ]}
-            />
-          </View>
-
-          {/* Free Unconstrained Route Option */}
-          {filterMode === 'all' && (
-            <TouchableOpacity
-              style={[styles.routeCard, selectedRouteId === null && styles.routeCardSelected]}
-              onPress={() => {
-                hapticButtonPress();
-                onSelectRoute(null);
-                onClose();
-              }}
-              activeOpacity={0.7}
-            >
-              <View style={styles.cardHeader}>
-                <View style={styles.zoneTag}>
-                  <IOSIcon name="map" size={13} color={IOSColors.systemTeal} />
-                  <Text style={styles.zoneTagText}>{t('ui_routePickerModal.exploration')}</Text>
-                </View>
-                {selectedRouteId === null && (
-                  <View style={styles.selectedBadge}>
-                    <IOSIcon name="check" size={14} color="#FFFFFF" />
-                  </View>
-                )}
-              </View>
-              <Text style={styles.routeTitle}>
-                {t('ui_routePickerModal.free_form_dynamic_route')}
-              </Text>
-              <Text style={styles.routeDescription}>
-                {t('ui_routePickerModal.survey_arbitrary_streets_or_unmapped_corridors')}
-              </Text>
-            </TouchableOpacity>
-          )}
-
-          {/* Catalog of Fixed Routes */}
-          {filteredRoutes.map((route) => {
-            const isSelected = selectedRouteId === route.id;
-            const densityColors = getDensityBadgeColor(route.densityClassification);
-
+      {routes.length === 0 ? (
+        <EmptyState
+          icon="route"
+          title={t('ui_routes_v3.none_title')}
+          message={t('ui_routes_v3.none_body')}
+        />
+      ) : shown.length === 0 ? (
+        <EmptyState
+          icon="shield"
+          title={t('ui_routes_v3.no_adopted_title')}
+          message={t('ui_routes_v3.no_adopted_body')}
+        />
+      ) : (
+        <View style={{ gap: 14 }}>
+          {shown.map((r) => {
+            const selected = r.id === selectedRouteId;
             return (
-              <View
-                key={route.id}
-                style={[styles.routeCard, isSelected && styles.routeCardSelected]}
+              <Card
+                key={r.id}
+                style={{
+                  gap: 10,
+                  borderWidth: 2,
+                  borderColor: selected ? c.accent : 'transparent',
+                }}
               >
-                <View style={styles.cardHeader}>
-                  <View style={styles.zoneTag}>
-                    <IOSIcon name="compass" size={13} color={IOSColors.systemIndigo} />
-                    <Text style={styles.zoneTagText}>{route.zone.toUpperCase()}</Text>
-                  </View>
-
-                  <View style={[styles.densityBadge, { backgroundColor: densityColors.bg }]}>
-                    <Text style={[styles.densityText, { color: densityColors.text }]}>
-                      {t('ui_routePickerModal.density', {
-                        v1: route.densityClassification.toUpperCase(),
+                <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
+                  {r.zone ? <Tag label={r.zone} tone="neutral" /> : null}
+                  {r.isAdopted ? <Tag label={t('ui_routes_v3.adopted')} /> : null}
+                  <View style={{ flex: 1 }} />
+                  {selected ? <Symbol name="checkCircle" size={22} color={c.accent} /> : null}
+                </View>
+                <Text variant="title3">{ar && r.nameAr ? r.nameAr : r.name}</Text>
+                {(ar ? r.descriptionAr : r.description) ? (
+                  <Text variant="subhead" tone="ink2">
+                    {ar && r.descriptionAr ? r.descriptionAr : r.description}
+                  </Text>
+                ) : null}
+                <View style={{ flexDirection: 'row', gap: 16, flexWrap: 'wrap' }}>
+                  <Meta icon="ruler" text={t('ui_routes_v3.km', { km: r.distanceKm.toFixed(1) })} />
+                  <Meta icon="sync" text={t('ui_routes_v3.walked', { count: r.timesSurveyed })} />
+                  {r.lastSurveyedAt ? (
+                    <Meta
+                      icon="clock"
+                      text={formatObservedAt(r.lastSurveyedAt, {
+                        today: t('ui_common.today'),
+                        yesterday: t('ui_common.yesterday'),
                       })}
-                    </Text>
-                  </View>
-                </View>
-
-                <View style={styles.titleRow}>
-                  <View style={{ flex: 1 }}>
-                    <Text style={styles.routeTitle}>{route.name}</Text>
-                  </View>
-                  {isSelected && (
-                    <View style={styles.selectedBadge}>
-                      <IOSIcon name="check" size={14} color="#FFFFFF" />
-                    </View>
-                  )}
-                </View>
-
-                <Text style={styles.routeDescription}>{route.description}</Text>
-
-                {/* Metrics Pill Grid */}
-                <View style={styles.metricsRow}>
-                  <View style={styles.metricPill}>
-                    <Text style={styles.metricLabel}>{t('ui_routePickerModal.distance')}</Text>
-                    <Text style={styles.metricValue}>
-                      {t('ui_routePickerModal.km', { distanceKm: route.distanceKm })}
-                    </Text>
-                  </View>
-                  <View style={styles.metricPill}>
-                    <Text style={styles.metricLabel}>{t('ui_routePickerModal.target_pace')}</Text>
-                    <Text style={styles.metricValue}>
-                      {t('ui_routePickerModal.km_h', { targetPaceKmH: route.targetPaceKmH })}
-                    </Text>
-                  </View>
-                  <View style={styles.metricPill}>
-                    <Text style={styles.metricLabel}>{t('ui_routePickerModal.surveyed')}</Text>
-                    <Text style={styles.metricValue}>
-                      {t('ui_routePickerModal.times', { timesSurveyed: route.timesSurveyed })}
-                    </Text>
-                  </View>
-                  <View style={styles.metricPill}>
-                    <Text style={styles.metricLabel}>{t('ui_routePickerModal.bonus')}</Text>
-                    <Text style={[styles.metricValue, { color: IOSColors.systemTeal }]}>
-                      {t('ui_routePickerModal.xp', { bonusXp: route.bonusXp })}
-                    </Text>
-                  </View>
-                </View>
-
-                {/* Adoption and Selection Actions */}
-                <View style={styles.cardActions}>
-                  <TouchableOpacity
-                    style={[styles.adoptBtn, route.isAdopted && styles.adoptBtnActive]}
-                    onPress={() => {
-                      hapticSuccess();
-                      toggleAdoptRoute(route.id);
-                    }}
-                    activeOpacity={0.7}
-                  >
-                    <IOSIcon
-                      name="shield"
-                      size={14}
-                      color={route.isAdopted ? '#FFFFFF' : IOSColors.systemIndigo}
                     />
-                    <Text
-                      style={[styles.adoptBtnText, route.isAdopted && styles.adoptBtnTextActive]}
-                      numberOfLines={1}
-                    >
-                      {route.isAdopted
-                        ? t('ui_routePickerModal.adopted')
-                        : t('ui_routePickerModal.adopt_route')}
-                    </Text>
-                  </TouchableOpacity>
-
-                  <TouchableOpacity
-                    style={[styles.selectBtn, isSelected && styles.selectBtnActive]}
-                    onPress={() => {
-                      hapticButtonPress();
-                      onSelectRoute(route);
-                      onClose();
-                    }}
-                    activeOpacity={0.7}
-                  >
-                    <Text
-                      style={[styles.selectBtnText, isSelected && styles.selectBtnTextActive]}
-                      numberOfLines={1}
-                    >
-                      {isSelected
-                        ? t('ui_routePickerModal.active_route')
-                        : t('ui_routePickerModal.select')}
-                    </Text>
-                  </TouchableOpacity>
+                  ) : null}
                 </View>
-              </View>
+                <View style={{ flexDirection: 'row', gap: 10, marginTop: 4 }}>
+                  <Button
+                    kind="secondary"
+                    size="small"
+                    icon="shield"
+                    title={r.isAdopted ? t('ui_routes_v3.adopted') : t('ui_routes_v3.adopt')}
+                    onPress={() => toggleAdoptRoute(r.id)}
+                    accessibilityHint={t('ui_routes_v3.adopt_hint')}
+                    style={{ flex: 1 }}
+                  />
+                  <Button
+                    size="small"
+                    title={selected ? t('ui_routes_v3.selected') : t('ui_routes_v3.walk_this')}
+                    onPress={() => choose(r)}
+                    style={{ flex: 1 }}
+                  />
+                </View>
+              </Card>
             );
           })}
-
-          {filteredRoutes.length === 0 && filterMode === 'adopted' && (
-            <View style={styles.emptyState}>
-              <IOSIcon name="shield" size={36} color={IOSColors.systemGray3} />
-              <Text style={styles.emptyTitle}>
-                {t('ui_routePickerModal.no_adopted_routes_yet')}
-              </Text>
-              <Text style={styles.emptySubtitle}>
-                {t('ui_routePickerModal.switch_to_all_transects_and_tap')}
-              </Text>
-            </View>
-          )}
-        </ScrollView>
-      </SafeAreaView>
-    </Modal>
+        </View>
+      )}
+    </PageSheet>
   );
-};
+}
 
-const styles = StyleSheet.create({
-  safeArea: {
-    flex: 1,
-    backgroundColor: '#F8FAFC',
-  },
-  catalogHeroWrapper: {
-    marginHorizontal: 16,
-    marginTop: 12,
-    marginBottom: 4,
-    height: 140,
-    borderRadius: 18,
-    overflow: 'hidden',
-    position: 'relative',
-    backgroundColor: '#0284C7',
-    shadowColor: '#0284C7',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.16,
-    shadowRadius: 10,
-    elevation: 4,
-  },
-  catalogHeroImage: {
-    width: '100%',
-    height: '100%',
-  },
-  catalogHeroOverlay: {
-    ...StyleSheet.absoluteFill,
-    backgroundColor: 'rgba(15, 23, 42, 0.20)',
-    justifyContent: 'flex-end',
-    padding: 10,
-  },
-  catalogHeroBadge: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 6,
-    backgroundColor: 'rgba(15, 23, 42, 0.75)',
-    paddingHorizontal: 10,
-    paddingVertical: 5,
-    borderRadius: 14,
-    alignSelf: 'flex-start',
-    borderWidth: 1,
-    borderColor: 'rgba(255, 255, 255, 0.20)',
-  },
-  catalogHeroBadgeText: {
-    fontSize: 10,
-    fontWeight: '800',
-    color: '#FFFFFF',
-    letterSpacing: 0.6,
-  },
-  navBar: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    paddingHorizontal: 16,
-    paddingVertical: 14,
-    borderBottomWidth: StyleSheet.hairlineWidth,
-    borderBottomColor: '#E2E8F0',
-    backgroundColor: '#FFFFFF',
-  },
-  navBtn: {
-    paddingVertical: 4,
-    paddingHorizontal: 8,
-  },
-  navBtnText: {
-    fontSize: 16,
-    fontWeight: '600',
-    color: IOSColors.systemTeal,
-  },
-  navTitle: {
-    fontSize: 17,
-    fontWeight: '700',
-    color: IOSColors.label,
-  },
-  navRightPlaceholder: {
-    width: 48,
-  },
-  scrollContent: {
-    padding: 16,
-    paddingBottom: 40,
-  },
-  headerBox: {
-    marginBottom: 16,
-  },
-  headline: {
-    fontSize: 22,
-    fontWeight: '800',
-    color: IOSColors.label,
-    letterSpacing: -0.5,
-    marginBottom: 6,
-  },
-  subheadline: {
-    fontSize: 14,
-    color: IOSColors.secondaryLabel,
-    lineHeight: 20,
-  },
-  filterSegment: {
-    marginBottom: 18,
-  },
-  routeCard: {
-    backgroundColor: '#FFFFFF',
-    borderRadius: 16,
-    padding: 16,
-    marginBottom: 14,
-    borderWidth: 1,
-    borderColor: '#E2E8F0',
-    shadowColor: '#000000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.04,
-    shadowRadius: 6,
-    elevation: 2,
-  },
-  routeCardSelected: {
-    borderColor: IOSColors.systemTeal,
-    borderWidth: 2,
-    backgroundColor: '#F0FDFA',
-  },
-  cardHeader: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    marginBottom: 8,
-  },
-  zoneTag: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 5,
-    backgroundColor: '#F1F5F9',
-    paddingHorizontal: 8,
-    paddingVertical: 4,
-    borderRadius: 6,
-  },
-  zoneTagText: {
-    fontSize: 11,
-    fontWeight: '700',
-    color: IOSColors.secondaryLabel,
-    letterSpacing: 0.5,
-  },
-  densityBadge: {
-    paddingHorizontal: 8,
-    paddingVertical: 3,
-    borderRadius: 6,
-  },
-  densityText: {
-    fontSize: 10,
-    fontWeight: '800',
-    letterSpacing: 0.4,
-  },
-  titleRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'flex-start',
-    marginBottom: 4,
-  },
-  routeTitle: {
-    fontSize: 17,
-    fontWeight: '700',
-    color: IOSColors.label,
-  },
-  routeArabicTitle: {
-    fontSize: 13,
-    color: IOSColors.secondaryLabel,
-    marginTop: 2,
-  },
-  selectedBadge: {
-    backgroundColor: IOSColors.systemTeal,
-    width: 24,
-    height: 24,
-    borderRadius: 12,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  routeDescription: {
-    fontSize: 13,
-    color: IOSColors.secondaryLabel,
-    lineHeight: 18,
-    marginVertical: 8,
-  },
-  metricsRow: {
-    flexDirection: 'row',
-    gap: 8,
-    marginVertical: 10,
-  },
-  metricPill: {
-    flex: 1,
-    backgroundColor: '#F8FAFC',
-    borderRadius: 8,
-    paddingVertical: 6,
-    paddingHorizontal: 6,
-    alignItems: 'center',
-    borderWidth: 1,
-    borderColor: '#E2E8F0',
-  },
-  metricLabel: {
-    fontSize: 10,
-    color: IOSColors.tertiaryLabel,
-    fontWeight: '600',
-    marginBottom: 2,
-    textTransform: 'uppercase',
-  },
-  metricValue: {
-    fontSize: 12,
-    fontWeight: '700',
-    color: IOSColors.label,
-  },
-  cardActions: {
-    flexDirection: 'row',
-    gap: 10,
-    marginTop: 6,
-    paddingTop: 10,
-    borderTopWidth: StyleSheet.hairlineWidth,
-    borderTopColor: '#E2E8F0',
-  },
-  adoptBtn: {
-    flex: 1.3,
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    gap: 6,
-    paddingVertical: 10,
-    paddingHorizontal: 8,
-    minHeight: 40,
-    borderRadius: 10,
-    backgroundColor: '#EEF2FF',
-    borderWidth: 1,
-    borderColor: '#C7D2FE',
-  },
-  adoptBtnActive: {
-    backgroundColor: IOSColors.systemIndigo,
-    borderColor: IOSColors.systemIndigo,
-  },
-  adoptBtnText: {
-    fontSize: 13,
-    fontWeight: '700',
-    color: IOSColors.systemIndigo,
-    textAlign: 'center',
-  },
-  adoptBtnTextActive: {
-    color: '#FFFFFF',
-  },
-  selectBtn: {
-    flex: 1,
-    alignItems: 'center',
-    justifyContent: 'center',
-    paddingVertical: 10,
-    paddingHorizontal: 8,
-    minHeight: 40,
-    borderRadius: 10,
-    backgroundColor: '#F1F5F9',
-  },
-  selectBtnActive: {
-    backgroundColor: IOSColors.systemTeal,
-  },
-  selectBtnText: {
-    fontSize: 13,
-    fontWeight: '700',
-    color: IOSColors.label,
-    textAlign: 'center',
-  },
-  selectBtnTextActive: {
-    color: '#FFFFFF',
-  },
-  emptyState: {
-    alignItems: 'center',
-    justifyContent: 'center',
-    paddingVertical: 60,
-    paddingHorizontal: 24,
-  },
-  emptyTitle: {
-    fontSize: 17,
-    fontWeight: '700',
-    color: IOSColors.label,
-    marginTop: 14,
-    marginBottom: 6,
-  },
-  emptySubtitle: {
-    fontSize: 13,
-    color: IOSColors.secondaryLabel,
-    textAlign: 'center',
-    lineHeight: 18,
-  },
-});
+function Meta({ icon, text }: { icon: 'ruler' | 'sync' | 'clock'; text: string }) {
+  const { c } = useTheme();
+  return (
+    <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
+      <Symbol name={icon} size={14} color={c.ink3} />
+      <Text variant="footnote" tone="ink2" tabular>
+        {text}
+      </Text>
+    </View>
+  );
+}

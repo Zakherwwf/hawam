@@ -11,3 +11,4 @@ export { Sheet } from './Sheet';
 export { ToastHost, useToast } from './Toast';
 export { Gradient, Glass } from './Surfaces';
 export { StreetScene, AnimalFace } from './Illustrations';
+export { PageSheet } from './PageSheet';
