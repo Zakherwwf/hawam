@@ -8,6 +8,33 @@ export function SignIn() {
   const [password, setPassword] = useState('');
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [notice, setNotice] = useState<string | null>(null);
+  const back = `${window.location.origin}${window.location.pathname}`;
+
+  const google = async () => {
+    setError(null);
+    const { error: err } = await supabase.auth.signInWithOAuth({
+      provider: 'google',
+      options: { redirectTo: back },
+    });
+    if (err) setError(err.message);
+  };
+
+  const forgot = async () => {
+    if (!email.trim()) {
+      setError('Enter your email above first, then choose Forgot Password.');
+      return;
+    }
+    setError(null);
+    const { error: err } = await supabase.auth.resetPasswordForEmail(email.trim(), {
+      redirectTo: back,
+    });
+    if (err) setError(err.message);
+    else
+      setNotice(
+        `If ${email.trim()} has an account, a link to set a new password is on its way. Open it on this computer.`
+      );
+  };
 
   const submit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -56,6 +83,14 @@ export function SignIn() {
             </div>
           </div>
           <h2 className="text-[24px] font-bold">Sign In</h2>
+          <Button kind="secondary" onClick={google}>
+            Continue with Google
+          </Button>
+          <div className="flex items-center gap-3 text-[13px] text-ink3" aria-hidden>
+            <span className="h-px flex-1 bg-line" />
+            or with email
+            <span className="h-px flex-1 bg-line" />
+          </div>
           <Field label="Email" htmlFor="email">
             <input
               id="email"
@@ -87,8 +122,16 @@ export function SignIn() {
               {error}
             </p>
           ) : null}
+          {notice ? (
+            <p role="status" aria-live="polite" className="text-[14px] text-accent">
+              {notice}
+            </p>
+          ) : null}
           <Button type="submit" disabled={busy || !email || !password}>
             {busy ? 'Signing In…' : 'Sign In'}
+          </Button>
+          <Button kind="ghost" onClick={forgot}>
+            Forgot Password
           </Button>
           <p className="text-[13px] text-ink2">
             Use the same account as in the Hawem app. The portal is open to researchers and

@@ -19,6 +19,7 @@ import { readTheme, saveTheme } from './lib/theme';
 import { cx, Skeleton } from './ui';
 import { SignIn } from './pages/SignIn';
 import { NoAccess } from './pages/NoAccess';
+import { SetPassword } from './pages/SetPassword';
 import { Overview } from './pages/Overview';
 import { MapPage } from './pages/MapPage';
 import { Walks } from './pages/Walks';
@@ -41,11 +42,15 @@ const NAV = [
 
 export default function App() {
   const [me, setMe] = useState<Me | null | undefined>(undefined);
+  const [recovering, setRecovering] = useState(false);
   const route = useRoute();
 
   useEffect(() => {
     getMe().then(setMe);
-    const { data } = supabase.auth.onAuthStateChange(() => getMe().then(setMe));
+    const { data } = supabase.auth.onAuthStateChange((event) => {
+      if (event === 'PASSWORD_RECOVERY') setRecovering(true);
+      getMe().then(setMe);
+    });
     return () => data.subscription.unsubscribe();
   }, []);
 
@@ -56,6 +61,7 @@ export default function App() {
       </div>
     );
   }
+  if (recovering) return <SetPassword onDone={() => setRecovering(false)} />;
   if (!me) return <SignIn />;
   if (me.role !== 'researcher' && me.role !== 'admin') return <NoAccess me={me} />;
 
