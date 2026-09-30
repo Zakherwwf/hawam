@@ -11,7 +11,9 @@ import { Button } from '../components/design-system/Button';
 import { IOSSegmentedControl } from '../components/ios';
 import { hapticTabSwitch, hapticButtonPress, hapticSuccess } from '../utils/haptics';
 
-export const CURRENT_CONSENT_VERSION = 'v1.0-tn-pasteur';
+// v2.0: consent text no longer names a country or partner institution;
+// everyone re-accepts once so what they agreed to matches what they read.
+export const CURRENT_CONSENT_VERSION = 'v2.0';
 
 interface ConsentScreenProps {
   onAccept: (version: string) => void;

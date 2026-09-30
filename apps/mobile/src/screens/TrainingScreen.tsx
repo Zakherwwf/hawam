@@ -259,7 +259,7 @@ export const TrainingScreen: React.FC<TrainingScreenProps> = ({ onBack }) => {
               <IOSIcon name="paw" size={40} color={IOSColors.systemTeal} />
             </View>
 
-            <Text style={styles.certSuperTitle}>{t('ui_training.republic_of_tunisia')}</Text>
+            <Text style={styles.certSuperTitle}>{t('ui_training.certificate_issuer')}</Text>
             <Text style={styles.certTitle}>{t('ui_training.certified_field_surveyor')}</Text>
             <Text style={styles.certSubtitle}>
               {t('ui_training.fauna_observatory_free_roaming_animal_population')}

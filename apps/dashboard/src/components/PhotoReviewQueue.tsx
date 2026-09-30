@@ -25,12 +25,14 @@ const SAMPLE_MATCHES: ProposedMatch[] = [
     method: 'algorithm',
     angleA: 'Flanc Gauche',
     dateA: '2026-09-18 08:30',
-    locationA: 'Tunis Médina (1km grid)',
-    imageA: 'https://images.unsplash.com/photo-1514888286974-6c03e2ca1dba?auto=format&fit=crop&w=600&q=80',
+    locationA: 'Grille 1 km',
+    imageA:
+      'https://images.unsplash.com/photo-1514888286974-6c03e2ca1dba?auto=format&fit=crop&w=600&q=80',
     angleB: 'Flanc Gauche',
     dateB: '2026-09-22 17:15',
-    locationB: 'Tunis Médina (1km grid)',
-    imageB: 'https://images.unsplash.com/photo-1573865526739-10659fec78a5?auto=format&fit=crop&w=600&q=80',
+    locationB: 'Grille 1 km',
+    imageB:
+      'https://images.unsplash.com/photo-1573865526739-10659fec78a5?auto=format&fit=crop&w=600&q=80',
     coatPattern: 'Tabby avec plastron blanc asymétrique',
   },
   {
@@ -41,12 +43,14 @@ const SAMPLE_MATCHES: ProposedMatch[] = [
     angleA: 'Face',
     dateA: '2026-09-15 09:10',
     locationA: 'Ariana Centre (1km grid)',
-    imageA: 'https://images.unsplash.com/photo-1543466835-00a7907e9de1?auto=format&fit=crop&w=600&q=80',
+    imageA:
+      'https://images.unsplash.com/photo-1543466835-00a7907e9de1?auto=format&fit=crop&w=600&q=80',
     angleB: 'Face',
     dateB: '2026-09-23 07:45',
     locationB: 'Ariana Centre (1km grid)',
-    imageB: 'https://images.unsplash.com/photo-1537151608828-ea2b11777ee8?auto=format&fit=crop&w=600&q=80',
-    coatPattern: 'Fauve uni avec cicatrice sur l\'oreille gauche',
+    imageB:
+      'https://images.unsplash.com/photo-1537151608828-ea2b11777ee8?auto=format&fit=crop&w=600&q=80',
+    coatPattern: "Fauve uni avec cicatrice sur l'oreille gauche",
   },
 ];
 
@@ -77,17 +81,22 @@ export const PhotoReviewQueue: React.FC = () => {
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <div>
-          <h2 className="text-xl font-bold text-slate-900">File de Validation Photo-Identification (Mark-Resight)</h2>
+          <h2 className="text-xl font-bold text-slate-900">
+            File de Validation Photo-Identification (Mark-Resight)
+          </h2>
           <p className="text-sm text-slate-500">
-            Comparaison côte à côte des paires candidates pour attribuer ou rejeter l'identité d'un individu unique.
+            Comparaison côte à côte des paires candidates pour attribuer ou rejeter l'identité d'un
+            individu unique.
           </p>
         </div>
         <div className="flex items-center gap-4 text-xs font-semibold">
           <span className="px-3 py-1.5 bg-emerald-50 text-emerald-700 border border-emerald-200 rounded-lg inline-flex items-center gap-1.5">
-            <Check className="w-3.5 h-3.5" aria-hidden />{confirmedCount} Individus Confirmés
+            <Check className="w-3.5 h-3.5" aria-hidden />
+            {confirmedCount} Individus Confirmés
           </span>
           <span className="px-3 py-1.5 bg-rose-50 text-rose-700 border border-rose-200 rounded-lg inline-flex items-center gap-1.5">
-            <X className="w-3.5 h-3.5" aria-hidden />{rejectedCount} Paires Rejetées
+            <X className="w-3.5 h-3.5" aria-hidden />
+            {rejectedCount} Paires Rejetées
           </span>
         </div>
       </div>
@@ -97,7 +106,8 @@ export const PhotoReviewQueue: React.FC = () => {
           <CircleCheckBig className="w-12 h-12 mx-auto text-teal-600" aria-hidden />
           <h3 className="text-lg font-bold text-slate-900">File de validation à jour !</h3>
           <p className="text-sm text-slate-500 max-w-md mx-auto">
-            Toutes les paires de photos proposées ont été examinées. De nouvelles paires apparaîtront dès que de nouvelles observations avec photos seront synchronisées.
+            Toutes les paires de photos proposées ont été examinées. De nouvelles paires
+            apparaîtront dès que de nouvelles observations avec photos seront synchronisées.
           </p>
         </div>
       ) : (
@@ -109,7 +119,12 @@ export const PhotoReviewQueue: React.FC = () => {
                 {currentMatch.species === 'cat' ? 'Felis catus' : 'Canis lupus familiaris'}
               </span>
               <span className="text-xs text-slate-600">
-                Méthode : <strong>{currentMatch.method === 'algorithm' ? 'Algorithme HotSpotter / AI' : 'Observateur'}</strong>
+                Méthode :{' '}
+                <strong>
+                  {currentMatch.method === 'algorithm'
+                    ? 'Algorithme HotSpotter / AI'
+                    : 'Observateur'}
+                </strong>
               </span>
               <span className="text-xs text-slate-600">
                 Motif : <strong>{currentMatch.coatPattern}</strong>
@@ -140,7 +155,9 @@ export const PhotoReviewQueue: React.FC = () => {
                 />
               </div>
               <div className="flex items-center justify-between text-xs text-slate-600">
-                <span>Angle : <strong>{currentMatch.angleA}</strong></span>
+                <span>
+                  Angle : <strong>{currentMatch.angleA}</strong>
+                </span>
                 <span>Lieu : {currentMatch.locationA}</span>
               </div>
             </div>
@@ -148,7 +165,9 @@ export const PhotoReviewQueue: React.FC = () => {
             {/* Photo B */}
             <div className="space-y-3">
               <div className="flex items-center justify-between text-xs text-slate-500">
-                <span className="font-semibold text-slate-700">Observation B (Nouvelle détection)</span>
+                <span className="font-semibold text-slate-700">
+                  Observation B (Nouvelle détection)
+                </span>
                 <span>{currentMatch.dateB}</span>
               </div>
               <div className="h-72 rounded-xl overflow-hidden bg-slate-950 flex items-center justify-center border border-slate-200">
@@ -159,7 +178,9 @@ export const PhotoReviewQueue: React.FC = () => {
                 />
               </div>
               <div className="flex items-center justify-between text-xs text-slate-600">
-                <span>Angle : <strong>{currentMatch.angleB}</strong></span>
+                <span>
+                  Angle : <strong>{currentMatch.angleB}</strong>
+                </span>
                 <span>Lieu : {currentMatch.locationB}</span>
               </div>
             </div>

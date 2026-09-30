@@ -128,7 +128,7 @@ export const CreateColonyModal: React.FC<CreateColonyModalProps> = ({
       name: name.trim(),
       nameAr: nameAr.trim() || undefined,
       species,
-      zone: zone.trim() || 'Grand Tunis',
+      zone: zone.trim(),
       latitude: lat,
       longitude: lon,
       estimatedPopulation: popNum,

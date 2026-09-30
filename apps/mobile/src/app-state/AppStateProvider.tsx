@@ -104,9 +104,7 @@ function accountFromSession(
     role: (savedLocal?.role as any) || userMeta.role || 'surveyor',
     governorate: savedLocal?.governorate || userMeta.governorate || '',
     surveyorId:
-      savedLocal?.surveyorId ||
-      userMeta.surveyor_id ||
-      `TUN-OBS-${user.id.slice(0, 6).toUpperCase()}`,
+      savedLocal?.surveyorId || userMeta.surveyor_id || `OBS-${user.id.slice(0, 6).toUpperCase()}`,
     avatarUri: savedLocal?.avatarUri || userMeta.avatar_url || undefined,
     createdAt: savedLocal?.createdAt || user.created_at || new Date().toISOString(),
   };
@@ -232,7 +230,7 @@ export function AppStateProvider({ children }: { children: React.ReactNode }) {
 
         // Consent defaults to unaccepted if absent or outdated
         const storedConsent = await AsyncStorage.getItem('hawem_consent_version');
-        if (storedConsent === CURRENT_CONSENT_VERSION || storedConsent === 'v1.0') {
+        if (storedConsent === CURRENT_CONSENT_VERSION) {
           if (isMounted) setConsentAccepted(true);
           if (session?.user?.id) ensureUserConsentAccepted().catch(() => {});
         } else if (isMounted) {

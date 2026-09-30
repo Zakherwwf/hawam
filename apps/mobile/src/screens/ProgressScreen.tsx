@@ -55,13 +55,6 @@ const BADGE_ASSET_MAP: Record<string, any> = {
   route_guardian: require('../../assets/dog_pose_5_amber.png'),
   colony_keeper: require('../../assets/cat_pose_5_primary.png'),
 };
-const GOVERNORATES = [
-  { key: 'all', label: 'All Tunisia' },
-  { key: 'Tunis', label: 'Tunis' },
-  { key: 'Sfax', label: 'Sfax' },
-  { key: 'Sousse', label: 'Sousse' },
-  { key: 'Nabeul', label: 'Nabeul' },
-];
 
 interface ProgressScreenProps {
   userAccount?: UserAccount | null;
@@ -76,14 +69,13 @@ export const ProgressScreen: React.FC<ProgressScreenProps> = ({ userAccount, sta
   const { t } = useTranslation();
   const tabBarClearance = useTabBarClearance();
 
-  const userGov = userAccount?.governorate || 'Tunis';
+  // Leaderboard scope: everyone, or the region the volunteer typed in their profile
+  const userGov = userAccount?.governorate?.trim() || '';
   const governorateList = React.useMemo(() => {
-    const list = [...GOVERNORATES];
-    if (userGov && !list.some((g) => g.key.toLowerCase() === userGov.toLowerCase())) {
-      list.push({ key: userGov, label: userGov });
-    }
+    const list = [{ key: 'all', label: t('ui_progress.everyone') }];
+    if (userGov) list.push({ key: userGov, label: userGov });
     return list;
-  }, [userGov]);
+  }, [userGov, t]);
 
   const {
     xpTotal: localXp,
@@ -148,8 +140,8 @@ export const ProgressScreen: React.FC<ProgressScreenProps> = ({ userAccount, sta
               name: p.full_name || p.name || 'Field Surveyor',
               metric: leaderboardTab === 'km' ? '0.0 km' : '0 surveys',
               isUser: false,
-              governorate: p.governorate || 'Tunis',
-              sector: `${p.governorate || 'Tunis'} Sector`,
+              governorate: p.governorate || '',
+              sector: p.governorate || '',
               badgesEarned: 0,
               surveysCount: 0,
               kmCount: 0,
@@ -571,7 +563,7 @@ export const ProgressScreen: React.FC<ProgressScreenProps> = ({ userAccount, sta
                       ? `${actualKm.toFixed(1)} km`
                       : `${actualSurveys} ${actualSurveys === 1 ? 'survey' : 'surveys'}`,
                   isUser: true,
-                  governorate: userAccount?.governorate || 'Tunis',
+                  governorate: userAccount?.governorate || '',
                   sector: userAccount?.governorate
                     ? `${userAccount.governorate} Urban Transects`
                     : 'Coastal Urban Transects',

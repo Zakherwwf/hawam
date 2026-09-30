@@ -1,6 +1,6 @@
 {
   "app_name": "Hawem",
-  "tagline": "Observatoire de la faune errante en Tunisie",
+  "tagline": "Observatoire des chats et chiens en liberté",
   "nav": {
     "map": "Carte",
     "survey": "Enquête",
@@ -28,7 +28,7 @@
     "title": "Protection absolue des coordonnées",
     "warning": "Pour protéger les animaux contre les risques d'abattage municipal ou d'empoisonnement, les coordonnées précises ne sont JAMAIS rendues publiques.",
     "points": [
-      "Les coordonnées GPS exactes sont réservées exclusivement aux chercheurs certifiés (Institut Pasteur / Services vétérinaires).",
+      "Les positions GPS exactes ne sont visibles que par les bénévoles et chercheurs connectés à Hawem. Les exports et cartes publiques montrent une grille de 1 km, jamais votre position exacte.",
       "Les cartes publiques n'affichent que des cellules agrégées de 1 km² avec seuil d'anonymat.",
       "Vous pouvez supprimer votre compte et vos données à tout moment."
     ],
@@ -177,8 +177,20 @@
     "recent_sightings": "Observations récentes",
     "recent_sightings_empty": "Vos observations apparaîtront ici.",
     "region_header": "Région ou ville",
-    "region_placeholder": "ex. Tunis, Lima, Pune",
+    "region_placeholder": "ex. votre ville ou quartier",
     "organization_placeholder": "ex. votre refuge, université ou association",
     "member_since": "Membre depuis {{date}}"
+  },
+  "ui_training": {
+    "certificate_issuer": "Académie de terrain Hawem"
+  },
+  "ui_structuredSurvey": {
+    "hero_transect_title": "Transect de terrain standardisé",
+    "hero_point_title": "Point d'écoute fixe",
+    "hero_transect_sub": "Échantillonnage par distance le long d'un parcours",
+    "hero_point_sub": "Comptage à 360° depuis un point fixe"
+  },
+  "ui_progress": {
+    "everyone": "Tout le monde"
   }
 }

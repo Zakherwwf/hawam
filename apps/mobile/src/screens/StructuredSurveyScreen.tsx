@@ -811,12 +811,14 @@ export const StructuredSurveyScreen: React.FC<StructuredSurveyScreenProps> = ({
               variant="backgroundHero"
               scene={protocol === 'stationary_point' ? 'cat' : 'patrol'}
               headline={
-                protocol === 'transect' ? 'Standardized Field Transect' : 'Stationary Point Count'
+                protocol === 'transect'
+                  ? t('ui_structuredSurvey.hero_transect_title')
+                  : t('ui_structuredSurvey.hero_point_title')
               }
               subheadline={
                 protocol === 'transect'
-                  ? 'Distance sampling & population telemetry • Tunis'
-                  : 'Fixed 360° vantage occupancy census • Tunis'
+                  ? t('ui_structuredSurvey.hero_transect_sub')
+                  : t('ui_structuredSurvey.hero_point_sub')
               }
               onBack={onBack}
             />
@@ -1411,7 +1413,7 @@ export const StructuredSurveyScreen: React.FC<StructuredSurveyScreenProps> = ({
                       value={sightingIdentifier}
                       onChangeText={setSightingIdentifier}
                       placeholder={t('ui_structuredSurvey.e_g_or_tag', {
-                        v0: sightingSpecies === 'cat' ? 'Bab Souika Tabby' : 'Rex (Corner)',
+                        v0: sightingSpecies === 'cat' ? 'Market Tabby' : 'Rex (Corner)',
                       })}
                       placeholderTextColor="#94A3B8"
                       autoCapitalize="words"

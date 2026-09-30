@@ -541,7 +541,7 @@ export const OpportunisticScreen: React.FC<OpportunisticScreenProps> = ({
                   value={identifier}
                   onChangeText={setIdentifier}
                   placeholder={t('ui_opportunistic.e_g_or_tag', {
-                    v0: species === 'cat' ? 'Bab Souika Tabby' : 'Rex (Souk Gate)',
+                    v0: species === 'cat' ? 'Market Tabby' : 'Rex (Bakery Corner)',
                   })}
                   placeholderTextColor="#94A3B8"
                   autoCapitalize="words"

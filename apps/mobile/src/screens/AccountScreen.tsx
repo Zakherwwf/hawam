@@ -133,7 +133,7 @@ export const AccountScreen: React.FC<AccountScreenProps> = ({
       setEmail(userAccount.email || '');
       setOrganization(userAccount.organization || '');
       setRole(userAccount.role || 'surveyor');
-      setGovernorate(userAccount.governorate || 'Tunis');
+      setGovernorate(userAccount.governorate || '');
       setSurveyorId(userAccount.surveyorId || '');
       setAvatarUri(userAccount.avatarUri);
     }
@@ -220,13 +220,13 @@ export const AccountScreen: React.FC<AccountScreenProps> = ({
       surveyorId.trim() ||
       userAccount?.surveyorId ||
       (session?.user?.id
-        ? `TUN-OBS-${session.user.id.slice(0, 6).toUpperCase()}`
-        : `TUN-OBS-${Math.floor(1000 + Math.random() * 9000)}`);
+        ? `OBS-${session.user.id.slice(0, 6).toUpperCase()}`
+        : `OBS-${Math.floor(1000 + Math.random() * 9000)}`);
 
     const account: UserAccount = {
       name: name.trim(),
-      email: email.trim() || session?.user?.email || 'surveyor@pasteur.tn',
-      organization: organization.trim() || 'Institut Pasteur de Tunis',
+      email: email.trim() || session?.user?.email || '',
+      organization: organization.trim(),
       role,
       governorate,
       surveyorId: effectiveId,
@@ -391,11 +391,11 @@ export const AccountScreen: React.FC<AccountScreenProps> = ({
 
   // Active Profile View
   const displayName = userAccount?.name || session?.user?.email?.split('@')[0] || 'Field Surveyor';
-  const displayOrg = userAccount?.organization || 'Tunisia Fauna Observatory';
+  const displayOrg = userAccount?.organization || '';
   const displayRole = (userAccount?.role || 'surveyor').toUpperCase();
   const displayId =
     userAccount?.surveyorId ||
-    (session?.user?.id ? `OBS-${session.user.id.slice(0, 6).toUpperCase()}` : 'TUN-OBS-01');
+    (session?.user?.id ? `OBS-${session.user.id.slice(0, 6).toUpperCase()}` : '');
 
   const initials = displayName
     .split(' ')

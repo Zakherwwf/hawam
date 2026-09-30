@@ -1,12 +1,18 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { useRoutesStore, INITIAL_FIXED_ROUTES } from '../features/routes/routesStore.ts';
+import { SAMPLE_ROUTES } from './fixtures/sampleRoutes.ts';
+
+// The app ships with no routes; these tests run against sample ones
+useRoutesStore.setState({ routes: SAMPLE_ROUTES.map((r) => ({ ...r })) });
 import { useGamificationStore } from '../features/gamification/gamificationStore.ts';
 
-test('routesStore: INITIAL_FIXED_ROUTES contains 5 Greater Tunis transects with valid trajectories', () => {
-  assert.equal(INITIAL_FIXED_ROUTES.length, 5, 'Should have 5 predefined transects');
+test('routesStore: the app ships with no built-in routes', () => {
+  assert.equal(INITIAL_FIXED_ROUTES.length, 0);
+});
 
-  for (const route of INITIAL_FIXED_ROUTES) {
+test('routesStore: sample routes have valid trajectories', () => {
+  for (const route of SAMPLE_ROUTES) {
     assert.ok(route.id, 'Route must have an id');
     assert.ok(route.name, 'Route must have an English name');
     assert.ok(route.nameAr, 'Route must have an Arabic name');
@@ -36,7 +42,11 @@ test('routesStore: toggleAdoptRoute toggles adoption status and awards XP when a
   store.toggleAdoptRoute(routeId);
   const adoptedRoute = useRoutesStore.getState().routes.find((r) => r.id === routeId);
   assert.equal(adoptedRoute?.isAdopted, true, 'Route should now be adopted');
-  assert.equal(useGamificationStore.getState().xpTotal, xpBefore + 30, 'Should award +30 XP for adopting a route');
+  assert.equal(
+    useGamificationStore.getState().xpTotal,
+    xpBefore + 30,
+    'Should award +30 XP for adopting a route'
+  );
 
   // Un-adopt route
   store.toggleAdoptRoute(routeId);
@@ -55,7 +65,7 @@ test('routesStore: checkOffRoute identifies on-route and off-route surveyor posi
   assert.ok(onRouteCheck.distanceM < 10, 'Distance to waypoint should be near 0m');
 
   // Coordinate far away in Ariana: [36.8665, 10.1950] (> 7km away)
-  const offRouteCheck = store.checkOffRoute(36.8665, 10.1950, 'route-bourguiba-02');
+  const offRouteCheck = store.checkOffRoute(36.8665, 10.195, 'route-bourguiba-02');
   assert.equal(offRouteCheck.isOffRoute, true, 'Far away coordinate must be flagged as off route');
   assert.ok(offRouteCheck.distanceM > 50, 'Distance must exceed 50m corridor threshold');
 });
@@ -69,6 +79,10 @@ test('routesStore: recordSurveyCompletion increments count and updates timestamp
 
   const updatedRoute = useRoutesStore.getState().routes.find((r) => r.id === route.id);
   assert.ok(updatedRoute);
-  assert.equal(updatedRoute.timesSurveyed, initialSurveyCount + 1, 'Survey count must increment by 1');
+  assert.equal(
+    updatedRoute.timesSurveyed,
+    initialSurveyCount + 1,
+    'Survey count must increment by 1'
+  );
   assert.ok(updatedRoute.lastSurveyedAt, 'lastSurveyedAt timestamp must be recorded');
 });

@@ -34,7 +34,7 @@ export const AuthGateScreen: React.FC<AuthGateScreenProps> = ({ onAuthenticated 
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [fullName, setFullName] = useState('');
-  const [organization, setOrganization] = useState('Tunisia Fauna Observatory');
+  const [organization, setOrganization] = useState('');
   const [isLoading, setIsLoading] = useState(false);
 
   const handleGoogleSignIn = async () => {
@@ -54,10 +54,10 @@ export const AuthGateScreen: React.FC<AuthGateScreenProps> = ({ onAuthenticated 
         const account: UserAccount = {
           name: displayName,
           email: result.user.email || '',
-          organization: 'Tunisia Fauna Observatory',
+          organization: '',
           role: 'surveyor',
-          governorate: 'Tunis',
-          surveyorId: `TUN-OBS-${result.user.id.slice(0, 6).toUpperCase()}`,
+          governorate: '',
+          surveyorId: `OBS-${result.user.id.slice(0, 6).toUpperCase()}`,
           createdAt: result.user.created_at || new Date().toISOString(),
         };
 
@@ -115,7 +115,7 @@ export const AuthGateScreen: React.FC<AuthGateScreenProps> = ({ onAuthenticated 
             options: {
               data: {
                 full_name: autoName,
-                organization: organization.trim() || 'Tunisia Fauna Observatory',
+                organization: organization.trim(),
                 role: 'surveyor',
               },
             },
@@ -144,10 +144,10 @@ export const AuthGateScreen: React.FC<AuthGateScreenProps> = ({ onAuthenticated 
           const account: UserAccount = {
             name: displayName,
             email: authedUser.email || '',
-            organization: userMeta.organization || 'Tunisia Fauna Observatory',
+            organization: userMeta.organization || '',
             role: userMeta.role || 'surveyor',
-            governorate: userMeta.governorate || 'Tunis',
-            surveyorId: `TUN-OBS-${authedUser.id.slice(0, 6).toUpperCase()}`,
+            governorate: userMeta.governorate || '',
+            surveyorId: `OBS-${authedUser.id.slice(0, 6).toUpperCase()}`,
             createdAt: authedUser.created_at || new Date().toISOString(),
           };
 
@@ -179,10 +179,10 @@ export const AuthGateScreen: React.FC<AuthGateScreenProps> = ({ onAuthenticated 
           const account: UserAccount = {
             name: fullName.trim(),
             email: data.user.email || '',
-            organization: organization.trim() || 'Tunisia Fauna Observatory',
+            organization: organization.trim(),
             role: 'surveyor',
-            governorate: 'Tunis',
-            surveyorId: `TUN-OBS-${data.user.id.slice(0, 6).toUpperCase()}`,
+            governorate: '',
+            surveyorId: `OBS-${data.user.id.slice(0, 6).toUpperCase()}`,
             createdAt: data.user.created_at || new Date().toISOString(),
           };
 

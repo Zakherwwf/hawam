@@ -11,42 +11,14 @@ interface FixedRoute {
   surveyCount: number;
 }
 
-const INITIAL_ROUTES: FixedRoute[] = [
-  {
-    id: 'route-medina-01',
-    name: 'Tunis Médina - Circuit Bab Souika',
-    governorate: 'Tunis',
-    delegation: 'Médina',
-    lengthKm: 1.8,
-    habitatNotes:
-      'Dense historical urban fabric, pedestrian alleys, high food provisioning near markets.',
-    surveyCount: 14,
-  },
-  {
-    id: 'route-ariana-02',
-    name: 'Ariana Centre - Avenue Habib Bourguiba',
-    governorate: 'Ariana',
-    delegation: 'Ariana Ville',
-    lengthKm: 2.2,
-    habitatNotes: 'Commercial and residential mix, open waste bins, moderate vehicular traffic.',
-    surveyCount: 9,
-  },
-  {
-    id: 'route-carthage-03',
-    name: 'Carthage Byrsa - Site Archéologique',
-    governorate: 'Tunis',
-    delegation: 'Carthage',
-    lengthKm: 2.5,
-    habitatNotes: 'Archaeological open area, gardens, cat feeding stations.',
-    surveyCount: 6,
-  },
-];
+// Routes come from the database; nothing is pre-filled
+const INITIAL_ROUTES: FixedRoute[] = [];
 
 export const RouteManager: React.FC = () => {
   const [routes, setRoutes] = useState<FixedRoute[]>(INITIAL_ROUTES);
   const [showAddModal, setShowAddModal] = useState(false);
   const [newRouteName, setNewRouteName] = useState('');
-  const [newGov, setNewGov] = useState('Tunis');
+  const [newGov, setNewGov] = useState('');
   const [newDelegation, setNewDelegation] = useState('');
   const [newLength, setNewLength] = useState('2.0');
   const [newHabitat, setNewHabitat] = useState('');
@@ -60,7 +32,7 @@ export const RouteManager: React.FC = () => {
           const mapped: FixedRoute[] = live.map((r: any) => ({
             id: r.id,
             name: r.name,
-            governorate: r.governorate || 'Tunis',
+            governorate: r.governorate || '',
             delegation: r.delegation || 'Centre',
             lengthKm: r.length_km || 1.8,
             habitatNotes: r.habitat_notes || 'Transect urbain',
@@ -187,7 +159,7 @@ export const RouteManager: React.FC = () => {
                   autoComplete="off"
                   type="text"
                   required
-                  placeholder="ex: La Goulette - Port de Pêche"
+                  placeholder="ex. Marché central - Port…"
                   value={newRouteName}
                   onChange={(e) => setNewRouteName(e.target.value)}
                   className="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm focus-visible:ring-2 focus-visible:ring-teal-600 focus-visible:border-teal-600 outline-none"
@@ -200,22 +172,18 @@ export const RouteManager: React.FC = () => {
                     htmlFor="route-region"
                     className="block text-xs font-semibold text-slate-700 mb-1"
                   >
-                    Gouvernorat
+                    Région
                   </label>
-                  <select
+                  <input
                     id="route-region"
                     name="region"
+                    type="text"
+                    autoComplete="off"
+                    placeholder="ex. ville ou district…"
                     value={newGov}
                     onChange={(e) => setNewGov(e.target.value)}
                     className="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm bg-white focus-visible:ring-2 focus-visible:ring-teal-600 focus-visible:border-teal-600 outline-none"
-                  >
-                    <option value="Tunis">Tunis</option>
-                    <option value="Ariana">Ariana</option>
-                    <option value="Ben Arous">Ben Arous</option>
-                    <option value="Manouba">Manouba</option>
-                    <option value="Sousse">Sousse</option>
-                    <option value="Sfax">Sfax</option>
-                  </select>
+                  />
                 </div>
                 <div>
                   <label
@@ -229,7 +197,7 @@ export const RouteManager: React.FC = () => {
                     name="delegation"
                     autoComplete="off"
                     type="text"
-                    placeholder="ex: La Goulette"
+                    placeholder="ex. Centre-ville…"
                     value={newDelegation}
                     onChange={(e) => setNewDelegation(e.target.value)}
                     className="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm focus-visible:ring-2 focus-visible:ring-teal-600 focus-visible:border-teal-600 outline-none"

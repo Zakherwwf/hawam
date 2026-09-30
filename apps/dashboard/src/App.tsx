@@ -15,24 +15,10 @@ export function App() {
           <div className="flex items-center gap-3">
             <PawPrint className="w-7 h-7 text-teal-700" aria-hidden />
             <div>
-              <h1 className="text-base font-extrabold text-slate-900 leading-tight">
-                Observatoire National des Chiens & Chats Errants
-              </h1>
+              <h1 className="text-base font-extrabold text-slate-900 leading-tight">Hawem</h1>
               <p className="text-[11px] text-teal-700 font-semibold uppercase tracking-wider">
-                Portail Chercheur • Institut Pasteur de Tunis & Services Vétérinaires
+                Portail chercheur
               </p>
-            </div>
-          </div>
-
-          <div className="flex items-center gap-4">
-            <div className="text-right hidden sm:block">
-              <div className="text-xs font-bold text-slate-800">Dr. Chercheur Pasteur</div>
-              <div className="text-[11px] text-teal-700 font-medium">
-                Rôle : Chercheur Accrédité
-              </div>
-            </div>
-            <div className="h-9 w-9 rounded-full bg-teal-800 text-white flex items-center justify-center font-bold text-xs shadow-sm">
-              IPT
             </div>
           </div>
         </div>

@@ -250,7 +250,7 @@ export const DataExporter: React.FC = () => {
     });
 
     const csv = objectsToCSV(dwc);
-    const filename = `darwin_core_tunisia_${includePreciseCoords ? 'RESEARCHER_EXACT' : 'PUBLIC_1KM'}_${Date.now()}.csv`;
+    const filename = `darwin_core_hawem_${includePreciseCoords ? 'RESEARCHER_EXACT' : 'PUBLIC_1KM'}_${Date.now()}.csv`;
     downloadFile(csv, filename);
 
     setDownloadNotice(
@@ -368,7 +368,7 @@ export const DataExporter: React.FC = () => {
             <input
               type="text"
               required
-              placeholder="Indiquez le motif d'utilisation (ex: Modélisation SECR Institut Pasteur Tunis / Projet Rage)"
+              placeholder="Indiquez le motif d'utilisation (ex. modélisation SECR, projet rage…)"
               value={auditReason}
               onChange={(e) => setAuditReason(e.target.value)}
               className="w-full px-3 py-2 text-xs bg-white border border-amber-300 rounded-lg outline-none focus-visible:ring-2 focus-visible:ring-amber-500"

@@ -1,5 +1,5 @@
 /**
- * Core domain types and enumerations for the Tunisia Free-Roaming Cat & Dog Survey.
+ * Core domain types and enumerations for the Hawem free-roaming cat and dog survey.
  */
 
 export type UserRole = 'volunteer' | 'trained_surveyor' | 'researcher' | 'admin';
