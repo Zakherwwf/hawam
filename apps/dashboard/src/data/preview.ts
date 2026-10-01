@@ -18,8 +18,7 @@ import type {
   Walk,
 } from './api';
 
-const env = (import.meta as unknown as { env: Record<string, string | boolean | undefined> }).env;
-export const PREVIEW = Boolean(env.DEV) && env.VITE_PREVIEW === '1';
+export { PREVIEW } from './flags';
 
 let seed = 7;
 const rnd = () => (seed = (seed * 16807) % 2147483647) / 2147483647;

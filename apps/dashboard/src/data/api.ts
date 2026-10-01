@@ -1,5 +1,5 @@
 import { supabase } from './client';
-import * as P from './preview';
+import { loadPreview, PREVIEW } from './flags';
 
 export type Role = 'volunteer' | 'trained_surveyor' | 'researcher' | 'admin';
 
@@ -103,7 +103,7 @@ function ok<T>(res: { data: unknown; error: { message: string } | null }): T {
 }
 
 export async function getMe(): Promise<Me | null> {
-  if (P.PREVIEW) return P.previewMe;
+  if (PREVIEW) return (await loadPreview()).previewMe;
   const { data } = await supabase.auth.getUser();
   const user = data.user;
   if (!user) return null;
@@ -121,8 +121,8 @@ export async function getMe(): Promise<Me | null> {
 }
 
 export const getWalks = async () =>
-  P.PREVIEW
-    ? P.previewWalks
+  PREVIEW
+    ? (await loadPreview()).previewWalks
     : ok<Walk[]>(
         await supabase
           .from('sessions')
@@ -135,8 +135,8 @@ export const getWalks = async () =>
       );
 
 export const getSightings = async () =>
-  P.PREVIEW
-    ? P.previewSightings
+  PREVIEW
+    ? (await loadPreview()).previewSightings
     : ok<Sighting[]>(
         await supabase
           .from('observations_map')
@@ -148,8 +148,8 @@ export const getSightings = async () =>
       );
 
 export const getTrack = async (sessionId: string) =>
-  P.PREVIEW
-    ? P.previewTracks.filter((t) => t.session_id === sessionId)
+  PREVIEW
+    ? (await loadPreview()).previewTracks.filter((t) => t.session_id === sessionId)
     : ok<TrackRow[]>(
         await supabase
           .from('session_tracks_geojson')
@@ -158,8 +158,8 @@ export const getTrack = async (sessionId: string) =>
       );
 
 export const getTracks = async () =>
-  P.PREVIEW
-    ? P.previewTracks
+  PREVIEW
+    ? (await loadPreview()).previewTracks
     : ok<TrackRow[]>(
         await supabase
           .from('session_tracks_geojson')
@@ -179,8 +179,8 @@ export interface UserStats {
 }
 
 export const getUserStats = async () =>
-  P.PREVIEW
-    ? P.previewStats
+  PREVIEW
+    ? (await loadPreview()).previewStats
     : ok<UserStats[]>(
         await supabase
           .from('user_stats')
@@ -191,13 +191,13 @@ export const getUserStats = async () =>
       );
 
 export const getLeaders = async () =>
-  P.PREVIEW
-    ? P.previewLeaders
+  PREVIEW
+    ? (await loadPreview()).previewLeaders
     : ok<Leader[]>(await supabase.from('effort_leaderboard').select('*').limit(1000));
 
 export const getUsers = async () =>
-  P.PREVIEW
-    ? P.previewUsers
+  PREVIEW
+    ? (await loadPreview()).previewUsers
     : ok<UserRow[]>(
         await supabase
           .from('users')
@@ -212,7 +212,7 @@ export async function setRole(userId: string, role: Role) {
 }
 
 export async function getRoutes(): Promise<RouteRow[]> {
-  if (P.PREVIEW) return P.previewRoutes;
+  if (PREVIEW) return (await loadPreview()).previewRoutes;
   const all = ok<RouteRow[]>(
     await supabase
       .from('routes')
@@ -252,8 +252,8 @@ export async function setRouteActive(id: string, active: boolean) {
 }
 
 export const getColonies = async () =>
-  P.PREVIEW
-    ? P.previewColonies
+  PREVIEW
+    ? (await loadPreview()).previewColonies
     : ok<ColonyRow[]>(await supabase.from('colonies_app').select('*').limit(5000));
 
 export interface Individual {
@@ -294,8 +294,8 @@ export interface Photo {
 }
 
 export const getIndividuals = async () =>
-  P.PREVIEW
-    ? P.previewIndividuals
+  PREVIEW
+    ? (await loadPreview()).previewIndividuals
     : ok<Individual[]>(
         await supabase
           .from('individuals_app')
@@ -305,8 +305,8 @@ export const getIndividuals = async () =>
       );
 
 export const getLinks = async () =>
-  P.PREVIEW
-    ? P.previewLinks
+  PREVIEW
+    ? (await loadPreview()).previewLinks
     : ok<Link[]>(
         await supabase
           .from('individual_links')
@@ -317,7 +317,10 @@ export const getLinks = async () =>
       );
 
 export async function getPhotos(observationIds: string[]): Promise<Photo[]> {
-  if (P.PREVIEW) return P.previewPhotos.filter((p) => observationIds.includes(p.observation_id));
+  if (PREVIEW)
+    return (await loadPreview()).previewPhotos.filter((p) =>
+      observationIds.includes(p.observation_id)
+    );
   if (!observationIds.length) return [];
   return ok<Photo[]>(
     await supabase
@@ -331,7 +334,7 @@ export async function getPhotos(observationIds: string[]): Promise<Photo[]> {
 const signed = new Map<string, string>();
 /** Short-lived signed URL for a photo in the private bucket; cached for the visit. */
 export async function photoUrl(path: string): Promise<string | null> {
-  if (P.PREVIEW) return `https://picsum.photos/seed/${encodeURIComponent(path)}/480/360`;
+  if (PREVIEW) return `https://picsum.photos/seed/${encodeURIComponent(path)}/480/360`;
   if (signed.has(path)) return signed.get(path)!;
   const { data } = await supabase.storage.from('animal-photos').createSignedUrl(path, 3600);
   if (data?.signedUrl) signed.set(path, data.signedUrl);
@@ -339,8 +342,8 @@ export async function photoUrl(path: string): Promise<string | null> {
 }
 
 export async function reviewLink(id: string, status: 'confirmed' | 'rejected') {
-  if (P.PREVIEW) {
-    const l = P.previewLinks.find((x) => x.id === id);
+  if (PREVIEW) {
+    const l = (await loadPreview()).previewLinks.find((x) => x.id === id);
     if (l) l.status = status;
     return;
   }
@@ -349,7 +352,7 @@ export async function reviewLink(id: string, status: 'confirmed' | 'rejected') {
 }
 
 export const getDwc = async () =>
-  P.PREVIEW
+  PREVIEW
     ? []
     : ok<Record<string, unknown>[]>(await supabase.from('dwc_occurrence').select('*').limit(50000));
 
@@ -360,7 +363,7 @@ export async function logExport(
   precise: boolean,
   filters: Record<string, unknown>
 ) {
-  if (P.PREVIEW) return;
+  if (PREVIEW) return;
   await supabase.rpc('log_export', {
     p_type: type,
     p_rows: rows,
