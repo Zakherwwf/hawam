@@ -25,10 +25,10 @@ SELECT public.submit_survey_bundle('{"session":{"id":"c0000000-0000-0000-0000-00
  {"recorded_at":"2026-09-30T10:00:20Z","latitude":36.806,"longitude":10.18,"accuracy_m":5},
  {"recorded_at":"2026-09-30T10:00:30Z","latitude":36.809,"longitude":10.18,"accuracy_m":5},
  {"recorded_at":"2026-09-30T10:00:40Z","latitude":36.812,"longitude":10.18,"accuracy_m":5}]}') IS NOT NULL;
-RESET ROLE;
-
--- The deferred trigger runs at commit; inside this test transaction fire it now
+-- The deferred trigger runs at commit, as the volunteer's role (the bundle
+-- function's owner rights have ended by then); fire it now, still as them
 SET CONSTRAINTS ALL IMMEDIATE;
+RESET ROLE;
 
 SELECT CASE WHEN validation_status = 'valid' AND cardinality(validation_reasons) = 0
   THEN 'PASS 1: an honest walk is validated automatically' ELSE 'FAIL 1: ' || validation_status || ' ' || validation_reasons::text END
