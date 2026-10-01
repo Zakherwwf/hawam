@@ -105,3 +105,34 @@ test('geo: EWKT in lon lat order and a sensible length', () => {
   ]);
   assert.ok(km > 0.89 && km < 0.91, String(km));
 });
+
+test('captureHistory: confirmed links on unflagged surveys, one column per week', async () => {
+  const { captureHistory } = await import('../src/lib/exports.ts');
+  const walks = [
+    walk('w1', { start_time: '2026-09-07T08:00:00Z' }),
+    walk('w2', { start_time: '2026-09-15T08:00:00Z' }),
+    walk('w3', { start_time: '2026-09-22T08:00:00Z', validation_status: 'flagged' }),
+    walk('q', { start_time: '2026-09-29T08:00:00Z', protocol: 'incidental' }),
+  ];
+  const s = [
+    seen('o1', 'w1'),
+    seen('o2', 'w2'),
+    seen('o3', 'w3'),
+    seen('o4', 'q'),
+    seen('o5', 'w2'),
+  ];
+  const links = [
+    { observation_id: 'o1', individual_id: 'A', status: 'confirmed' },
+    { observation_id: 'o2', individual_id: 'A', status: 'confirmed' },
+    { observation_id: 'o3', individual_id: 'A', status: 'confirmed' },
+    { observation_id: 'o4', individual_id: 'A', status: 'confirmed' },
+    { observation_id: 'o5', individual_id: 'B', status: 'proposed' },
+  ];
+  const ch = captureHistory(links, s, walks, [{ id: 'A', nickname: 'Ginger', species: 'cat' }]);
+  assert.deepEqual(ch.occasions, ['2026-09-07', '2026-09-14']);
+  assert.equal(ch.rows.length, 1, 'proposed links do not count');
+  assert.equal(ch.rows[0].ch, '11');
+  assert.equal(ch.detections.length, 2, 'flagged and quick records left out');
+  const withQuick = captureHistory(links, s, walks, [], 'week', true);
+  assert.equal(withQuick.rows[0].ch, '111');
+});

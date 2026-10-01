@@ -95,3 +95,78 @@ export function preciseRows(sightings: Sighting[]) {
     ear_tip_or_notch: s.ear_tip_or_notch ?? '',
   }));
 }
+
+export type OccasionUnit = 'week' | 'day';
+
+function occasionKey(iso: string, unit: OccasionUnit): string {
+  const d = new Date(iso);
+  if (unit === 'day') return d.toISOString().slice(0, 10);
+  const m = new Date(Date.UTC(d.getUTCFullYear(), d.getUTCMonth(), d.getUTCDate()));
+  m.setUTCDate(m.getUTCDate() - ((m.getUTCDay() + 6) % 7));
+  return m.toISOString().slice(0, 10);
+}
+
+/**
+ * Capture histories for capture-recapture and SECR (secr, unmarked, MARK):
+ * one row per individual, one 0/1 column per occasion. Occasions are the
+ * weeks (or days) with at least one unflagged survey; detections come only
+ * from confirmed links (founders included) on those surveys. Quick sightings
+ * carry no effort, so they are left out unless asked for.
+ */
+export function captureHistory(
+  links: { observation_id: string; individual_id: string; status: string }[],
+  sightings: Sighting[],
+  walks: Walk[],
+  individuals: { id: string; nickname: string | null; species: string }[],
+  unit: OccasionUnit = 'week',
+  includeQuick = false
+) {
+  const eligible = new Map(
+    walks
+      .filter(
+        (w) => w.validation_status !== 'flagged' && (includeQuick || w.protocol !== 'incidental')
+      )
+      .map((w) => [w.id, w])
+  );
+  const occasions = Array.from(
+    new Set([...eligible.values()].map((w) => occasionKey(w.start_time, unit)))
+  ).sort();
+  const obs = new Map(sightings.map((s) => [s.id, s]));
+  const hits = new Map<string, Set<string>>();
+  const detections: Record<string, unknown>[] = [];
+  for (const l of links) {
+    if (l.status !== 'confirmed') continue;
+    const s = obs.get(l.observation_id);
+    const w = s ? eligible.get(s.session_id) : undefined;
+    if (!s || !w) continue;
+    const occ = occasionKey(w.start_time, unit);
+    if (!hits.has(l.individual_id)) hits.set(l.individual_id, new Set());
+    hits.get(l.individual_id)!.add(occ);
+    detections.push({
+      individual_id: l.individual_id,
+      occasion: occ,
+      session_id: s.session_id,
+      observation: s.public_code,
+      observed_at: s.observed_at,
+      latitude: s.latitude,
+      longitude: s.longitude,
+    });
+  }
+  const byId = new Map(individuals.map((i) => [i.id, i]));
+  const rows = [...hits.entries()].map(([id, set]) => {
+    const row: Record<string, unknown> = {
+      individual_id: id,
+      nickname: byId.get(id)?.nickname ?? '',
+      species: byId.get(id)?.species ?? '',
+    };
+    for (const o of occasions) row[o] = set.has(o) ? 1 : 0;
+    row.ch = occasions.map((o) => (set.has(o) ? '1' : '0')).join('');
+    return row;
+  });
+  return {
+    rows,
+    occasions,
+    detections,
+    columns: ['individual_id', 'nickname', 'species', ...occasions, 'ch'],
+  };
+}

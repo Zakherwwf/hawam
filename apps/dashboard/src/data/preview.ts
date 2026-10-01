@@ -4,6 +4,9 @@
  * without a researcher account. It is never active in a production build.
  */
 import type {
+  Individual,
+  Link,
+  Photo,
   ColonyRow,
   Leader,
   Me,
@@ -237,3 +240,58 @@ export const previewColonies: ColonyRow[] = [
     created_at: new Date(Date.now() - 8 * 86400000).toISOString(),
   },
 ];
+
+// Individuals: a few animals seen on several walks, with proposed resightings to review
+const catSightings = sightings.filter((x) => x.species === 'cat');
+const dogSightings = sightings.filter((x) => x.species === 'dog');
+const groups: { sp: 'cat' | 'dog'; name: string | null; coat: string; obs: Sighting[] }[] = [
+  { sp: 'cat', name: 'Ginger', coat: 'tabby', obs: catSightings.slice(0, 4) },
+  { sp: 'cat', name: null, coat: 'solid_black', obs: catSightings.slice(4, 6) },
+  { sp: 'cat', name: 'Patch', coat: 'bicolour_piebald', obs: catSightings.slice(6, 9) },
+  { sp: 'dog', name: 'Biscuit', coat: 'solid_other', obs: dogSightings.slice(0, 3) },
+];
+export const previewIndividuals: Individual[] = [];
+export const previewLinks: Link[] = [];
+export const previewPhotos: Photo[] = [];
+groups.forEach((g, gi) => {
+  if (!g.obs.length) return;
+  const sorted = [...g.obs].sort((a, b) => a.observed_at.localeCompare(b.observed_at));
+  const id = `ind${gi}`;
+  sorted.forEach((o, k) => {
+    previewLinks.push({
+      id: `${id}-l${k}`,
+      observation_id: o.id,
+      individual_id: id,
+      is_founder: k === 0,
+      decision: k === 2 ? 'unsure' : 'same',
+      status: k === 0 || k === 1 ? 'confirmed' : 'proposed',
+      proposed_by: o.observer_id,
+      created_at: o.observed_at,
+      reviewed_at: null,
+    });
+    previewPhotos.push({
+      id: `${id}-p${k}`,
+      observation_id: o.id,
+      storage_path: `${g.sp}-${gi}-${k}`,
+      angle: k % 2 ? 'right_flank' : 'left_flank',
+    });
+  });
+  const last = sorted[sorted.length - 1];
+  previewIndividuals.push({
+    id,
+    species: g.sp,
+    nickname: g.name,
+    coat_pattern: g.coat,
+    created_by: sorted[0].observer_id,
+    created_at: sorted[0].observed_at,
+    first_seen: sorted[0].observed_at,
+    last_seen: last.observed_at,
+    sightings_count: sorted.length,
+    latitude: last.latitude,
+    longitude: last.longitude,
+    photo_path: `${g.sp}-${gi}-0`,
+    has_left_flank: true,
+    has_right_flank: sorted.length > 1,
+    pending_links: sorted.filter((_, k) => k >= 2).length,
+  });
+});

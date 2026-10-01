@@ -256,6 +256,98 @@ export const getColonies = async () =>
     ? P.previewColonies
     : ok<ColonyRow[]>(await supabase.from('colonies_app').select('*').limit(5000));
 
+export interface Individual {
+  id: string;
+  species: 'cat' | 'dog' | 'unknown';
+  nickname: string | null;
+  coat_pattern: string | null;
+  created_by: string | null;
+  created_at: string;
+  first_seen: string | null;
+  last_seen: string | null;
+  sightings_count: number;
+  latitude: number | null;
+  longitude: number | null;
+  photo_path: string | null;
+  has_left_flank: boolean;
+  has_right_flank: boolean;
+  pending_links: number;
+}
+
+export interface Link {
+  id: string;
+  observation_id: string;
+  individual_id: string;
+  is_founder: boolean;
+  decision: 'same' | 'unsure';
+  status: 'proposed' | 'confirmed' | 'rejected';
+  proposed_by: string | null;
+  created_at: string;
+  reviewed_at: string | null;
+}
+
+export interface Photo {
+  id: string;
+  observation_id: string;
+  storage_path: string;
+  angle: 'left_flank' | 'right_flank' | 'face' | 'other';
+}
+
+export const getIndividuals = async () =>
+  P.PREVIEW
+    ? P.previewIndividuals
+    : ok<Individual[]>(
+        await supabase
+          .from('individuals_app')
+          .select('*')
+          .order('last_seen', { ascending: false, nullsFirst: false })
+          .limit(5000)
+      );
+
+export const getLinks = async () =>
+  P.PREVIEW
+    ? P.previewLinks
+    : ok<Link[]>(
+        await supabase
+          .from('individual_links')
+          .select(
+            'id, observation_id, individual_id, is_founder, decision, status, proposed_by, created_at, reviewed_at'
+          )
+          .limit(20000)
+      );
+
+export async function getPhotos(observationIds: string[]): Promise<Photo[]> {
+  if (P.PREVIEW) return P.previewPhotos.filter((p) => observationIds.includes(p.observation_id));
+  if (!observationIds.length) return [];
+  return ok<Photo[]>(
+    await supabase
+      .from('photos')
+      .select('id, observation_id, storage_path, angle')
+      .in('observation_id', observationIds.slice(0, 200))
+      .is('deleted_at', null)
+  );
+}
+
+const signed = new Map<string, string>();
+/** Short-lived signed URL for a photo in the private bucket; cached for the visit. */
+export async function photoUrl(path: string): Promise<string | null> {
+  if (P.PREVIEW) return `https://picsum.photos/seed/${encodeURIComponent(path)}/480/360`;
+  if (signed.has(path)) return signed.get(path)!;
+  const { data } = await supabase.storage.from('animal-photos').createSignedUrl(path, 3600);
+  if (data?.signedUrl) signed.set(path, data.signedUrl);
+  return data?.signedUrl ?? null;
+}
+
+export async function reviewLink(id: string, status: 'confirmed' | 'rejected') {
+  if (P.PREVIEW) {
+    const l = P.previewLinks.find((x) => x.id === id);
+    if (l) l.status = status;
+    return;
+  }
+  const { error } = await supabase.from('individual_links').update({ status }).eq('id', id);
+  if (error) throw new Error(error.message);
+}
+
 export const getDwc = async () =>
   P.PREVIEW
     ? []

@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 import {
+  Cat,
   ChartColumn,
   Download,
   Footprints,
@@ -28,12 +29,14 @@ import { Routes } from './pages/Routes';
 import { Colonies } from './pages/Colonies';
 import { Volunteers } from './pages/Volunteers';
 import { Exports } from './pages/Exports';
+import { Animals } from './pages/Animals';
 
 const NAV = [
   { page: 'overview', label: 'Overview', icon: ChartColumn },
   { page: 'map', label: 'Map', icon: MapIcon },
   { page: 'walks', label: 'Walks', icon: Footprints },
   { page: 'sightings', label: 'Sightings', icon: PawPrint },
+  { page: 'animals', label: 'Animals', icon: Cat },
   { page: 'routes', label: 'Routes', icon: RouteIcon },
   { page: 'colonies', label: 'Colonies', icon: Warehouse },
   { page: 'volunteers', label: 'Volunteers', icon: Users },
@@ -71,6 +74,7 @@ export default function App() {
     map: MapPage,
     walks: Walks,
     sightings: Sightings,
+    animals: Animals,
     routes: Routes,
     colonies: Colonies,
     volunteers: Volunteers,

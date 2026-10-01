@@ -1,11 +1,17 @@
 import { useState } from 'react';
-import { Download, FileSpreadsheet, Lock } from 'lucide-react';
-import { getDwc, getSightings, getWalks, logExport } from '../data/api';
+import { Download, FileSpreadsheet } from 'lucide-react';
+import { getDwc, getIndividuals, getLinks, getSightings, getWalks, logExport } from '../data/api';
 import { useData } from '../data/useData';
 import { download, toCsv } from '../lib/csv';
-import { distanceRows, effortRows, preciseRows } from '../lib/exports';
+import {
+  captureHistory,
+  distanceRows,
+  effortRows,
+  preciseRows,
+  type OccasionUnit,
+} from '../lib/exports';
 import { fmtInt } from '../lib/format';
-import { Badge, Button, Card, ErrorNote, PageHeader } from '../ui';
+import { Badge, Button, Card, ErrorNote, PageHeader, Segmented } from '../ui';
 import type { PageProps } from './types';
 
 const stamp = () => new Date().toISOString().slice(0, 10);
@@ -17,16 +23,29 @@ export function Exports(_: PageProps) {
   const [status, setStatus] = useState<string | null>(null);
   const ready = !!walks.data && !!sightings.data;
   const dist = ready ? distanceRows(walks.data!, sightings.data!) : null;
+  const individuals = useData('individuals', getIndividuals);
+  const links = useData('links', getLinks);
+  const [unit, setUnit] = useState<OccasionUnit>('week');
+  const [quick, setQuick] = useState(false);
+  const ch =
+    ready && links.data && individuals.data
+      ? captureHistory(links.data, sightings.data!, walks.data!, individuals.data, unit, quick)
+      : null;
 
   const run = async (
     id: string,
-    build: () => Promise<{ name: string; rows: Record<string, unknown>[]; precise: boolean }>
+    build: () => Promise<{
+      name: string;
+      rows: Record<string, unknown>[];
+      precise: boolean;
+      columns?: string[];
+    }>
   ) => {
     setBusy(id);
     setStatus(null);
     try {
-      const { name, rows, precise } = await build();
-      download(`${name}_${stamp()}.csv`, toCsv(rows));
+      const { name, rows, precise, columns } = await build();
+      download(`${name}_${stamp()}.csv`, toCsv(rows, columns));
       await logExport(id, rows.length, precise, {});
       setStatus(`Downloaded ${fmtInt(rows.length)} rows. The export is recorded in the audit log.`);
     } catch (e) {
@@ -147,17 +166,83 @@ export function Exports(_: PageProps) {
             </div>
           </Card>
         ))}
-        <Card className="p-5 flex flex-col gap-3 md:col-span-2 bg-canvas shadow-none ring-1 ring-line">
-          <div className="flex items-center gap-3">
-            <Lock className="w-5 h-5 text-ink3" aria-hidden />
-            <h2 className="text-[17px] font-semibold">Capture histories</h2>
-            <Badge>Not available yet</Badge>
+        <Card className="p-5 flex flex-col gap-3 md:col-span-2">
+          <div className="flex items-start gap-3">
+            <span
+              aria-hidden
+              className="w-10 h-10 rounded-control bg-lime-soft text-accent grid place-items-center shrink-0"
+            >
+              <FileSpreadsheet className="w-5 h-5" />
+            </span>
+            <div className="min-w-0 flex-1">
+              <h2 className="text-[17px] font-semibold">Capture histories</h2>
+              <div className="flex items-center gap-2 mt-1">
+                <Badge tone="accent">Confirmed animals only</Badge>
+                {ch ? (
+                  <span className="text-[13px] text-ink2 tabular">
+                    {fmtInt(ch.rows.length)} animals, {fmtInt(ch.occasions.length)} occasions
+                  </span>
+                ) : null}
+              </div>
+            </div>
           </div>
           <p className="text-[14px] text-ink2">
-            Capture-recapture and SECR need confirmed individual animals. They become available once
-            re-identification is in place: volunteers link sightings of the same animal, and
-            researchers confirm the matches here.
+            One row per confirmed animal and one 0/1 column per occasion, for secr, unmarked or
+            MARK. Occasions are the weeks or days with at least one unflagged survey; only
+            resightings a researcher confirmed count.
           </p>
+          <div className="flex flex-wrap items-center gap-3">
+            <Segmented
+              label="Occasion"
+              value={unit}
+              onChange={setUnit}
+              options={[
+                { value: 'week', label: 'Weekly occasions' },
+                { value: 'day', label: 'Daily occasions' },
+              ]}
+            />
+            <label className="inline-flex items-center gap-2 text-[14px] cursor-pointer">
+              <input
+                type="checkbox"
+                checked={quick}
+                onChange={(e) => setQuick(e.target.checked)}
+                className="w-4 h-4 accent-[var(--accent)]"
+              />
+              Include quick sightings
+            </label>
+          </div>
+          <div className="flex flex-wrap gap-2">
+            <Button
+              size="sm"
+              icon={<Download />}
+              disabled={!ch || busy !== null}
+              onClick={() =>
+                run('capture_history', async () => ({
+                  name: `hawem_capture_history_${unit}`,
+                  rows: ch!.rows,
+                  precise: false,
+                  columns: ch!.columns,
+                }))
+              }
+            >
+              {busy === 'capture_history' ? 'Preparing…' : 'Capture History CSV'}
+            </Button>
+            <Button
+              kind="secondary"
+              size="sm"
+              icon={<Download />}
+              disabled={!ch || busy !== null}
+              onClick={() =>
+                run('secr_detections', async () => ({
+                  name: 'hawem_secr_detections',
+                  rows: ch!.detections,
+                  precise: true,
+                }))
+              }
+            >
+              {busy === 'secr_detections' ? 'Preparing…' : 'SECR Detections CSV (exact)'}
+            </Button>
+          </div>
         </Card>
       </div>
     </>
