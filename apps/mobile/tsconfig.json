@@ -7,11 +7,6 @@
     "allowImportingTsExtensions": true,
     "noEmit": true
   },
-  "include": [
-    "src/**/*",
-    "App.tsx"
-  ],
-  "exclude": [
-    "src/__tests__"
-  ]
+  "include": ["src/**/*", "app/**/*", ".expo/types/**/*.ts", "expo-env.d.ts"],
+  "exclude": ["src/__tests__"]
 }

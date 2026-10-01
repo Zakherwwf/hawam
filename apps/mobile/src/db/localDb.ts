@@ -172,7 +172,11 @@ export const localDb = {
     }
   },
 
-  updateSessionStatus: async (sessionId: string, status: string, endedAt?: string): Promise<void> => {
+  updateSessionStatus: async (
+    sessionId: string,
+    status: string,
+    endedAt?: string
+  ): Promise<void> => {
     const mem = inMemorySessions.get(sessionId);
     if (mem) {
       mem.status = status;
@@ -183,10 +187,11 @@ export const localDb = {
     if (db) {
       try {
         if (endedAt) {
-          db.runSync(
-            `UPDATE local_sessions SET status = ?, ended_at = ? WHERE id = ?`,
-            [status, endedAt, sessionId]
-          );
+          db.runSync(`UPDATE local_sessions SET status = ?, ended_at = ? WHERE id = ?`, [
+            status,
+            endedAt,
+            sessionId,
+          ]);
         } else {
           db.runSync(`UPDATE local_sessions SET status = ? WHERE id = ?`, [status, sessionId]);
         }
@@ -210,10 +215,11 @@ export const localDb = {
     const db = getDatabase();
     if (db) {
       try {
-        db.runSync(
-          `UPDATE local_sessions SET duration_min = ?, distance_km = ? WHERE id = ?`,
-          [durationMin, distanceKm, sessionId]
-        );
+        db.runSync(`UPDATE local_sessions SET duration_min = ?, distance_km = ? WHERE id = ?`, [
+          durationMin,
+          distanceKm,
+          sessionId,
+        ]);
       } catch (err) {
         console.warn('[localDb] Error updating session metrics:', err);
       }
@@ -585,6 +591,9 @@ export const localDb = {
             }
           }
         }
+        // Moved, not copied: a copy left behind brought uploaded records back
+        // on every launch, and they were sent again
+        await storage.removeItem('hawem_outbox_v2');
       }
     } catch (err) {
       console.warn('[localDb] Legacy migration warning:', err);

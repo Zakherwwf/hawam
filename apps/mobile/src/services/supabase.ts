@@ -3,6 +3,8 @@
  * Hawem (حايم) Citizen-Science Platform
  */
 
+import type { ColonyRow, RouteRow, colonyToServer } from '../features/sync/serverMapping';
+import type { IndividualRow } from '../features/animals/knownAnimals';
 import { createClient } from '@supabase/supabase-js';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
@@ -46,7 +48,8 @@ const storageAdapter = {
   },
 };
 
-const isTestEnv = typeof process !== 'undefined' && (process.env.NODE_ENV === 'test' || !process.env.EXPO_OS);
+const isTestEnv =
+  typeof process !== 'undefined' && (process.env.NODE_ENV === 'test' || !process.env.EXPO_OS);
 
 export const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
   auth: {
@@ -84,6 +87,7 @@ export interface SurveyBundlePayload {
     longitude: number;
     accuracy_m?: number | null;
     speed_mps?: number | null;
+    is_mock?: boolean;
   }>;
   observations: Array<{
     id: string;
@@ -108,6 +112,24 @@ export interface SurveyBundlePayload {
       coordinates?: [number, number]; // [lon, lat]
     };
     notes?: string | null;
+    // Animal details (enum values of the matching database types)
+    sex?: string;
+    age_class?: string;
+    reproductive_status?: string;
+    visible_health_issues?: string[];
+    ear_tip_or_notch?: string;
+    collar_or_tag?: string;
+    behaviour?: string;
+    habitat_type?: string;
+    coat_pattern?: string;
+    /** Re-identification: register a new animal or propose a resighting */
+    individual?: {
+      id: string;
+      new?: boolean;
+      nickname?: string;
+      coat_pattern?: string;
+      decision?: 'same' | 'unsure';
+    };
   }>;
   photos?: Array<{
     id: string;
@@ -119,12 +141,28 @@ export interface SurveyBundlePayload {
 }
 
 /**
+ * Uploads and submit_survey_bundle require a signed-in user. Sync callers
+ * check this first so guest data stays queued locally instead of burning
+ * retry attempts on requests the server will reject.
+ */
+export async function hasAuthSession(): Promise<boolean> {
+  try {
+    const { data } = await supabase.auth.getSession();
+    return !!data?.session?.user?.id;
+  } catch {
+    return false;
+  }
+}
+
+/**
  * Ensures the authenticated user has accepted consent in public.users on Supabase.
  * The submit_survey_bundle RPC requires consent_accepted_at to be non-null.
  */
 export async function ensureUserConsentAccepted(): Promise<void> {
   try {
-    const { data: { session } } = await supabase.auth.getSession();
+    const {
+      data: { session },
+    } = await supabase.auth.getSession();
     if (session?.user?.id) {
       await supabase
         .from('users')
@@ -164,56 +202,159 @@ export async function pushSurveyBundle(payload: SurveyBundlePayload) {
 }
 
 /**
- * Pulls active official fixed routes from PostgreSQL
+ * Right of access: every server row keyed to the signed-in user, as JSON.
  */
-export async function pullActiveRoutes() {
+export async function exportMyData(): Promise<{
+  success: boolean;
+  data?: unknown;
+  error?: string;
+}> {
   try {
-    const { data, error } = await supabase
-      .from('routes')
-      .select('*')
-      .eq('is_active', true);
-
-    if (error) {
-      console.warn('Error fetching routes from Supabase:', error);
-      return [];
-    }
-    return data || [];
-  } catch (err) {
-    console.warn('Network error fetching routes:', err);
-    return [];
+    const { data, error } = await supabase.rpc('export_my_data');
+    if (error) return { success: false, error: error.message };
+    return { success: true, data };
+  } catch (err: any) {
+    return { success: false, error: err?.message || 'Network error' };
   }
 }
 
 /**
- * Pulls persistent cat colonies from PostgreSQL
+ * Right to erasure: delete_my_account() deletes the auth user, which cascades
+ * to every session, observation, precise location, track and photo record
+ * they submitted. Shared records (routes, confirmed individuals, audit rows)
+ * survive with the person reference cleared.
  */
-export async function pullColonies() {
+export async function deleteMyAccount(): Promise<{ success: boolean; error?: string }> {
   try {
-    const { data, error } = await supabase.from('colonies').select('*');
+    const { error } = await supabase.rpc('delete_my_account');
+    if (error) return { success: false, error: error.message };
+    return { success: true };
+  } catch (err: any) {
+    return { success: false, error: err?.message || 'Network error' };
+  }
+}
+
+export interface MapObservationRow {
+  id: string;
+  observed_at: string;
+  species: 'cat' | 'dog' | 'unknown';
+  group_size: number | null;
+  body_condition_score: number | null;
+  notes: string | null;
+  latitude: number | null;
+  longitude: number | null;
+  perpendicular_distance_m: number | null;
+  observer_id: string | null;
+  observer_name: string | null;
+  protocol: 'transect' | 'stationary_point' | 'incidental';
+  public_code: string;
+}
+
+/**
+ * Every volunteer's observations for the shared map (signed-in users only).
+ * Returns null on failure so callers keep what they already have.
+ */
+export async function pullMapObservations(limit = 5000): Promise<MapObservationRow[] | null> {
+  try {
+    const { data, error } = await supabase
+      .from('observations_map')
+      .select(
+        'id, observed_at, species, group_size, body_condition_score, notes, latitude, longitude, ' +
+          'perpendicular_distance_m, observer_id, observer_name, protocol, public_code'
+      )
+      .order('observed_at', { ascending: false })
+      .limit(limit);
     if (error) {
-      console.warn('Error fetching colonies from Supabase:', error);
-      return [];
+      console.warn('Error fetching map observations:', error.message);
+      return null;
     }
-    return data || [];
+    return (data as unknown as MapObservationRow[]) ?? [];
   } catch (err) {
-    console.warn('Network error fetching colonies:', err);
-    return [];
+    console.warn('Network error fetching map observations:', err);
+    return null;
+  }
+}
+
+/**
+ * Pulls active official fixed routes from PostgreSQL
+ */
+/** Active routes with GeoJSON geometry (routes_app); null when offline or on error. */
+export async function pullRoutes(): Promise<RouteRow[] | null> {
+  try {
+    const { data, error } = await supabase.from('routes_app').select('*').limit(500);
+    if (error) {
+      console.warn('Error fetching routes:', error.message);
+      return null;
+    }
+    return (data ?? []) as RouteRow[];
+  } catch {
+    return null;
+  }
+}
+
+/** Everyone's colonies with visit totals (colonies_app); null when offline or on error. */
+export async function pullSharedColonies(): Promise<ColonyRow[] | null> {
+  try {
+    const { data, error } = await supabase.from('colonies_app').select('*').limit(5000);
+    if (error) {
+      console.warn('Error fetching colonies:', error.message);
+      return null;
+    }
+    return (data ?? []) as ColonyRow[];
+  } catch {
+    return null;
+  }
+}
+
+/** Insert one colony; an existing id counts as success (a retried upload). */
+export async function pushColony(row: ReturnType<typeof colonyToServer>): Promise<boolean> {
+  try {
+    const { error } = await supabase.from('colonies').insert(row);
+    return !error || error.code === '23505';
+  } catch {
+    return false;
+  }
+}
+
+export async function pushColonyVisit(v: {
+  id: string;
+  colonyId: string;
+  visitedAt: string;
+  tags: string[];
+  notes?: string;
+}): Promise<boolean> {
+  try {
+    const { error } = await supabase.from('colony_visits').insert({
+      id: v.id,
+      colony_id: v.colonyId,
+      visited_at: v.visitedAt,
+      tags: v.tags,
+      notes: v.notes ?? null,
+    });
+    return !error || error.code === '23505';
+  } catch {
+    return false;
   }
 }
 
 /**
  * Pulls known individuals for capture-recapture from PostgreSQL
  */
-export async function pullKnownIndividuals() {
+/** Known animals with last position, photo and flanks (individuals_app); null offline. */
+export async function pullKnownAnimals(): Promise<IndividualRow[] | null> {
   try {
-    const { data, error } = await supabase.from('individuals').select('*');
+    const { data, error } = await supabase
+      .from('individuals_app')
+      .select(
+        'id, species, nickname, coat_pattern, created_by, last_seen, sightings_count, latitude, longitude, photo_path, has_left_flank, has_right_flank'
+      )
+      .limit(5000);
     if (error) {
-      console.warn('Error fetching individuals from Supabase:', error);
-      return [];
+      console.warn('Error fetching known animals:', error.message);
+      return null;
     }
-    return data || [];
-  } catch (err) {
-    console.warn('Network error fetching individuals:', err);
-    return [];
+    return (data ?? []) as IndividualRow[];
+  } catch {
+    return null;
   }
 }

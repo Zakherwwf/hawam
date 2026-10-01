@@ -38,73 +38,73 @@ export interface Quest {
 export const INITIAL_BADGES: Badge[] = [
   {
     id: 'first_walk',
-    name: 'First Steps',
+    name: 'ui_gamificationStore.first_steps',
     nameAr: 'الخطوة الأولى',
-    description: 'Complete 1 structured transect survey',
+    description: 'ui_gamificationStore.complete_1_structured_transect_survey',
     tier: 'bronze',
     icon: 'compass',
   },
   {
     id: 'distance_10km',
-    name: '10 km Surveyor',
+    name: 'ui_gamificationStore.10_km_surveyor',
     nameAr: 'مسّاح 10 كم',
-    description: 'Survey 10 km total walking distance',
+    description: 'ui_gamificationStore.survey_10_km_total_walking_distance',
     tier: 'bronze',
     icon: 'location',
   },
   {
     id: 'zero_hero',
-    name: 'Zero Hero',
+    name: 'ui_gamificationStore.zero_hero',
     nameAr: 'بطل الصفر',
-    description: 'Complete 5 complete zero-count surveys (essential non-detections)',
+    description: 'ui_gamificationStore.complete_5_complete_zero_count_surveys',
     tier: 'silver',
     icon: 'shield',
   },
   {
     id: 'photo_pro',
-    name: 'Photographic Master',
+    name: 'ui_gamificationStore.photographic_master',
     nameAr: 'محترف التوثيق',
-    description: 'Record 25 full 3-angle photo sets (Left, Right, Face)',
+    description: 'ui_gamificationStore.record_25_full_3_angle_photo',
     tier: 'silver',
     icon: 'camera',
   },
   {
     id: 'recapture_master',
-    name: 'Mark-Resight Specialist',
+    name: 'ui_gamificationStore.mark_resight_specialist',
     nameAr: 'خبير إعادة الرصد',
-    description: 'Confirm 10 resightings of previously registered animals',
+    description: 'ui_gamificationStore.confirm_10_resightings_of_previously_registered',
     tier: 'gold',
     icon: 'eye',
   },
   {
     id: 'explorer_50',
-    name: 'Terra Incognita',
+    name: 'ui_gamificationStore.terra_incognita',
     nameAr: 'مستكشف الخلايا',
-    description: 'Survey in 50 distinct H3 resolution-9 hex cells',
+    description: 'ui_gamificationStore.survey_in_50_distinct_h3_resolution',
     tier: 'gold',
     icon: 'map',
   },
   {
     id: 'academy_graduate',
-    name: 'Academy Graduate',
+    name: 'ui_gamificationStore.academy_graduate',
     nameAr: 'خريج الأكاديمية الميدانية',
-    description: 'Complete all 5 Field Academy modules with certified competency',
+    description: 'ui_gamificationStore.complete_all_5_field_academy_modules',
     tier: 'bronze',
     icon: 'paw',
   },
   {
     id: 'route_guardian',
-    name: 'Route Guardian',
+    name: 'ui_gamificationStore.route_guardian',
     nameAr: 'حارس المسارات',
-    description: 'Repeat an official fixed transect 5 times for repeat-visit modeling',
+    description: 'ui_gamificationStore.repeat_an_official_fixed_transect_5',
     tier: 'silver',
     icon: 'compass',
   },
   {
     id: 'colony_keeper',
-    name: 'Colony Monitor',
+    name: 'ui_gamificationStore.colony_monitor',
     nameAr: 'راصد المستعمرات',
-    description: 'Monitor or register a persistent cat colony or feeding station',
+    description: 'ui_gamificationStore.monitor_or_register_a_persistent_cat',
     tier: 'bronze',
     icon: 'shield',
   },
@@ -113,9 +113,9 @@ export const INITIAL_BADGES: Badge[] = [
 export const INITIAL_QUESTS: Quest[] = [
   {
     id: 'quest_hex',
-    title: 'Spatial Pioneer',
+    title: 'ui_gamificationStore.spatial_pioneer',
     titleAr: 'استكشاف خلايا جديدة',
-    description: 'Survey in 2 H3 hex cells you have never visited',
+    description: 'ui_gamificationStore.survey_in_2_h3_hex_cells',
     xpReward: 30,
     progress: 0,
     target: 2,
@@ -123,9 +123,9 @@ export const INITIAL_QUESTS: Quest[] = [
   },
   {
     id: 'quest_complete_survey',
-    title: 'Complete Checklist',
+    title: 'ui_gamificationStore.complete_checklist',
     titleAr: 'قائمة كاملة',
-    description: 'Complete a full transect survey following the eBird standard',
+    description: 'ui_gamificationStore.complete_a_full_transect_survey_following',
     xpReward: 20,
     progress: 0,
     target: 1,
@@ -133,9 +133,9 @@ export const INITIAL_QUESTS: Quest[] = [
   },
   {
     id: 'quest_photo_set',
-    title: 'Identification Angles',
+    title: 'ui_gamificationStore.identification_angles',
     titleAr: 'زوايا التوثيق',
-    description: 'Capture left flank, right flank, and face of a free-roaming cat or dog',
+    description: 'ui_gamificationStore.capture_left_flank_right_flank_and',
     xpReward: 25,
     progress: 0,
     target: 1,
@@ -164,16 +164,33 @@ interface GamificationState {
   unlockBadge: (badgeId: string) => void;
   updateQuestProgress: (questId: string, delta: number) => void;
   claimQuestReward: (questId: string) => boolean;
-  useStreakFreeze: () => boolean;
+  consumeStreakFreeze: () => boolean;
   completeAcademyCertification: () => void;
 }
 
-export function computeLevel(xp: number): { level: number; rankTitle: string; rankTitleAr: string } {
+/** XP at which each level starts; level 7 has no upper bound. Single source for level math. */
+export const LEVEL_START_XP = [0, 300, 700, 1200, 2000, 3500, 6000] as const;
+
+/** XP range of a level: [start, end) with end null for the top level. */
+export function levelBounds(level: number): { start: number; end: number | null } {
+  const i = Math.max(1, Math.min(LEVEL_START_XP.length, level)) - 1;
+  return {
+    start: LEVEL_START_XP[i],
+    end: i + 1 < LEVEL_START_XP.length ? LEVEL_START_XP[i + 1] : null,
+  };
+}
+
+export function computeLevel(xp: number): {
+  level: number;
+  rankTitle: string;
+  rankTitleAr: string;
+} {
   if (xp < 300) return { level: 1, rankTitle: 'Newcomer Observer', rankTitleAr: 'راصد جديد' };
   if (xp < 700) return { level: 2, rankTitle: 'Street Observer', rankTitleAr: 'راصد شوارع' };
   if (xp < 1200) return { level: 3, rankTitle: 'Neighbourhood Watcher', rankTitleAr: 'حارس الحي' };
   if (xp < 2000) return { level: 4, rankTitle: 'Field Surveyor', rankTitleAr: 'مسّاح ميداني' };
-  if (xp < 3500) return { level: 5, rankTitle: 'Senior Field Surveyor', rankTitleAr: 'خبير مسح ميداني' };
+  if (xp < 3500)
+    return { level: 5, rankTitle: 'Senior Field Surveyor', rankTitleAr: 'خبير مسح ميداني' };
   if (xp < 6000) return { level: 6, rankTitle: 'Research Naturalist', rankTitleAr: 'باحث طبيعي' };
   return { level: 7, rankTitle: 'Field Scientist', rankTitleAr: 'عالم ميداني' };
 }
@@ -305,7 +322,7 @@ export const useGamificationStore = create<GamificationState>((set, get) => ({
     return true;
   },
 
-  useStreakFreeze: () => {
+  consumeStreakFreeze: () => {
     const { freezesAvailable } = get();
     if (freezesAvailable > 0) {
       set({ freezesAvailable: freezesAvailable - 1 });

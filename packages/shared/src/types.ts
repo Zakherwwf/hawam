@@ -1,5 +1,5 @@
 /**
- * Core domain types and enumerations for the Tunisia Free-Roaming Cat & Dog Survey.
+ * Core domain types and enumerations for the Hawem free-roaming cat and dog survey.
  */
 
 export type UserRole = 'volunteer' | 'trained_surveyor' | 'researcher' | 'admin';
@@ -27,12 +27,7 @@ export type ReproductiveStatus = 'lactating' | 'visibly_pregnant' | 'none_visibl
 export type BodyConditionScore = 1 | 2 | 3 | 4 | 5;
 
 export type HealthIssue =
-  | 'skin_lesions_mange'
-  | 'wound'
-  | 'limp'
-  | 'eye_nose_discharge'
-  | 'tumour'
-  | 'none';
+  'skin_lesions_mange' | 'wound' | 'limp' | 'eye_nose_discharge' | 'tumour' | 'none';
 
 export type YesNoUnknown = 'yes' | 'no' | 'unknown';
 
@@ -54,12 +49,7 @@ export type FoodSource = 'garbage' | 'deliberate_feeding' | 'none' | 'other';
 export type PhotoAngle = 'left_flank' | 'right_flank' | 'face' | 'other';
 
 export type CoatPattern =
-  | 'tabby'
-  | 'bicolour_piebald'
-  | 'tortoiseshell_calico'
-  | 'solid_black'
-  | 'solid_other'
-  | 'other';
+  'tabby' | 'bicolour_piebald' | 'tortoiseshell_calico' | 'solid_black' | 'solid_other' | 'other';
 
 export type WeatherCondition = 'clear' | 'cloudy' | 'rain' | 'wind';
 
@@ -109,6 +99,8 @@ export interface SurveySession {
   time_of_day?: TimeOfDay | null;
   app_version: string;
   device_gps_accuracy_avg?: number | null;
+  country_code?: string | null; // ISO 3166-1 alpha-2, resolved server-side
+  timezone?: string | null; // IANA zone, resolved server-side
   created_at?: string;
 }
 
@@ -140,6 +132,10 @@ export interface ObservationPublic {
   identifier?: string | null;
   observer_name?: string | null;
   linked_individual_id?: string | null;
+  country_code?: string | null; // ISO 3166-1 alpha-2, resolved server-side
+  admin1_code?: string | null; // ISO 3166-2
+  timezone?: string | null; // IANA zone
+  observed_at_local?: string | null; // wall-clock time where the animal was seen
   created_at?: string;
 }
 

@@ -15,6 +15,18 @@
  * 'utf-8', and safely falls back to 'utf-8' for unsupported encodings rather than throwing.
  */
 
+// Intl.PluralRules for i18next's CLDR plural keys (_one/_other/...). Some
+// Hermes builds (Android Expo Go) ship without it, and i18next then falls back
+// to v3 plural handling, rendering raw keys. Each import only installs itself
+// when the runtime lacks the API. Order matters: PluralRules needs Locale,
+// which needs getCanonicalLocales. Add locale data when enabling a language.
+import '@formatjs/intl-getcanonicallocales/polyfill.js';
+import '@formatjs/intl-locale/polyfill.js';
+import '@formatjs/intl-pluralrules/polyfill.js';
+import '@formatjs/intl-pluralrules/locale-data/en.js';
+import '@formatjs/intl-pluralrules/locale-data/fr.js';
+import '@formatjs/intl-pluralrules/locale-data/ar.js';
+
 if (typeof globalThis !== 'undefined') {
   const OriginalTextDecoder = (globalThis as any).TextDecoder;
 
@@ -23,7 +35,10 @@ if (typeof globalThis !== 'undefined') {
       try {
         const clean =
           typeof encoding === 'string'
-            ? encoding.trim().toLowerCase().replace(/[^a-z0-9]/g, '')
+            ? encoding
+                .trim()
+                .toLowerCase()
+                .replace(/[^a-z0-9]/g, '')
             : '';
         const normalized = clean === 'utf8' ? 'utf-8' : encoding;
         return new (OriginalTextDecoder as any)(normalized, options);

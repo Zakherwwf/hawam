@@ -13,9 +13,11 @@ export const MAPBOX_CONFIG = {
     light: 'mapbox://styles/mapbox/light-v11',
     dark: 'mapbox://styles/mapbox/dark-v11',
   },
+  // World view. Maps without an explicit centre move to the last camera
+  // position or the device location once either is known.
   defaultCenter: {
-    latitude: 36.8065,
-    longitude: 10.1815,
+    latitude: 20,
+    longitude: 0,
   },
-  defaultZoom: 14,
+  defaultZoom: 1.5,
 };

@@ -1,5 +1,6 @@
 import React from 'react';
 import { View, Text, TouchableOpacity, StyleSheet, I18nManager } from 'react-native';
+import { useTranslation } from 'react-i18next';
 import { IOSColors, IOSTypography } from '../../theme/ios';
 
 interface IOSNavigationBarProps {
@@ -15,17 +16,27 @@ export const IOSNavigationBar: React.FC<IOSNavigationBarProps> = ({
   title,
   subtitle,
   onBack,
-  backTitle = '‹ Retour',
+  backTitle,
   rightAction,
   largeTitle = false,
 }) => {
+  const { t } = useTranslation();
+  const backLabel = (backTitle ?? t('ui_common.back')).replace(/[‹›]/g, '').trim();
   return (
     <View style={styles.wrapper}>
       <View style={styles.topRow}>
         <View style={styles.leftCol}>
           {onBack ? (
-            <TouchableOpacity onPress={onBack} hitSlop={{ top: 14, bottom: 14, left: 14, right: 14 }} style={styles.backBtn}>
-              <Text style={styles.backText}>{I18nManager.isRTL ? '›' : '‹'} {backTitle.replace(/[‹›]/g, '').trim()}</Text>
+            <TouchableOpacity
+              onPress={onBack}
+              hitSlop={{ top: 14, bottom: 14, left: 14, right: 14 }}
+              style={styles.backBtn}
+              accessibilityRole="button"
+              accessibilityLabel={backLabel}
+            >
+              <Text style={styles.backText}>
+                {I18nManager.isRTL ? '›' : '‹'} {backLabel}
+              </Text>
             </TouchableOpacity>
           ) : null}
         </View>
@@ -35,15 +46,17 @@ export const IOSNavigationBar: React.FC<IOSNavigationBarProps> = ({
             <Text style={styles.inlineTitle} numberOfLines={1}>
               {title}
             </Text>
-            {subtitle ? <Text style={styles.inlineSub} numberOfLines={1}>{subtitle}</Text> : null}
+            {subtitle ? (
+              <Text style={styles.inlineSub} numberOfLines={1}>
+                {subtitle}
+              </Text>
+            ) : null}
           </View>
         ) : (
           <View style={styles.centerCol} />
         )}
 
-        <View style={styles.rightCol}>
-          {rightAction}
-        </View>
+        <View style={styles.rightCol}>{rightAction}</View>
       </View>
 
       {largeTitle ? (

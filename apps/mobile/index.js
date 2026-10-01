@@ -1,5 +1,3 @@
+// Polyfills must load before any other module (crypto, URL, etc.)
 import './src/polyfills';
-import { registerRootComponent } from 'expo';
-import App from './App';
-
-registerRootComponent(App);
+import 'expo-router/entry';

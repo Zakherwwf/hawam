@@ -10,6 +10,7 @@
  */
 
 import { create } from 'zustand';
+import { generateUUID } from '../../utils/uuid.ts';
 import { storage } from '../../services/storageAdapter.ts';
 import { localDb } from '../../db/localDb.ts';
 import type { SurveyProtocol, Species } from '@tunisia-survey/shared';
@@ -17,13 +18,7 @@ import { computeAnimalLocation, simplifyGpsTrack } from '../../services/georef/g
 import { generateScientificObservationCode } from '../../utils/scientificCodes.ts';
 
 export type SurveyStatus =
-  | 'idle'
-  | 'acquiring_fix'
-  | 'recording'
-  | 'paused'
-  | 'finishing'
-  | 'finished'
-  | 'recovered';
+  'idle' | 'acquiring_fix' | 'recording' | 'paused' | 'finishing' | 'finished' | 'recovered';
 
 export interface InSurveyDetection {
   id: string;
@@ -36,7 +31,8 @@ export interface InSurveyDetection {
   animal_lat: number;
   animal_lon: number;
   bearing_deg?: number;
-  distance_estimate_m: number;
+  /** Observer's estimate; undefined until they give one (never a default) */
+  distance_estimate_m?: number;
   perpendicular_distance_m?: number;
   h3_res9: string;
   body_condition_score?: number;
@@ -45,6 +41,15 @@ export interface InSurveyDetection {
   photoUris?: string[];
   is_welfare_alert?: boolean;
   gps_accuracy_m?: number;
+  sex?: 'male' | 'female' | 'unknown';
+  age_class?: 'juvenile' | 'adult' | 'unknown';
+  ear_tip_or_notch?: 'yes' | 'no' | 'unknown';
+  visible_health_issues?: string[];
+  /** Re-identification decision for this sighting */
+  link?: import('../animals/knownAnimals.ts').AnimalLink;
+  coat_pattern?: import('../animals/knownAnimals.ts').CoatPattern;
+  /** Which side the single photo shows */
+  photoAngle?: 'left_flank' | 'right_flank' | 'other';
 }
 
 export interface RawTrackPoint {
@@ -53,6 +58,8 @@ export interface RawTrackPoint {
   longitude: number;
   accuracy_m?: number;
   speed_mps?: number;
+  /** Android reported the fix as mocked (fake GPS) */
+  is_mock?: boolean;
 }
 
 interface SurveyState {
@@ -82,7 +89,13 @@ interface SurveyState {
   pauseSurvey: () => void;
   resumeSurvey: () => void;
   updateLocation: (lat: number, lon: number, accuracy: number, heading?: number) => void;
-  addTrackPoint: (lat: number, lon: number, accuracy?: number, speed?: number, mocked?: boolean) => void;
+  addTrackPoint: (
+    lat: number,
+    lon: number,
+    accuracy?: number,
+    speed?: number,
+    mocked?: boolean
+  ) => void;
   tickTimer: () => void;
   logDetection: (params: {
     species: Species;
@@ -151,22 +164,29 @@ export const useSurveyStore = create<SurveyState>((set, get) => ({
       detections: [],
       completeChecklist: true,
     });
-    storage.setItem('hawem_survey_draft', JSON.stringify({
-      sessionId,
-      protocol,
-      selectedRouteId: routeId,
-      startedAt,
-    })).catch(() => {});
+    storage
+      .setItem(
+        'hawem_survey_draft',
+        JSON.stringify({
+          sessionId,
+          protocol,
+          selectedRouteId: routeId,
+          startedAt,
+        })
+      )
+      .catch(() => {});
 
-    localDb.insertSession({
-      id: sessionId,
-      protocol,
-      routeId,
-      startedAt,
-      createdAt: startedAt,
-      status: 'active',
-      completeChecklist: true,
-    }).catch(() => {});
+    localDb
+      .insertSession({
+        id: sessionId,
+        protocol,
+        routeId,
+        startedAt,
+        createdAt: startedAt,
+        status: 'active',
+        completeChecklist: true,
+      })
+      .catch(() => {});
   },
 
   setFixAcquired: () => {
@@ -214,27 +234,41 @@ export const useSurveyStore = create<SurveyState>((set, get) => ({
       longitude: lon,
       accuracy_m: accuracy,
       speed_mps: speed,
+      is_mock: Boolean(mocked) || undefined,
     };
 
     // CLAUDE.md §2.2: Strict speed limit 15 km/h (4.17 m/s)
-    const isSpeedAcceptable = speed !== undefined ? speed <= 4.17 : true;
-    const rejectedReason = !isSpeedAcceptable ? 'speed_exceeded_15kmh' : undefined;
+    const isSpeedAcceptable = speed !== undefined && speed !== null ? speed <= 4.17 : true;
+    // CLAUDE.md 1.5: fixes worse than 30 m are kept, flagged, and never
+    // counted towards distance
+    const isAccurate = accuracy === undefined || accuracy === null || accuracy <= 30;
+    const rejectedReason = !isAccurate
+      ? 'low_accuracy'
+      : !isSpeedAcceptable
+        ? 'speed_exceeded_15kmh'
+        : undefined;
 
     if (sessionId) {
-      localDb.insertTrackPoint({
-        id: `tp-${Date.now()}-${Math.random().toString(36).substring(2, 7)}`,
-        sessionId,
-        latitude: lat,
-        longitude: lon,
-        accuracyM: accuracy,
-        speedMps: speed,
-        mocked: Boolean(mocked),
-        rejectedReason,
-        recordedAt: newRawPoint.recorded_at,
-      }).catch(() => {});
+      localDb
+        .insertTrackPoint({
+          id: `tp-${Date.now()}-${Math.random().toString(36).substring(2, 7)}`,
+          sessionId,
+          latitude: lat,
+          longitude: lon,
+          accuracyM: accuracy,
+          speedMps: speed,
+          mocked: Boolean(mocked),
+          rejectedReason,
+          recordedAt: newRawPoint.recorded_at,
+        })
+        .catch(() => {});
     }
 
     if (activeTrack.length === 0) {
+      if (!isAccurate) {
+        set({ rawTrackPoints: [...rawTrackPoints, newRawPoint] });
+        return;
+      }
       set({
         activeTrack: [[lat, lon]],
         rawTrackPoints: [...rawTrackPoints, newRawPoint],
@@ -257,7 +291,7 @@ export const useSurveyStore = create<SurveyState>((set, get) => ({
     const deltaM = R * c;
 
     // Reject micro-jitter (< 2m) and filter impossible speeds (> 15 km/h)
-    if (deltaM >= 2 && isSpeedAcceptable) {
+    if (deltaM >= 2 && isSpeedAcceptable && isAccurate) {
       const nextDistanceM = distanceMeters + deltaM;
       set({
         activeTrack: [...activeTrack, [lat, lon]],
@@ -297,7 +331,7 @@ export const useSurveyStore = create<SurveyState>((set, get) => ({
     group_size = 1,
     distance_estimate_m,
     bearing_deg,
-    body_condition_score = 3,
+    body_condition_score,
     notes = '',
     photoUri = null,
     photoUris = [],
@@ -323,23 +357,24 @@ export const useSurveyStore = create<SurveyState>((set, get) => ({
     const { currentLocation, activeTrack, detections, sessionId } = get();
     const obsLat = observer_lat ?? currentLocation?.lat ?? 0;
     const obsLon = observer_lon ?? currentLocation?.lon ?? 0;
-    const bearing = bearing_deg ?? (currentLocation?.heading || 0);
-
-    const distEst = distance_estimate_m ?? 5.0;
+    // No invented values: without a distance the animal is placed at the
+    // observer and the perpendicular distance stays unknown (CLAUDE.md 1.4)
+    const bearing = bearing_deg;
+    const hasEstimate = distance_estimate_m != null && bearing != null;
     const geoResult = computeAnimalLocation(
       obsLat,
       obsLon,
-      distEst,
-      bearing,
+      hasEstimate ? distance_estimate_m : 0,
+      bearing ?? 0,
       activeTrack
     );
 
-    const effectivePhotos = photoUris.length > 0 ? photoUris : (photoUri ? [photoUri] : []);
+    const effectivePhotos = photoUris.length > 0 ? photoUris : photoUri ? [photoUri] : [];
     const effectiveIdentifier =
       identifier || generateScientificObservationCode(species, detections.length + 1);
 
     const newDetection: InSurveyDetection = {
-      id: `det-${Date.now()}-${Math.floor(Math.random() * 1000)}`,
+      id: generateUUID(),
       identifier: effectiveIdentifier,
       species,
       group_size,
@@ -349,8 +384,8 @@ export const useSurveyStore = create<SurveyState>((set, get) => ({
       animal_lat: geoResult.animalLat,
       animal_lon: geoResult.animalLon,
       bearing_deg: bearing,
-      distance_estimate_m: distEst,
-      perpendicular_distance_m: geoResult.perpendicularDistanceM,
+      distance_estimate_m,
+      perpendicular_distance_m: hasEstimate ? geoResult.perpendicularDistanceM : undefined,
       h3_res9: geoResult.h3Res9,
       body_condition_score,
       notes,
@@ -364,26 +399,28 @@ export const useSurveyStore = create<SurveyState>((set, get) => ({
     set({ detections: updatedDetections });
 
     if (sessionId) {
-      localDb.insertObservation({
-        id: newDetection.id,
-        sessionId,
-        observedAt: newDetection.observed_at,
-        observerLat: obsLat,
-        observerLon: obsLon,
-        animalLat: geoResult.animalLat,
-        animalLon: geoResult.animalLon,
-        gpsAccuracyM: gps_accuracy_m,
-        bearingDeg: bearing,
-        distanceEstimateM: distance_estimate_m,
-        perpendicularDistanceM: geoResult.perpendicularDistanceM,
-        h3Res9: geoResult.h3Res9,
-        species,
-        groupSize: group_size,
-        bodyConditionScore: body_condition_score,
-        healthIssuesJson: '[]',
-        notes,
-        synced: false,
-      }).catch(() => {});
+      localDb
+        .insertObservation({
+          id: newDetection.id,
+          sessionId,
+          observedAt: newDetection.observed_at,
+          observerLat: obsLat,
+          observerLon: obsLon,
+          animalLat: geoResult.animalLat,
+          animalLon: geoResult.animalLon,
+          gpsAccuracyM: gps_accuracy_m,
+          bearingDeg: bearing,
+          distanceEstimateM: distance_estimate_m,
+          perpendicularDistanceM: hasEstimate ? geoResult.perpendicularDistanceM : undefined,
+          h3Res9: geoResult.h3Res9,
+          species,
+          groupSize: group_size,
+          bodyConditionScore: body_condition_score,
+          healthIssuesJson: '[]',
+          notes,
+          synced: false,
+        })
+        .catch(() => {});
     }
 
     return newDetection;
@@ -395,26 +432,28 @@ export const useSurveyStore = create<SurveyState>((set, get) => ({
       detections: detections.map((d) => (d.id === updated.id ? updated : d)),
     });
     if (sessionId) {
-      localDb.insertObservation({
-        id: updated.id,
-        sessionId,
-        observedAt: updated.observed_at,
-        observerLat: updated.observer_lat,
-        observerLon: updated.observer_lon,
-        animalLat: updated.animal_lat,
-        animalLon: updated.animal_lon,
-        gpsAccuracyM: updated.gps_accuracy_m,
-        bearingDeg: updated.bearing_deg,
-        distanceEstimateM: updated.distance_estimate_m,
-        perpendicularDistanceM: updated.perpendicular_distance_m,
-        h3Res9: updated.h3_res9,
-        species: updated.species,
-        groupSize: updated.group_size,
-        bodyConditionScore: updated.body_condition_score,
-        healthIssuesJson: '[]',
-        notes: updated.notes,
-        synced: false,
-      }).catch(() => {});
+      localDb
+        .insertObservation({
+          id: updated.id,
+          sessionId,
+          observedAt: updated.observed_at,
+          observerLat: updated.observer_lat,
+          observerLon: updated.observer_lon,
+          animalLat: updated.animal_lat,
+          animalLon: updated.animal_lon,
+          gpsAccuracyM: updated.gps_accuracy_m,
+          bearingDeg: updated.bearing_deg,
+          distanceEstimateM: updated.distance_estimate_m,
+          perpendicularDistanceM: updated.perpendicular_distance_m,
+          h3Res9: updated.h3_res9,
+          species: updated.species,
+          groupSize: updated.group_size,
+          bodyConditionScore: updated.body_condition_score,
+          healthIssuesJson: '[]',
+          notes: updated.notes,
+          synced: false,
+        })
+        .catch(() => {});
     }
   },
 
@@ -471,6 +510,10 @@ export const useSurveyStore = create<SurveyState>((set, get) => ({
   },
 
   resetSurvey: () => {
+    // Close the local record too, or crash recovery revives it on next launch
+    const { sessionId } = get();
+    if (sessionId)
+      localDb.updateSessionStatus(sessionId, 'abandoned', new Date().toISOString()).catch(() => {});
     set({
       sessionId: null,
       status: 'idle',
@@ -493,6 +536,16 @@ export const useSurveyStore = create<SurveyState>((set, get) => ({
       if (unfinished) {
         const rawPoints = await localDb.getTrackPointsBySession(unfinished.id);
         const obsList = await localDb.getObservationsBySession(unfinished.id);
+        // Only a walk that recorded something, recently, is worth resuming.
+        // A session opened and left while waiting for GPS is closed instead.
+        const ageH = (Date.now() - new Date(unfinished.startedAt).getTime()) / 3600000;
+        if ((rawPoints.length === 0 && obsList.length === 0) || ageH > 24) {
+          await localDb
+            .updateSessionStatus(unfinished.id, 'abandoned', new Date().toISOString())
+            .catch(() => {});
+          await storage.removeItem('hawem_survey_draft').catch(() => {});
+          return false;
+        }
 
         const activeTrack: [number, number][] = rawPoints
           .filter((p) => !p.rejectedReason)
@@ -514,13 +567,20 @@ export const useSurveyStore = create<SurveyState>((set, get) => ({
           body_condition_score: o.bodyConditionScore ?? undefined,
           notes: o.notes ?? undefined,
         }));
+        // The local table stores a missing estimate as 0; without a bearing
+        // that 0 was never an estimate
+        for (const d of detections) {
+          if (d.distance_estimate_m === 0 && d.bearing_deg == null)
+            d.distance_estimate_m = undefined;
+        }
 
         const durationSeconds = Math.round((unfinished.durationMin || 0) * 60);
         const distanceMeters = Math.round((unfinished.distanceKm || 0) * 1000);
 
         set({
           sessionId: unfinished.id,
-          status: 'recovered',
+          // Paused, so the app shows "Survey paused. Tap to resume"
+          status: 'paused',
           protocol: unfinished.protocol as SurveyProtocol,
           selectedRouteId: unfinished.routeId,
           startedAt: unfinished.startedAt,
@@ -546,20 +606,8 @@ export const useSurveyStore = create<SurveyState>((set, get) => ({
 
     // Fallback: check legacy AsyncStorage draft
     try {
-      const raw = await storage.getItem('hawem_survey_draft');
-      if (raw) {
-        const draft = JSON.parse(raw);
-        if (draft && draft.startedAt) {
-          set({
-            sessionId: draft.sessionId || null,
-            status: 'recovered',
-            protocol: draft.protocol || 'transect',
-            selectedRouteId: draft.selectedRouteId || null,
-            startedAt: draft.startedAt,
-          });
-          return true;
-        }
-      }
+      // An old draft carries no track or animals, so nothing can be resumed
+      await storage.removeItem('hawem_survey_draft');
     } catch {}
     return false;
   },
