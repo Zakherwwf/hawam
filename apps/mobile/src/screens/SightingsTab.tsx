@@ -27,6 +27,7 @@ import {
 } from '../ui';
 import type { SightingItem } from '../app-state/types';
 import { useSyncStore } from '../features/sync/syncStore';
+import { useToast } from '../ui/Toast';
 import { useKnownAnimals } from '../features/animals/knownAnimals';
 import { supabase } from '../services/supabase';
 import { resolveAnimalPhotoUrl } from '../services/storageService';
@@ -49,6 +50,7 @@ export function SightingsTab({
   const { c } = useTheme();
   const pending = useSyncStore((s) => s.pendingCount);
   const syncing = useSyncStore((s) => s.isSyncing);
+  const lastError = useSyncStore((s) => s.outbox.find((o) => o.lastError)?.lastError);
   const [view, setView] = useState<'all' | 'known'>('all');
   const [filter, setFilter] = useState<Filter>('all');
   const [query, setQuery] = useState('');
@@ -125,7 +127,9 @@ export function SightingsTab({
               {t('ui_sightings_v3.waiting', { count: pending })}
             </Text>
             <Text variant="footnote" tone="ink2">
-              {t('ui_sightings_v3.waiting_body')}
+              {lastError
+                ? t('ui_sightings_v3.waiting_error', { error: lastError })
+                : t('ui_sightings_v3.waiting_body')}
             </Text>
           </View>
           <Button
@@ -133,7 +137,46 @@ export function SightingsTab({
             size="small"
             title={t('ui_sightings_v3.upload_now')}
             loading={syncing}
-            onPress={() => useSyncStore.getState().triggerSync()}
+            onPress={async () => {
+              const res = await useSyncStore.getState().triggerSync();
+              const left = useSyncStore.getState().pendingCount;
+              if (res.syncedCount > 0)
+                useToast
+                  .getState()
+                  .show({
+                    title: t('ui_sightings_v3.uploaded_n', { count: res.syncedCount }),
+                    icon: 'upload',
+                  });
+              if (left > 0) {
+                const err = useSyncStore.getState().outbox.find((o) => o.lastError)?.lastError;
+                Alert.alert(
+                  t('ui_sightings_v3.still_waiting', { count: left }),
+                  err
+                    ? t('ui_sightings_v3.reason', { error: err })
+                    : t('ui_sightings_v3.offline_reason'),
+                  [
+                    { text: t('common.done'), style: 'cancel' },
+                    {
+                      text: t('ui_sightings_v3.remove_stuck'),
+                      style: 'destructive',
+                      onPress: () =>
+                        Alert.alert(
+                          t('ui_sightings_v3.remove_stuck_title'),
+                          t('ui_sightings_v3.remove_stuck_body'),
+                          [
+                            { text: t('common.cancel'), style: 'cancel' },
+                            {
+                              text: t('ui_sightings_v3.remove_stuck'),
+                              style: 'destructive',
+                              onPress: () => useSyncStore.getState().discardFailed(),
+                            },
+                          ]
+                        ),
+                    },
+                  ]
+                );
+              }
+            }}
           />
         </Card>
       ) : null}

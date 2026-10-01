@@ -8,6 +8,8 @@
 import React from 'react';
 import { View, type StyleProp, type ViewStyle } from 'react-native';
 import Svg, { Circle, Defs, Ellipse, G, LinearGradient, Path, Rect, Stop } from 'react-native-svg';
+import { CatIcon } from 'phosphor-react-native/src/icons/Cat';
+import { DogIcon } from 'phosphor-react-native/src/icons/Dog';
 import { useTheme } from './theme';
 
 function useScenePalette() {
@@ -143,56 +145,29 @@ export function StreetScene({ style, label }: { style?: StyleProp<ViewStyle>; la
   );
 }
 
-/** Illustrated cat or dog face for species choices and empty states. */
+/**
+ * Cat or dog mark for species choices, rows and cards: the Phosphor duotone
+ * icon (the icon family the taste skill recommends) on a soft species tint.
+ */
 export function AnimalFace({ species, size = 56 }: { species: 'cat' | 'dog'; size?: number }) {
   const { c } = useTheme();
   const bg = species === 'cat' ? c.catSoft : c.dogSoft;
   const fg = species === 'cat' ? c.cat : c.dog;
+  const Icon = species === 'cat' ? CatIcon : DogIcon;
   return (
-    <Svg width={size} height={size} viewBox="0 0 64 64">
-      <Circle cx={32} cy={32} r={32} fill={bg} />
-      {species === 'cat' ? (
-        <G>
-          <Path d="M16 30 L18 12 L28 22 Z" fill={fg} />
-          <Path d="M48 30 L46 12 L36 22 Z" fill={fg} />
-          <Circle cx={32} cy={35} r={16} fill={fg} />
-          <Ellipse cx={26} cy={33} rx={2.4} ry={3.2} fill={bg} />
-          <Ellipse cx={38} cy={33} rx={2.4} ry={3.2} fill={bg} />
-          <Path d="M30 40 L34 40 L32 42.5 Z" fill={bg} />
-          <Path
-            d="M20 40 L12 38 M20 43 L12 44 M44 40 L52 38 M44 43 L52 44"
-            stroke={fg}
-            strokeWidth={1.6}
-            strokeLinecap="round"
-          />
-        </G>
-      ) : (
-        <G>
-          <Ellipse
-            cx={17}
-            cy={30}
-            rx={6}
-            ry={12}
-            fill={fg}
-            opacity={0.75}
-            transform="rotate(15 17 30)"
-          />
-          <Ellipse
-            cx={47}
-            cy={30}
-            rx={6}
-            ry={12}
-            fill={fg}
-            opacity={0.75}
-            transform="rotate(-15 47 30)"
-          />
-          <Circle cx={32} cy={32} r={15} fill={fg} />
-          <Ellipse cx={32} cy={42} rx={9} ry={7} fill={fg} />
-          <Circle cx={26} cy={30} r={2.4} fill={bg} />
-          <Circle cx={38} cy={30} r={2.4} fill={bg} />
-          <Ellipse cx={32} cy={40} rx={3.6} ry={2.6} fill={bg} />
-        </G>
-      )}
-    </Svg>
+    <View
+      style={{
+        width: size,
+        height: size,
+        borderRadius: size / 2,
+        backgroundColor: bg,
+        alignItems: 'center',
+        justifyContent: 'center',
+      }}
+      accessibilityElementsHidden
+      importantForAccessibility="no-hide-descendants"
+    >
+      <Icon size={size * 0.62} color={fg} weight="duotone" />
+    </View>
   );
 }

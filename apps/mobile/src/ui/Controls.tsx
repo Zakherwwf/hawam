@@ -291,12 +291,15 @@ export function Tag({
 /** Seven small bars (a week), highlighting one; values are plain numbers. */
 export function WeekBars({
   values,
+  active,
   labels,
   highlight,
   height = 64,
   label,
 }: {
   values: number[];
+  /** Days with at least one survey; shown in colour even without distance */
+  active?: boolean[];
   labels: string[];
   highlight: number;
   height?: number;
@@ -310,35 +313,47 @@ export function WeekBars({
       accessibilityLabel={label}
       style={{ flexDirection: 'row', alignItems: 'flex-end', gap: 8 }}
     >
-      {values.map((v, i) => (
-        <View key={i} style={{ flex: 1, alignItems: 'center', gap: 6 }}>
-          <View
-            style={{
-              width: '100%',
-              height,
-              justifyContent: 'flex-end',
-              borderRadius: 8,
-              backgroundColor: c.limeSoft,
-              overflow: 'hidden',
-            }}
-          >
+      {values.map((v, i) => {
+        const on = active ? active[i] : v > 0;
+        const today = i === highlight;
+        // Surveyed days are never shorter than 40% so a short walk still reads
+        const h = on ? Math.max(height * 0.4, (v / max) * height) : 0;
+        return (
+          <View key={i} style={{ flex: 1, alignItems: 'center', gap: 6 }}>
             <View
               style={{
-                height: v > 0 ? Math.max(6, (v / max) * height) : 0,
-                backgroundColor: i === highlight ? c.accent : c.lime,
+                width: '100%',
+                height,
+                justifyContent: 'flex-end',
                 borderRadius: 8,
+                backgroundColor: c.fill,
+                borderWidth: today ? 1.5 : 0,
+                borderColor: c.accent,
+                overflow: 'hidden',
+              }}
+            >
+              <View
+                style={{ height: h, backgroundColor: today ? c.accent : c.lime, borderRadius: 7 }}
+              />
+            </View>
+            <Text
+              variant="caption"
+              weight={on || today ? '700' : '400'}
+              tone={on || today ? 'ink' : 'ink3'}
+            >
+              {labels[i]}
+            </Text>
+            <View
+              style={{
+                width: 4,
+                height: 4,
+                borderRadius: 2,
+                backgroundColor: today ? c.accent : 'transparent',
               }}
             />
           </View>
-          <Text
-            variant="caption"
-            weight={i === highlight ? '700' : '400'}
-            tone={i === highlight ? 'ink' : 'ink3'}
-          >
-            {labels[i]}
-          </Text>
-        </View>
-      ))}
+        );
+      })}
     </View>
   );
 }

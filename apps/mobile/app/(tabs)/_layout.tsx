@@ -224,6 +224,32 @@ export default function TabsLayout() {
               {t('ui_app.survey_paused_tap_to_resume')}
             </Text>
           </Press>
+          <Press
+            onPress={() =>
+              Alert.alert(t('ui_walk.discard_title'), t('ui_walk.discard_body'), [
+                { text: t('ui_walk.cancel_keep'), style: 'cancel' },
+                {
+                  text: t('ui_walk.discard'),
+                  style: 'destructive',
+                  onPress: () => useSurveyStore.getState().resetSurvey(),
+                },
+              ])
+            }
+            accessibilityLabel={t('ui_walk.discard')}
+            style={{
+              position: 'absolute',
+              right: 0,
+              top: 0,
+              width: 44,
+              height: 44,
+              borderRadius: 22,
+              backgroundColor: c.warningSoft,
+              alignItems: 'center',
+              justifyContent: 'center',
+            }}
+          >
+            <Symbol name="close" size={16} color={c.warning} weight="semibold" />
+          </Press>
         </View>
       ) : null}
 

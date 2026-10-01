@@ -324,14 +324,19 @@ export function recentWeeks(
   return Array.from({ length: n }, (_, i) => weeks.has(current - (n - 1 - i)));
 }
 
-/** This week, Monday to Sunday: kilometres and minutes surveyed per day, and today's index. */
+/**
+ * This week, Monday to Sunday: kilometres, minutes and number of surveys per
+ * day, and today's index. A day counts as surveyed with any session, even a
+ * point count with no distance.
+ */
 export function weekDays(
   sessions: SessionSummary[],
   now = new Date()
-): { km: number[]; minutes: number[]; today: number } {
+): { km: number[]; minutes: number[]; surveys: number[]; today: number } {
   const start = weekStart(now);
   const km = new Array(7).fill(0);
   const minutes = new Array(7).fill(0);
+  const surveys = new Array(7).fill(0);
   for (const s of sessions) {
     const d = new Date(s.start_time);
     const day = Math.floor(
@@ -342,6 +347,12 @@ export function weekDays(
     if (day < 0 || day > 6) continue;
     km[day] += s.distance_km ?? 0;
     minutes[day] += s.duration_min ?? 0;
+    surveys[day] += 1;
   }
-  return { km: km.map((v) => Math.round(v * 10) / 10), minutes, today: (now.getDay() + 6) % 7 };
+  return {
+    km: km.map((v) => Math.round(v * 1000) / 1000),
+    minutes,
+    surveys,
+    today: (now.getDay() + 6) % 7,
+  };
 }

@@ -151,6 +151,31 @@ interface SyncState {
   triggerSync: () => Promise<{ success: boolean; syncedCount: number }>;
   setWifiOnly: (enabled: boolean) => void;
   clearOutbox: () => void;
+  /** Drop only the queued uploads that keep failing; nothing else is touched */
+  discardFailed: () => void;
+}
+
+/** Rejects after ms, so one stalled request can never freeze the queue. */
+function withTimeout<T>(p: Promise<T>, ms: number, what: string): Promise<T> {
+  return new Promise((resolve, reject) => {
+    const t = setTimeout(() => reject(new Error(`${what} timed out`)), ms);
+    p.then(
+      (v) => (clearTimeout(t), resolve(v)),
+      (e) => (clearTimeout(t), reject(e))
+    );
+  });
+}
+
+/** False when a queued photo's file is gone (cache cleared, app reinstalled). */
+async function photoFileExists(uri: string): Promise<boolean> {
+  if (uri.startsWith('data:')) return true;
+  try {
+    const res = await withTimeout(fetch(uri), 8000, 'Photo check');
+    const blob = await res.blob();
+    return blob.size > 0;
+  } catch {
+    return false;
+  }
 }
 
 export const useSyncStore = create<SyncState>((set, get) => ({
@@ -261,118 +286,146 @@ export const useSyncStore = create<SyncState>((set, get) => ({
     }
 
     set({ isSyncing: true });
+    try {
+      const syncedItemIds = new Set<string>();
+      const failedItemsMap = new Map<string, { attempts: number; lastError?: string }>();
+      let syncedCount = 0;
 
-    const syncedItemIds = new Set<string>();
-    const failedItemsMap = new Map<string, { attempts: number; lastError?: string }>();
-    let syncedCount = 0;
+      // Snapshot items to process
+      const itemsToProcess = [...outbox];
 
-    // Snapshot items to process
-    const itemsToProcess = [...outbox];
+      for (const item of itemsToProcess) {
+        try {
+          let photoUploadFailed = false;
+          let photoErrorMsg: string | undefined;
 
-    for (const item of itemsToProcess) {
-      try {
-        let photoUploadFailed = false;
-        let photoErrorMsg: string | undefined;
+          // Auto-sanitize legacy non-UUID formats for PostgreSQL schema compliance
+          const payload = sanitizeBundleUuids(item.payload);
 
-        // Auto-sanitize legacy non-UUID formats for PostgreSQL schema compliance
-        const payload = sanitizeBundleUuids(item.payload);
-
-        // Upload any local binary photos to Supabase Storage before RPC bundle submission
-        if (payload.photos && payload.photos.length > 0) {
-          for (const photo of payload.photos) {
-            if (
-              photo.storage_path &&
-              !photo.storage_path.startsWith('http://') &&
-              !photo.storage_path.startsWith('https://') &&
-              !isBucketPath(photo.storage_path)
-            ) {
-              const uploadRes = await uploadAnimalPhoto(
-                photo.storage_path,
-                photo.observation_id,
-                photo.id
-              );
-              if (uploadRes.success && uploadRes.storagePath) {
-                photo.storage_path = uploadRes.storagePath;
-              } else {
-                photoUploadFailed = true;
-                photoErrorMsg = uploadRes.error || 'Photo upload failed';
-                break; // Stop uploading subsequent photos for this observation
+          // Upload any local binary photos to Supabase Storage before RPC bundle submission
+          if (payload.photos && payload.photos.length > 0) {
+            for (const photo of payload.photos) {
+              if (
+                photo.storage_path &&
+                !photo.storage_path.startsWith('http://') &&
+                !photo.storage_path.startsWith('https://') &&
+                !isBucketPath(photo.storage_path)
+              ) {
+                const uploadRes = await withTimeout(
+                  uploadAnimalPhoto(photo.storage_path, photo.observation_id, photo.id),
+                  60000,
+                  'Photo upload'
+                ).catch((e: Error) => ({
+                  success: false as const,
+                  storagePath: photo.storage_path,
+                  error: e.message,
+                }));
+                if (uploadRes.success && uploadRes.storagePath) {
+                  photo.storage_path = uploadRes.storagePath;
+                } else if (!(await photoFileExists(photo.storage_path))) {
+                  // The file is gone for good; the record itself still counts.
+                  // Mark it so it is dropped below instead of blocking forever.
+                  photo.storage_path = '';
+                } else {
+                  photoUploadFailed = true;
+                  photoErrorMsg = uploadRes.error || 'Photo upload failed';
+                  break; // Stop uploading subsequent photos for this observation
+                }
               }
             }
           }
-        }
 
-        // CRITICAL DATA INTEGRITY: If photo upload failed, never push bundle with local file:// paths!
-        if (photoUploadFailed) {
+          if (payload.photos)
+            payload.photos = payload.photos.filter((ph) => ph.storage_path !== '');
+
+          // CRITICAL DATA INTEGRITY: If photo upload failed, never push bundle with local file:// paths!
+          if (photoUploadFailed) {
+            failedItemsMap.set(item.id, {
+              attempts: item.attempts + 1,
+              lastError: photoErrorMsg || 'Photo upload failed - will retry',
+            });
+            continue;
+          }
+
+          const result = await withTimeout(pushSurveyBundle(payload), 45000, 'Upload').catch(
+            (e: Error) => ({
+              success: false as const,
+              error: e.message,
+            })
+          );
+          if (result.success) {
+            syncedCount++;
+            syncedItemIds.add(item.id);
+            localDb.removeOutboxItem(item.id).catch(() => {});
+            localDb.updateSessionStatus(payload.session.id, 'finished').catch(() => {});
+          } else {
+            failedItemsMap.set(item.id, {
+              attempts: item.attempts + 1,
+              lastError: result.error,
+            });
+            localDb
+              .updateOutboxStatus(item.id, 'failed', item.attempts + 1, result.error)
+              .catch(() => {});
+          }
+        } catch (err: any) {
           failedItemsMap.set(item.id, {
             attempts: item.attempts + 1,
-            lastError: photoErrorMsg || 'Photo upload failed - will retry',
-          });
-          continue;
-        }
-
-        const result = await pushSurveyBundle(payload);
-        if (result.success) {
-          syncedCount++;
-          syncedItemIds.add(item.id);
-          localDb.removeOutboxItem(item.id).catch(() => {});
-          localDb.updateSessionStatus(payload.session.id, 'finished').catch(() => {});
-        } else {
-          failedItemsMap.set(item.id, {
-            attempts: item.attempts + 1,
-            lastError: result.error,
+            lastError: err?.message || 'Sync failed',
           });
           localDb
-            .updateOutboxStatus(item.id, 'failed', item.attempts + 1, result.error)
+            .updateOutboxStatus(item.id, 'failed', item.attempts + 1, err?.message || 'Sync failed')
             .catch(() => {});
         }
-      } catch (err: any) {
-        failedItemsMap.set(item.id, {
-          attempts: item.attempts + 1,
-          lastError: err?.message || 'Sync failed',
-        });
-        localDb
-          .updateOutboxStatus(item.id, 'failed', item.attempts + 1, err?.message || 'Sync failed')
-          .catch(() => {});
       }
-    }
 
-    // Atomic update: Preserve items enqueued in get().outbox while sync was running!
-    const latestOutbox = get().outbox;
-    const finalOutbox = latestOutbox
-      .filter((item) => !syncedItemIds.has(item.id))
-      .map((item) => {
-        const failureInfo = failedItemsMap.get(item.id);
-        if (failureInfo) {
-          return {
-            ...item,
-            attempts: failureInfo.attempts,
-            status: 'failed' as const,
-            lastError: failureInfo.lastError,
-          };
-        }
-        return item;
+      // Atomic update: Preserve items enqueued in get().outbox while sync was running!
+      const latestOutbox = get().outbox;
+      const finalOutbox = latestOutbox
+        .filter((item) => !syncedItemIds.has(item.id))
+        .map((item) => {
+          const failureInfo = failedItemsMap.get(item.id);
+          if (failureInfo) {
+            return {
+              ...item,
+              attempts: failureInfo.attempts,
+              status: 'failed' as const,
+              lastError: failureInfo.lastError,
+            };
+          }
+          return item;
+        });
+
+      const nowStr = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+
+      set({
+        isSyncing: false,
+        outbox: finalOutbox,
+        pendingCount: finalOutbox.length,
+        lastSyncedAt: syncedCount > 0 ? nowStr : get().lastSyncedAt,
       });
 
-    const nowStr = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+      await storage.setItem('hawem_outbox_v2', JSON.stringify(finalOutbox)).catch(() => {});
 
-    set({
-      isSyncing: false,
-      outbox: finalOutbox,
-      pendingCount: finalOutbox.length,
-      lastSyncedAt: syncedCount > 0 ? nowStr : get().lastSyncedAt,
-    });
-
-    await storage.setItem('hawem_outbox_v2', JSON.stringify(finalOutbox)).catch(() => {});
-
-    return {
-      success: finalOutbox.length === 0,
-      syncedCount,
-    };
+      return {
+        success: finalOutbox.length === 0,
+        syncedCount,
+      };
+    } finally {
+      // Whatever happened, the queue must be usable again
+      if (get().isSyncing) set({ isSyncing: false });
+    }
   },
 
   setWifiOnly: (wifiOnly) => {
     set({ wifiOnly });
+  },
+
+  discardFailed: () => {
+    const failed = get().outbox.filter((o) => o.lastError);
+    for (const o of failed) localDb.removeOutboxItem(o.id).catch(() => {});
+    const outbox = get().outbox.filter((o) => !o.lastError);
+    set({ outbox, pendingCount: outbox.length });
+    storage.setItem('hawem_outbox_v2', JSON.stringify(outbox)).catch(() => {});
   },
 
   clearOutbox: () => {

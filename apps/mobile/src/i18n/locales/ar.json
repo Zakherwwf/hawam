@@ -350,7 +350,17 @@
     "remove_body": "تُزال من هذا الهاتف. النسخة المرفوعة تبقى ضمن بيانات البحث.",
     "waiting_tag": "بالانتظار",
     "times_one": "×{{count}}",
-    "times_other": "×{{count}}"
+    "times_other": "×{{count}}",
+    "waiting_error": "فشلت آخر محاولة: {{error}}",
+    "uploaded_n_one": "رُفع {{count}} سجل",
+    "uploaded_n_other": "رُفعت {{count}} سجلات",
+    "still_waiting_one": "{{count}} سجل ما زال بالانتظار",
+    "still_waiting_other": "{{count}} سجلات ما زالت بالانتظار",
+    "reason": "السبب: {{error}}. تبقى آمنة على الهاتف وتُعاد المحاولة تلقائيًا.",
+    "offline_reason": "قد يكون الهاتف غير متصل. تبقى آمنة وتُعاد المحاولة تلقائيًا.",
+    "remove_stuck": "إزالة الرفعات العالقة",
+    "remove_stuck_title": "إزالة الرفعات التي تفشل؟",
+    "remove_stuck_body": "تُحذف من الهاتف ولن تصل إلى الخادم. السجلات السليمة تبقى في الطابور."
   },
   "ui_profile": {
     "role_volunteer": "متطوّع",
@@ -585,7 +595,10 @@
     "fewer_people": "شخص أقل",
     "more_people": "شخص أكثر",
     "observers_value_one": "{{count}} شخص",
-    "observers_value_other": "{{count}} أشخاص"
+    "observers_value_other": "{{count}} أشخاص",
+    "discard": "تجاهل الجولة",
+    "discard_title": "تجاهل هذه الجولة المتوقفة؟",
+    "discard_body": "يُحذف مسارها وأي حيوانات سُجّلت فيها من هذا الهاتف."
   },
   "ui_routes_v3": {
     "title": "المسارات",

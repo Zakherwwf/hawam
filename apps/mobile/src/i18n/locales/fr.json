@@ -396,7 +396,17 @@
     "remove_body": "Elle est retirée de ce téléphone. Une copie déjà envoyée reste dans les données de recherche.",
     "waiting_tag": "En attente",
     "times_one": "×{{count}}",
-    "times_other": "×{{count}}"
+    "times_other": "×{{count}}",
+    "waiting_error": "Dernier essai échoué : {{error}}",
+    "uploaded_n_one": "{{count}} relevé envoyé",
+    "uploaded_n_other": "{{count}} relevés envoyés",
+    "still_waiting_one": "{{count}} relevé encore en attente",
+    "still_waiting_other": "{{count}} relevés encore en attente",
+    "reason": "Raison : {{error}}. Ils restent sur ce téléphone et réessaient automatiquement.",
+    "offline_reason": "Le téléphone est peut-être hors ligne. Ils restent en sécurité et réessaient automatiquement.",
+    "remove_stuck": "Retirer les envois bloqués",
+    "remove_stuck_title": "Retirer les envois qui échouent ?",
+    "remove_stuck_body": "Ils sont supprimés de ce téléphone et n'atteindront pas le serveur. Les autres restent en file."
   },
   "ui_profile": {
     "role_volunteer": "Bénévole",
@@ -631,7 +641,10 @@
     "fewer_people": "Une personne de moins",
     "more_people": "Une personne de plus",
     "observers_value_one": "{{count}} personne",
-    "observers_value_other": "{{count}} personnes"
+    "observers_value_other": "{{count}} personnes",
+    "discard": "Abandonner le relevé",
+    "discard_title": "Abandonner ce relevé en pause ?",
+    "discard_body": "Son trajet et les animaux notés sont retirés de ce téléphone."
   },
   "ui_routes_v3": {
     "title": "Itinéraires",

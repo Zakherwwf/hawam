@@ -233,6 +233,7 @@ export function ProgressTab({
         </Text>
         <WeekBars
           values={days.km}
+          active={days.surveys.map((n) => n > 0)}
           labels={dayLabels}
           highlight={days.today}
           label={t('ui_progress_v3.week_bars', { km: fmtKm(weekKm) })}

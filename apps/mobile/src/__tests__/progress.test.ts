@@ -172,6 +172,27 @@ test('weekDays: km per day this week, Monday first', async () => {
     now
   );
   assert.deepEqual(w.km, [1.5, 0, 2, 0, 0, 0, 0]);
+  assert.deepEqual(w.surveys, [2, 0, 1, 0, 0, 0, 0]);
   assert.equal(w.today, 2);
   assert.equal(w.minutes[0], 20);
+});
+
+test('weekDays: a short walk still marks its day as surveyed', async () => {
+  const { weekDays } = await import('../features/gamification/progress.ts');
+  const now = new Date(2026, 8, 30, 12);
+  const w = weekDays(
+    [
+      {
+        start_time: new Date(2026, 8, 29, 9).toISOString(),
+        end_time: null,
+        distance_km: 0.02,
+        duration_min: 3,
+        complete_session: true,
+        protocol: 'stationary_point',
+      },
+    ],
+    now
+  );
+  assert.equal(w.surveys[1], 1);
+  assert.equal(w.km[1], 0.02);
 });

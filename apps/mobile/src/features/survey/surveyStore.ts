@@ -510,6 +510,10 @@ export const useSurveyStore = create<SurveyState>((set, get) => ({
   },
 
   resetSurvey: () => {
+    // Close the local record too, or crash recovery revives it on next launch
+    const { sessionId } = get();
+    if (sessionId)
+      localDb.updateSessionStatus(sessionId, 'abandoned', new Date().toISOString()).catch(() => {});
     set({
       sessionId: null,
       status: 'idle',
@@ -532,6 +536,16 @@ export const useSurveyStore = create<SurveyState>((set, get) => ({
       if (unfinished) {
         const rawPoints = await localDb.getTrackPointsBySession(unfinished.id);
         const obsList = await localDb.getObservationsBySession(unfinished.id);
+        // Only a walk that recorded something, recently, is worth resuming.
+        // A session opened and left while waiting for GPS is closed instead.
+        const ageH = (Date.now() - new Date(unfinished.startedAt).getTime()) / 3600000;
+        if ((rawPoints.length === 0 && obsList.length === 0) || ageH > 24) {
+          await localDb
+            .updateSessionStatus(unfinished.id, 'abandoned', new Date().toISOString())
+            .catch(() => {});
+          await storage.removeItem('hawem_survey_draft').catch(() => {});
+          return false;
+        }
 
         const activeTrack: [number, number][] = rawPoints
           .filter((p) => !p.rejectedReason)
@@ -592,20 +606,8 @@ export const useSurveyStore = create<SurveyState>((set, get) => ({
 
     // Fallback: check legacy AsyncStorage draft
     try {
-      const raw = await storage.getItem('hawem_survey_draft');
-      if (raw) {
-        const draft = JSON.parse(raw);
-        if (draft && draft.startedAt) {
-          set({
-            sessionId: draft.sessionId || null,
-            status: 'paused',
-            protocol: draft.protocol || 'transect',
-            selectedRouteId: draft.selectedRouteId || null,
-            startedAt: draft.startedAt,
-          });
-          return true;
-        }
-      }
+      // An old draft carries no track or animals, so nothing can be resumed
+      await storage.removeItem('hawem_survey_draft');
     } catch {}
     return false;
   },

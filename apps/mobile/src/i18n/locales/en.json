@@ -1401,7 +1401,17 @@
     "remove_body": "It is removed from this phone. A copy already uploaded stays with the research data.",
     "waiting_tag": "Waiting",
     "times_one": "×{{count}}",
-    "times_other": "×{{count}}"
+    "times_other": "×{{count}}",
+    "waiting_error": "Last try failed: {{error}}",
+    "uploaded_n_one": "{{count}} record uploaded",
+    "uploaded_n_other": "{{count}} records uploaded",
+    "still_waiting_one": "{{count}} record still waiting",
+    "still_waiting_other": "{{count}} records still waiting",
+    "reason": "Reason: {{error}}. They stay safe on this phone and retry automatically.",
+    "offline_reason": "The phone may be offline. They stay safe and retry automatically.",
+    "remove_stuck": "Remove stuck uploads",
+    "remove_stuck_title": "Remove the uploads that keep failing?",
+    "remove_stuck_body": "They are deleted from this phone and will not reach the server. Records that are fine stay queued."
   },
   "ui_profile": {
     "role_volunteer": "Volunteer",
@@ -1636,7 +1646,10 @@
     "fewer_people": "One person fewer",
     "more_people": "One person more",
     "observers_value_one": "{{count}} person",
-    "observers_value_other": "{{count}} people"
+    "observers_value_other": "{{count}} people",
+    "discard": "Discard walk",
+    "discard_title": "Discard this paused walk?",
+    "discard_body": "Its track and any animals logged on it are removed from this phone."
   },
   "ui_routes_v3": {
     "title": "Routes",
