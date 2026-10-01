@@ -1,7 +1,8 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { storage } from '../services/storageAdapter.ts';
-import { useSyncStore, sanitizeBundleUuids } from '../features/sync/syncStore.ts';
+import { useSyncStore, sanitizeBundleUuids, stableUuid } from '../features/sync/syncStore.ts';
+import { localDb } from '../db/localDb.ts';
 import { useSurveyStore } from '../features/survey/surveyStore.ts';
 import type { SurveyBundlePayload } from '../services/supabase.ts';
 
@@ -29,16 +30,16 @@ test('surveyIntegrity: addTrackPoint filters out impossible vehicle speeds (>15 
   useSurveyStore.setState({ status: 'recording' });
 
   // Point 1: starting position
-  store.addTrackPoint(36.8000, 10.1800, 3.0, 1.2);
+  store.addTrackPoint(36.8, 10.18, 3.0, 1.2);
   const initialDistance = useSurveyStore.getState().distanceMeters;
 
   // Point 2: legitimate walking step (approx 5 meters at 1.2 m/s)
-  store.addTrackPoint(36.80005, 10.1800, 3.0, 1.2);
+  store.addTrackPoint(36.80005, 10.18, 3.0, 1.2);
   const walkingDistance = useSurveyStore.getState().distanceMeters;
   assert.ok(walkingDistance > initialDistance, 'Valid walking speed should increase distance');
 
   // Point 3: impossible speed jump (e.g. car / teleport at 25 m/s = 90 km/h)
-  store.addTrackPoint(36.8200, 10.1800, 5.0, 25.0);
+  store.addTrackPoint(36.82, 10.18, 5.0, 25.0);
   const afterVehicleJumpDistance = useSurveyStore.getState().distanceMeters;
 
   // The vehicle jump distance should NOT be added to distanceMeters
@@ -55,7 +56,7 @@ test('surveyIntegrity: logDetection preserves Body Condition Score (1-5) and obs
   store.startSurvey('transect');
   useSurveyStore.setState({
     status: 'recording',
-    currentLocation: { lat: 36.8500, lon: 10.2000, accuracy: 2.5, heading: 90 },
+    currentLocation: { lat: 36.85, lon: 10.2, accuracy: 2.5, heading: 90 },
   });
 
   const detection = store.logDetection({
@@ -65,16 +66,16 @@ test('surveyIntegrity: logDetection preserves Body Condition Score (1-5) and obs
     bearing_deg: 90,
     body_condition_score: 2, // Underweight
     notes: 'Ear tipped tabby cat near olive tree',
-    observer_lat: 36.8500,
-    observer_lon: 10.2000,
+    observer_lat: 36.85,
+    observer_lon: 10.2,
     gps_accuracy_m: 2.5,
   });
 
   assert.equal(detection.species, 'cat');
   assert.equal(detection.group_size, 2);
   assert.equal(detection.body_condition_score, 2, 'BCS must be stored accurately as 2');
-  assert.equal(detection.observer_lat, 36.8500);
-  assert.equal(detection.observer_lon, 10.2000);
+  assert.equal(detection.observer_lat, 36.85);
+  assert.equal(detection.observer_lon, 10.2);
   assert.equal(detection.bearing_deg, 90);
   assert.ok(detection.animal_lat !== 0, 'Animal coordinate must be computed');
 });
@@ -100,7 +101,7 @@ test('surveyIntegrity: syncStore preserves cold-start items and handles outbox q
         species: 'cat',
         group_size: 1,
         body_condition_score: 4,
-        location: { type: 'Point', coordinates: [10.18, 36.80] },
+        location: { type: 'Point', coordinates: [10.18, 36.8] },
       },
     ],
   };
@@ -110,12 +111,11 @@ test('surveyIntegrity: syncStore preserves cold-start items and handles outbox q
   assert.equal(useSyncStore.getState().outbox.length, 1);
   assert.equal(useSyncStore.getState().outbox[0].payload.session.id, 'session-cold-1');
 
-  // Verify persistence in AsyncStorage
-  const raw = await storage.getItem('hawem_outbox_v2');
-  assert.ok(raw, 'Outbox must be saved to storage');
-  const parsed = JSON.parse(raw);
-  assert.equal(parsed.length, 1);
-  assert.equal(parsed[0].payload.session.id, 'session-cold-1');
+  // Persisted in the single SQLite queue, never in a second AsyncStorage copy
+  const rows = await localDb.getAllOutbox();
+  assert.equal(rows.length, 1);
+  assert.equal(rows[0].sessionId, 'session-cold-1');
+  assert.equal(await storage.getItem('hawem_outbox_v2'), null);
 
   // Simulate cold boot: clear in-memory state and reload from storage
   useSyncStore.setState({ outbox: [], pendingCount: 0 });
@@ -137,7 +137,7 @@ test('surveyIntegrity: sanitizeBundleUuids converts legacy timestamp IDs to comp
         id: 'sighting-1790280000000',
         observed_at: '2026-09-26T00:00:00.000Z',
         species: 'dog',
-        location: { type: 'Point', coordinates: [10.18, 36.80] },
+        location: { type: 'Point', coordinates: [10.18, 36.8] },
       },
     ],
     photos: [
@@ -160,13 +160,60 @@ test('surveyIntegrity: sanitizeBundleUuids converts legacy timestamp IDs to comp
   assert.equal(sanitized.photos![0].observation_id, sanitized.observations[0].id);
 
   // Verify location sanitization for remote generalize_point function
-  assert.equal(sanitized.observations[0].location.latitude, 36.80);
+  assert.equal(sanitized.observations[0].location.latitude, 36.8);
   assert.equal(sanitized.observations[0].location.longitude, 10.18);
   assert.equal(sanitized.observations[0].location.type, 'Point');
-  assert.deepEqual(sanitized.observations[0].location.coordinates, [10.18, 36.80]);
+  assert.deepEqual(sanitized.observations[0].location.coordinates, [10.18, 36.8]);
   assert.ok(sanitized.observations[0].observer_location, 'observer_location must be present');
-  assert.equal(sanitized.observations[0].observer_location?.latitude, 36.80);
+  assert.equal(sanitized.observations[0].observer_location?.latitude, 36.8);
   assert.equal(sanitized.observations[0].observer_location?.longitude, 10.18);
 });
 
+test('surveyIntegrity: a legacy record keeps the same ids on every retry', () => {
+  const legacy: SurveyBundlePayload = {
+    session: { id: 'incidental-sess-1790280000000', start_time: '2026-09-26T00:00:00.000Z' },
+    observations: [
+      {
+        id: 'sighting-1790280000000',
+        observed_at: '2026-09-26T00:00:00.000Z',
+        species: 'cat',
+        location: { type: 'Point', coordinates: [10.18, 36.8] },
+      },
+    ],
+    photos: [
+      {
+        id: 'photo-1',
+        observation_id: 'sighting-1790280000000',
+        storage_path: 'file:///a.jpg',
+        angle: 'other',
+        taken_at: '2026-09-26T00:00:00.000Z',
+      },
+    ],
+  };
+  const a = sanitizeBundleUuids(legacy);
+  const b = sanitizeBundleUuids(legacy);
+  assert.equal(a.session.id, b.session.id);
+  assert.equal(a.observations[0].id, b.observations[0].id);
+  assert.equal(a.photos![0].id, b.photos![0].id);
+  assert.notEqual(stableUuid('x'), stableUuid('y'));
+});
 
+test('surveyIntegrity: an old AsyncStorage queue is moved once, not copied back each launch', async () => {
+  useSyncStore.getState().clearOutbox();
+  const item = {
+    id: 'outbox-old-1',
+    payload: { session: { id: 'old-1', start_time: '2026-09-25T10:00:00Z' } },
+    created_at: '2026-09-25T10:00:00Z',
+    status: 'pending',
+    attempts: 0,
+  };
+  await storage.setItem('hawem_outbox_v2', JSON.stringify([item]));
+  await useSyncStore.getState().loadOutbox();
+  assert.equal(useSyncStore.getState().outbox.length, 1);
+  assert.equal(await storage.getItem('hawem_outbox_v2'), null, 'legacy copy removed');
+
+  // Uploaded (removed from SQLite): the next launch must not bring it back
+  await localDb.removeOutboxItem('outbox-old-1');
+  await useSyncStore.getState().loadOutbox();
+  assert.equal(useSyncStore.getState().outbox.length, 0);
+});

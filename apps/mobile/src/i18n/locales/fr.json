@@ -406,7 +406,9 @@
     "offline_reason": "Le téléphone est peut-être hors ligne. Ils restent en sécurité et réessaient automatiquement.",
     "remove_stuck": "Retirer les envois bloqués",
     "remove_stuck_title": "Retirer les envois qui échouent ?",
-    "remove_stuck_body": "Ils sont supprimés de ce téléphone et n'atteindront pas le serveur. Les autres restent en file."
+    "remove_stuck_body": "Ils sont supprimés de ce téléphone et n'atteindront pas le serveur. Les autres restent en file.",
+    "already_uploaded_one": "{{count}} relevé était déjà envoyé depuis un autre compte",
+    "already_uploaded_other": "{{count}} relevés étaient déjà envoyés depuis un autre compte"
   },
   "ui_profile": {
     "role_volunteer": "Bénévole",

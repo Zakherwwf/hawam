@@ -140,13 +140,16 @@ export function SightingsTab({
             onPress={async () => {
               const res = await useSyncStore.getState().triggerSync();
               const left = useSyncStore.getState().pendingCount;
+              if (res.alreadyUploaded > 0)
+                useToast.getState().show({
+                  title: t('ui_sightings_v3.already_uploaded', { count: res.alreadyUploaded }),
+                  icon: 'checkCircle',
+                });
               if (res.syncedCount > 0)
-                useToast
-                  .getState()
-                  .show({
-                    title: t('ui_sightings_v3.uploaded_n', { count: res.syncedCount }),
-                    icon: 'upload',
-                  });
+                useToast.getState().show({
+                  title: t('ui_sightings_v3.uploaded_n', { count: res.syncedCount }),
+                  icon: 'upload',
+                });
               if (left > 0) {
                 const err = useSyncStore.getState().outbox.find((o) => o.lastError)?.lastError;
                 Alert.alert(

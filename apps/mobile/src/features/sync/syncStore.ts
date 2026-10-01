@@ -18,9 +18,37 @@ import {
   type SurveyBundlePayload,
 } from '../../services/supabase.ts';
 import { isBucketPath, uploadAnimalPhoto } from '../../services/storageService.ts';
-import { generateUUID } from '../../utils/uuid.ts';
 
 const UUID_REGEX = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+
+/**
+ * A UUID derived from an old non-UUID id (cyrb128 hash). The same record must
+ * get the same id on every retry; a random one made each retry a new walk on
+ * the server.
+ */
+export function stableUuid(legacyId: string): string {
+  let h1 = 1779033703,
+    h2 = 3144134277,
+    h3 = 1013904242,
+    h4 = 2773480762;
+  for (let i = 0; i < legacyId.length; i++) {
+    const k = legacyId.charCodeAt(i);
+    h1 = h2 ^ Math.imul(h1 ^ k, 597399067);
+    h2 = h3 ^ Math.imul(h2 ^ k, 2869860233);
+    h3 = h4 ^ Math.imul(h3 ^ k, 951274213);
+    h4 = h1 ^ Math.imul(h4 ^ k, 2716044179);
+  }
+  h1 = Math.imul(h3 ^ (h1 >>> 18), 597399067);
+  h2 = Math.imul(h4 ^ (h2 >>> 22), 2869860233);
+  h3 = Math.imul(h1 ^ (h3 >>> 17), 951274213);
+  h4 = Math.imul(h2 ^ (h4 >>> 19), 2716044179);
+  h1 ^= h2 ^ h3 ^ h4;
+  h2 ^= h1;
+  h3 ^= h1;
+  h4 ^= h1;
+  const hex = [h1, h2, h3, h4].map((h) => (h >>> 0).toString(16).padStart(8, '0')).join('');
+  return `${hex.slice(0, 8)}-${hex.slice(8, 12)}-8${hex.slice(13, 16)}-${hex.slice(16, 20)}-${hex.slice(20)}`;
+}
 
 export function sanitizeBundleUuids(payload: SurveyBundlePayload): SurveyBundlePayload {
   const p: SurveyBundlePayload = {
@@ -31,7 +59,7 @@ export function sanitizeBundleUuids(payload: SurveyBundlePayload): SurveyBundleP
   };
 
   if (p.session && !UUID_REGEX.test(p.session.id)) {
-    p.session.id = generateUUID();
+    p.session.id = stableUuid(p.session.id);
   }
 
   if (p.observations && p.observations.length > 0) {
@@ -39,7 +67,7 @@ export function sanitizeBundleUuids(payload: SurveyBundlePayload): SurveyBundleP
       let obsId = obs.id;
       if (!UUID_REGEX.test(obsId)) {
         const oldId = obs.id;
-        const newObsId = generateUUID();
+        const newObsId = stableUuid(oldId);
         if (p.photos) {
           p.photos.forEach((ph) => {
             if (ph.observation_id === oldId) {
@@ -120,7 +148,7 @@ export function sanitizeBundleUuids(payload: SurveyBundlePayload): SurveyBundleP
   if (p.photos && p.photos.length > 0) {
     p.photos = p.photos.map((ph) => {
       if (!UUID_REGEX.test(ph.id)) {
-        return { ...ph, id: generateUUID() };
+        return { ...ph, id: stableUuid(ph.id) };
       }
       return ph;
     });
@@ -148,7 +176,8 @@ interface SyncState {
   // Actions
   loadOutbox: () => Promise<void>;
   enqueueSurvey: (bundle: SurveyBundlePayload) => Promise<void>;
-  triggerSync: () => Promise<{ success: boolean; syncedCount: number }>;
+  /** alreadyUploaded: records the server already had from another account */
+  triggerSync: () => Promise<{ success: boolean; syncedCount: number; alreadyUploaded: number }>;
   setWifiOnly: (enabled: boolean) => void;
   clearOutbox: () => void;
   /** Drop only the queued uploads that keep failing; nothing else is touched */
@@ -187,58 +216,34 @@ export const useSyncStore = create<SyncState>((set, get) => ({
 
   loadOutbox: async () => {
     try {
+      // Moves any queue an older build kept in AsyncStorage into SQLite, once
       await localDb.migrateFromAsyncStorage().catch(() => {});
       const dbItems = await localDb.getAllOutbox().catch(() => []);
-      if (dbItems.length > 0) {
-        const outboxList: OutboxItem[] = dbItems
-          .filter((i) => i.status !== 'synced')
-          .map((i) => {
-            let payload: SurveyBundlePayload;
-            try {
-              payload = JSON.parse(i.payloadJson);
-            } catch {
-              payload = { session: { id: i.sessionId } } as any;
-            }
-            return {
-              id: i.id,
-              payload,
-              created_at: i.createdAt,
-              status: i.status as any,
-              attempts: i.attempts,
-              lastError: i.lastError ?? undefined,
-            };
-          });
-        set({ outbox: outboxList, pendingCount: outboxList.length });
-        return;
-      }
-
-      const stored = await storage.getItem('hawem_outbox_v2');
-      if (stored) {
-        const parsed: OutboxItem[] = JSON.parse(stored);
-        if (Array.isArray(parsed)) {
-          set({ outbox: parsed, pendingCount: parsed.length });
-        }
-      }
+      const outboxList: OutboxItem[] = dbItems
+        .filter((i) => i.status !== 'synced')
+        .map((i) => {
+          let payload: SurveyBundlePayload;
+          try {
+            payload = JSON.parse(i.payloadJson);
+          } catch {
+            payload = { session: { id: i.sessionId } } as any;
+          }
+          return {
+            id: i.id,
+            payload,
+            created_at: i.createdAt,
+            status: i.status as any,
+            attempts: i.attempts,
+            lastError: i.lastError ?? undefined,
+          };
+        });
+      set({ outbox: outboxList, pendingCount: outboxList.length });
     } catch (err) {
       console.warn('[syncStore] Failed loading outbox from storage:', err);
     }
   },
 
   enqueueSurvey: async (bundle: SurveyBundlePayload) => {
-    // If cold start or store not loaded yet, pull existing items first to prevent overwriting
-    let currentOutbox = get().outbox;
-    if (currentOutbox.length === 0) {
-      try {
-        const stored = await storage.getItem('hawem_outbox_v2');
-        if (stored) {
-          const parsed = JSON.parse(stored);
-          if (Array.isArray(parsed) && parsed.length > 0) {
-            currentOutbox = parsed;
-          }
-        }
-      } catch {}
-    }
-
     const newItem: OutboxItem = {
       id: `outbox-${bundle.session.id}`,
       payload: bundle,
@@ -260,13 +265,12 @@ export const useSyncStore = create<SyncState>((set, get) => ({
       .catch(() => {});
 
     // Deduplicate against duplicate submission of identical session ID
-    const deduplicated = currentOutbox.filter(
+    const deduplicated = get().outbox.filter(
       (item) => item.payload.session.id !== bundle.session.id
     );
     const updated = [...deduplicated, newItem];
 
     set({ outbox: updated, pendingCount: updated.length });
-    await storage.setItem('hawem_outbox_v2', JSON.stringify(updated)).catch(() => {});
 
     // Trigger immediate background sync
     get()
@@ -275,19 +279,20 @@ export const useSyncStore = create<SyncState>((set, get) => ({
   },
 
   triggerSync: async () => {
-    const { outbox, isSyncing } = get();
-    if (isSyncing || outbox.length === 0) {
-      return { success: true, syncedCount: 0 };
-    }
-
-    // Guests keep their bundles queued until they sign in
-    if (!(await hasAuthSession())) {
-      return { success: false, syncedCount: 0 };
-    }
-
+    // The only uploader: the background worker calls this too, so a record
+    // is never sent twice at once
+    if (get().isSyncing) return { success: true, syncedCount: 0, alreadyUploaded: 0 };
     set({ isSyncing: true });
     try {
+      await get().loadOutbox();
+      const outbox = get().outbox;
+      if (outbox.length === 0) return { success: true, syncedCount: 0, alreadyUploaded: 0 };
+
+      // Guests keep their bundles queued until they sign in
+      if (!(await hasAuthSession())) return { success: false, syncedCount: 0, alreadyUploaded: 0 };
+
       const syncedItemIds = new Set<string>();
+      let alreadyUploaded = 0;
       const failedItemsMap = new Map<string, { attempts: number; lastError?: string }>();
       let syncedCount = 0;
 
@@ -358,6 +363,12 @@ export const useSyncStore = create<SyncState>((set, get) => ({
             syncedItemIds.add(item.id);
             localDb.removeOutboxItem(item.id).catch(() => {});
             localDb.updateSessionStatus(payload.session.id, 'finished').catch(() => {});
+          } else if (/belongs to another observer/.test(result.error ?? '')) {
+            // The server already holds this exact walk, uploaded while another
+            // account was signed in on this phone. Nothing is lost by letting go.
+            alreadyUploaded++;
+            syncedItemIds.add(item.id);
+            localDb.removeOutboxItem(item.id).catch(() => {});
           } else {
             failedItemsMap.set(item.id, {
               attempts: item.attempts + 1,
@@ -404,11 +415,10 @@ export const useSyncStore = create<SyncState>((set, get) => ({
         lastSyncedAt: syncedCount > 0 ? nowStr : get().lastSyncedAt,
       });
 
-      await storage.setItem('hawem_outbox_v2', JSON.stringify(finalOutbox)).catch(() => {});
-
       return {
         success: finalOutbox.length === 0,
         syncedCount,
+        alreadyUploaded,
       };
     } finally {
       // Whatever happened, the queue must be usable again
@@ -425,7 +435,6 @@ export const useSyncStore = create<SyncState>((set, get) => ({
     for (const o of failed) localDb.removeOutboxItem(o.id).catch(() => {});
     const outbox = get().outbox.filter((o) => !o.lastError);
     set({ outbox, pendingCount: outbox.length });
-    storage.setItem('hawem_outbox_v2', JSON.stringify(outbox)).catch(() => {});
   },
 
   clearOutbox: () => {

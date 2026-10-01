@@ -1411,7 +1411,9 @@
     "offline_reason": "The phone may be offline. They stay safe and retry automatically.",
     "remove_stuck": "Remove stuck uploads",
     "remove_stuck_title": "Remove the uploads that keep failing?",
-    "remove_stuck_body": "They are deleted from this phone and will not reach the server. Records that are fine stay queued."
+    "remove_stuck_body": "They are deleted from this phone and will not reach the server. Records that are fine stay queued.",
+    "already_uploaded_one": "{{count}} record was already uploaded from another account",
+    "already_uploaded_other": "{{count}} records were already uploaded from another account"
   },
   "ui_profile": {
     "role_volunteer": "Volunteer",

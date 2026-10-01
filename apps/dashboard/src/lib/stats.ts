@@ -83,6 +83,7 @@ export const REASON_LABEL: Record<string, string> = {
   teleport: 'GPS jump',
   average_speed: 'Too fast on average',
   implausible_density: 'Implausible count',
+  duplicate_upload: 'Uploaded twice',
 };
 
 export const PROTOCOL_LABEL: Record<string, string> = {
