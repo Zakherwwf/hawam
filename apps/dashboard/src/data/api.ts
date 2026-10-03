@@ -82,7 +82,15 @@ export interface UserRow {
   created_at: string;
   preferred_language?: string | null;
   consent_accepted_at?: string | null;
+  /** From user_directory(): researchers and admins only */
+  email?: string | null;
+  last_sign_in_at?: string | null;
+  provider?: string | null;
 }
+
+/** display_name, else the email before the @, else a neutral label. */
+export const personName = (u?: Pick<UserRow, 'display_name' | 'email'> | null) =>
+  u?.display_name?.trim() || u?.email?.split('@')[0] || 'Unnamed volunteer';
 
 export interface RouteRow {
   id: string;
@@ -241,16 +249,40 @@ export const getLeaders = async () =>
     ? (await loadPreview()).previewLeaders
     : ok<Leader[]>(await supabase.from('effort_leaderboard').select('*').limit(1000));
 
-export const getUsers = async () =>
-  PREVIEW
-    ? (await loadPreview()).previewUsers
-    : ok<UserRow[]>(
-        await supabase
-          .from('users')
-          .select('id, display_name, role, created_at, preferred_language, consent_accepted_at')
-          .order('created_at', { ascending: false })
-          .limit(5000)
-      );
+export async function getUsers(): Promise<UserRow[]> {
+  if (PREVIEW) return (await loadPreview()).previewUsers;
+  const users = ok<UserRow[]>(
+    await supabase
+      .from('users')
+      .select('id, display_name, role, created_at, preferred_language, consent_accepted_at')
+      .order('created_at', { ascending: false })
+      .limit(5000)
+  );
+  // Emails come from a researcher-only function (display_names migration);
+  // without it the portal still works with display names alone.
+  const dir = await supabase.rpc('user_directory');
+  if (dir.error || !Array.isArray(dir.data)) return users;
+  const byId = new Map(
+    (
+      dir.data as {
+        id: string;
+        email: string | null;
+        last_sign_in_at: string | null;
+        provider: string | null;
+      }[]
+    ).map((d) => [d.id, d])
+  );
+  return users.map((u) => ({
+    ...u,
+    ...(byId.get(u.id)
+      ? {
+          email: byId.get(u.id)!.email,
+          last_sign_in_at: byId.get(u.id)!.last_sign_in_at,
+          provider: byId.get(u.id)!.provider,
+        }
+      : {}),
+  }));
+}
 
 export async function setRole(userId: string, role: Role) {
   if (PREVIEW) {

@@ -1,6 +1,6 @@
 import { useMemo } from 'react';
 import { Search, Users } from 'lucide-react';
-import type { Role } from '../data/api';
+import { personName, type Role } from '../data/api';
 import { useCore } from '../data/portal';
 import { fmtAgo, fmtDate, fmtInt, fmtKm } from '../lib/format';
 import { href, setParam } from '../lib/router';
@@ -115,12 +115,12 @@ export function People({ params }: PageProps) {
     const list = (core.users.data ?? []).filter(
       (u) =>
         (role === 'all' || u.role === role) &&
-        (!n || (u.display_name ?? '').toLowerCase().includes(n))
+        (!n || personName(u).toLowerCase().includes(n) || (u.email ?? '').toLowerCase().includes(n))
     );
     const s = (id: string) => stats.get(id);
     return list.sort((a, b) =>
       sort === 'name'
-        ? (a.display_name ?? '').localeCompare(b.display_name ?? '')
+        ? personName(a).localeCompare(personName(b))
         : sort === 'walks'
           ? (s(b.id)?.walks ?? 0) - (s(a.id)?.walks ?? 0)
           : sort === 'recent'
@@ -161,7 +161,7 @@ export function People({ params }: PageProps) {
             autoComplete="off"
             defaultValue={q}
             onChange={(e) => setParam('q', e.target.value || undefined)}
-            placeholder="Search by name…"
+            placeholder="Search by name or email…"
             className={`${inputClass} w-full h-10 ps-11 rounded-full bg-surface border-0 shadow-pill`}
           />
         </div>
@@ -217,11 +217,16 @@ export function People({ params }: PageProps) {
                   href={href(`people/${u.id}`)}
                   className="group flex flex-col items-center text-center bg-surface rounded-card shadow-card px-5 pt-6 pb-5 hover:-translate-y-0.5 transition-transform duration-200 h-full"
                 >
-                  <Avatar id={u.id} name={u.display_name} size={64} />
+                  <Avatar id={u.id} name={personName(u)} size={64} />
                   <h2 className="text-[17px] font-semibold mt-3 truncate max-w-full">
-                    {u.display_name || 'Unnamed volunteer'}
+                    {personName(u)}
                   </h2>
                   <p className="text-[13px] text-ink2">{ROLE_LABEL[u.role]}</p>
+                  {u.email ? (
+                    <p className="text-[12px] text-ink3 truncate max-w-full" translate="no">
+                      {u.email}
+                    </p>
+                  ) : null}
                   <div className="flex items-end gap-1 h-8 mt-4" aria-hidden>
                     {(s?.recentKm ?? Array(8).fill(0)).map((v, i) => (
                       <span
@@ -267,6 +272,7 @@ export function People({ params }: PageProps) {
             <thead>
               <tr>
                 <th className={th}>Name</th>
+                <th className={th}>Email</th>
                 <th className={th}>Role</th>
                 <th className={`${th} text-end`}>km</th>
                 <th className={`${th} text-end`}>Walks</th>
@@ -288,9 +294,12 @@ export function People({ params }: PageProps) {
                         href={href(`people/${u.id}`)}
                         className="flex items-center gap-2.5 font-medium hover:underline"
                       >
-                        <Avatar id={u.id} name={u.display_name} size={30} />
-                        {u.display_name || 'Unnamed volunteer'}
+                        <Avatar id={u.id} name={personName(u)} size={30} />
+                        {personName(u)}
                       </a>
+                    </td>
+                    <td className={`${td} text-ink2 max-w-[240px] truncate`} translate="no">
+                      {u.email ?? '-'}
                     </td>
                     <td className={`${td} text-ink2`}>{ROLE_LABEL[u.role]}</td>
                     <td className={tdNum}>{fmtKm(s?.km ?? 0)}</td>

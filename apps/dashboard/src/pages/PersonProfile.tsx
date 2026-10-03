@@ -1,6 +1,6 @@
 import { useMemo, useState } from 'react';
 import { ChevronLeft, Users } from 'lucide-react';
-import { setRole, type Role } from '../data/api';
+import { personName, setRole, type Role } from '../data/api';
 import { useAnimals, useCore, useTracks } from '../data/portal';
 import { invalidate } from '../data/useData';
 import { compliance, parseTrack, previousVisitOf } from '../lib/compliance';
@@ -145,7 +145,7 @@ export function PersonProfile({ id, me }: PageProps) {
       await core.users.reload();
       setMessage({
         tone: 'accent',
-        text: `${user.display_name || 'This person'} is now ${ROLE_LABEL[pendingRole].toLowerCase()}.`,
+        text: `${personName(user)} is now ${ROLE_LABEL[pendingRole].toLowerCase()}.`,
       });
     } catch (e) {
       setMessage({
@@ -173,10 +173,10 @@ export function PersonProfile({ id, me }: PageProps) {
       ) : null}
       <Card className="p-6 mb-4">
         <div className="flex flex-col md:flex-row md:items-center gap-5">
-          <Avatar id={user.id} name={user.display_name} size={88} />
+          <Avatar id={user.id} name={personName(user)} size={88} />
           <div className="flex-1 min-w-0">
             <h1 className="text-[34px] leading-[1.1] font-bold tracking-[-0.02em] truncate">
-              {user.display_name || 'Unnamed volunteer'}
+              {personName(user)}
             </h1>
             <div className="flex flex-wrap items-center gap-2 mt-2">
               <Badge
@@ -192,6 +192,23 @@ export function PersonProfile({ id, me }: PageProps) {
                 {s?.last ? `, last surveyed ${fmtAgo(s.last)}` : ', no surveys yet'}
               </span>
             </div>
+            {user.email ? (
+              <p className="text-[14px] mt-1.5">
+                <a
+                  href={`mailto:${user.email}`}
+                  className="text-accent dark:text-lime font-medium hover:underline"
+                  translate="no"
+                >
+                  {user.email}
+                </a>
+                <span className="text-ink3">
+                  {user.provider
+                    ? `, signs in with ${user.provider === 'google' ? 'Google' : user.provider === 'email' ? 'email and password' : user.provider}`
+                    : ''}
+                  {user.last_sign_in_at ? `, last signed in ${fmtAgo(user.last_sign_in_at)}` : ''}
+                </span>
+              </p>
+            ) : null}
           </div>
           {isAdmin && user.id !== me.id ? (
             <label className="flex flex-col gap-1 text-[12px] text-ink2">
@@ -437,7 +454,7 @@ export function PersonProfile({ id, me }: PageProps) {
       <Dialog
         open={!!pendingRole}
         onClose={() => setPendingRole(null)}
-        title={`Make ${user.display_name || 'this person'} ${pendingRole ? ROLE_LABEL[pendingRole].toLowerCase() : ''}?`}
+        title={`Make ${personName(user)} ${pendingRole ? ROLE_LABEL[pendingRole].toLowerCase() : ''}?`}
         actions={
           <>
             <Button kind="ghost" onClick={() => setPendingRole(null)}>

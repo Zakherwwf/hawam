@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { Calendar, Check, ChevronDown, X } from 'lucide-react';
+import { personName } from '../data/api';
 import { useCore } from '../data/portal';
 import {
   activeCount,
@@ -113,8 +114,8 @@ export function FilterBar({
           options={[
             ['', 'Everyone'],
             ...[...(users.data ?? [])]
-              .sort((a, b) => (a.display_name ?? '').localeCompare(b.display_name ?? ''))
-              .map((u) => [u.id, u.display_name || 'Unnamed volunteer'] as [string, string]),
+              .sort((a, b) => personName(a).localeCompare(personName(b)))
+              .map((u) => [u.id, personName(u)] as [string, string]),
           ]}
         />
       ) : null}

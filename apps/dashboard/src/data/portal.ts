@@ -8,6 +8,7 @@ import {
   getUsers,
   getUserStats,
   getWalks,
+  personName,
 } from './api';
 import { useData } from './useData';
 
@@ -22,19 +23,29 @@ export function useCore() {
   const routes = useData('routes', getRoutes);
   const names = useMemo(() => {
     const m = new Map<string, string>();
-    for (const u of users.data ?? []) m.set(u.id, u.display_name || 'Unnamed volunteer');
+    for (const u of users.data ?? []) m.set(u.id, personName(u));
     for (const w of walks.data ?? [])
       if (!m.has(w.observer_id))
         m.set(w.observer_id, w.observer?.display_name || 'Unnamed volunteer');
     return m;
   }, [users.data, walks.data]);
+  // The map view's observer_name is the stored display name, empty for most
+  // accounts; give every sighting the same name the rest of the portal uses.
+  const named = useMemo(
+    () =>
+      sightings.data?.map((x) => ({
+        ...x,
+        observer_name: names.get(x.observer_id) ?? x.observer_name,
+      })),
+    [sightings.data, names]
+  );
   const routeNames = useMemo(
     () => new Map((routes.data ?? []).map((r) => [r.id, r.name])),
     [routes.data]
   );
   return {
     walks,
-    sightings,
+    sightings: { ...sightings, data: named },
     users,
     routes,
     nameOf: (id: string | null | undefined) =>

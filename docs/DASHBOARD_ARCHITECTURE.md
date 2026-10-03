@@ -247,6 +247,10 @@ Score = (passes + ½ warns) / applicable checks. Shown on walk profiles, the wal
 - Views: `routes_app` (new columns appended; archived routes hidden), `routes_admin` (all routes with rules, gated by `is_researcher()`), `track_points_app` (raw fixes as lat/lon, same RLS as `track_points`).
 - Behaviour test: `supabase/tests/route_protocols.behaviour.sql` (version starts at 1, sessions record it, a reversed line bumps it and keeps the old one, a rename does not, walked routes refuse delete, archived routes leave the app view, researcher-only views, read-only history).
 
+### People's names and emails (`20261003000200_display_names.sql`)
+
+The app keeps each person's name in their auth profile (`full_name`, or the Google name) and never wrote it to `public.users.display_name`, so the portal showed everyone except the signed-in researcher as "Unnamed volunteer". The migration backfills `display_name` from the auth profile, else the part of the email before the @, and keeps it filled on sign-up and on profile changes (without overwriting a name already set). `user_directory()` returns email, last sign-in and sign-in method to researchers and admins only; the portal merges it into People and person profiles and falls back to display names alone when the function is missing. `personName()` in `data/api.ts` is the one naming rule, and `useCore()` fills `observer_name` on sightings with it.
+
 Deploy with `bash supabase/scripts/deploy_migration.sh supabase/migrations/20261003000100_route_protocols.sql` after running the behaviour test on a copy.
 
 ---

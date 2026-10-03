@@ -112,6 +112,8 @@ export function Explore({ params }: PageProps) {
     return SERIES_COLORS[idx < 0 ? i % 8 : idx % 8];
   };
 
+  const fromMs = win.from.getTime();
+  const toMs = win.to.getTime();
   const speciesOnWalkMetric = by === 'species' && !SIGHTING_METRICS.includes(def.id);
   const groups = useMemo(
     () =>
@@ -134,8 +136,8 @@ export function Explore({ params }: PageProps) {
       walks,
       sightings,
       def.id,
-      win.from.getTime(),
-      win.to.getTime(),
+      fromMs,
+      toMs,
       grain,
       by,
       speciesOnWalkMetric,

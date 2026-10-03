@@ -9,7 +9,7 @@ import {
   Users,
   Warehouse,
 } from 'lucide-react';
-import { getColonies } from '../data/api';
+import { getColonies, personName } from '../data/api';
 import { useAnimals, useCore } from '../data/portal';
 import { useData } from '../data/useData';
 import { fmtDateTime } from '../lib/format';
@@ -64,14 +64,14 @@ export function CommandPalette({ open, onClose }: { open: boolean; onClose: () =
         });
     if (!n) return out;
     for (const u of users.data ?? [])
-      if (has(u.display_name))
+      if (has(personName(u)) || has(u.email))
         out.push({
           id: `u-${u.id}`,
           group: 'People',
-          title: u.display_name || 'Unnamed volunteer',
-          detail: ROLE_LABEL[u.role],
+          title: personName(u),
+          detail: [ROLE_LABEL[u.role], u.email].filter(Boolean).join(', '),
           href: href(`people/${u.id}`),
-          icon: <Avatar id={u.id} name={u.display_name} size={22} />,
+          icon: <Avatar id={u.id} name={personName(u)} size={22} />,
         });
     for (const a of individuals.data ?? [])
       if (has(a.nickname) || has(`unnamed ${a.species}`) || has(a.coat_pattern))
