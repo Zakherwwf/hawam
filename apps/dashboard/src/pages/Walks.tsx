@@ -1,297 +1,257 @@
-import { useMemo } from 'react';
-import { Footprints, Search } from 'lucide-react';
-import { getSightings, getTrack, getWalks, type Walk } from '../data/api';
-import { useData } from '../data/useData';
+import { useMemo, useState } from 'react';
+import { Download, Footprints, Search } from 'lucide-react';
+import type { Walk } from '../data/api';
+import { useTracks } from '../data/portal';
+import { compliance, parseTrack, previousVisitOf } from '../lib/compliance';
+import { download, toCsv } from '../lib/csv';
+import { effortRows } from '../lib/exports';
 import { fmtDateTime, fmtDuration, fmtInt, fmtKm } from '../lib/format';
-import { setParam } from '../lib/router';
+import { href, setParam } from '../lib/router';
+import { perWalk, PROTOCOL_LABEL } from '../lib/stats';
+import { FilterBar } from '../components/FilterBar';
+import { reasons, StatusBadge, useSlice } from '../components/widgets';
 import {
-  perWalk,
-  PROTOCOL_LABEL,
-  REASON_LABEL,
-  TIME_OF_DAY_LABEL,
-  WEATHER_LABEL,
-} from '../lib/stats';
-import { MapView, type MapLine, type MapPoint } from '../components/LazyMap';
-import {
+  Avatar,
   Badge,
+  Button,
   Card,
-  Drawer,
   EmptyState,
   ErrorNote,
   inputClass,
   PageHeader,
-  Segmented,
   Skeleton,
+  sortBy,
+  SortTh,
   Table,
   td,
-  th,
   tdNum,
+  th,
+  type Sort,
 } from '../ui';
-import { StatusBadge } from './Overview';
 import type { PageProps } from './types';
 
-type Status = 'all' | 'flagged' | 'complete';
-type Kind = 'all' | 'transect' | 'stationary_point' | 'incidental';
+type Key = 'start' | 'who' | 'time' | 'km' | 'animals' | 'score';
 
 export function Walks({ params }: PageProps) {
-  const status = (params.get('status') as Status) || 'all';
-  const kind = (params.get('type') as Kind) || 'all';
+  const { core, f, walks, sightings } = useSlice(params, 'all');
+  const tracks = useTracks();
   const q = params.get('q') ?? '';
-  const open = params.get('walk');
-  const walks = useData('walks', getWalks);
-  const sightings = useData('sightings', getSightings);
-  const counts = useMemo(
-    () => (sightings.data ? perWalk(sightings.data) : new Map()),
-    [sightings.data]
+  const [sort, setSort] = useState<Sort<Key>>({ key: 'start', dir: 'desc' });
+  const [limit, setLimit] = useState(100);
+  const counts = useMemo(() => perWalk(sightings), [sightings]);
+  const routes = useMemo(
+    () => new Map((core.routes.data ?? []).map((r) => [r.id, r])),
+    [core.routes.data]
   );
+  const trackBy = useMemo(
+    () => new Map((tracks.data ?? []).map((t) => [t.session_id, t.track_geojson])),
+    [tracks.data]
+  );
+
+  // Protocol compliance for walks on a fixed route (computed once per data load)
+  const scores = useMemo(() => {
+    const m = new Map<string, number>();
+    if (!tracks.data || !core.walks.data) return m;
+    for (const w of walks) {
+      const r = w.route_id ? routes.get(w.route_id) : undefined;
+      if (!r) continue;
+      const c = compliance(
+        w,
+        parseTrack(trackBy.get(w.id)),
+        r,
+        previousVisitOf(w, core.walks.data)
+      );
+      if (c) m.set(w.id, c.score);
+    }
+    return m;
+  }, [walks, routes, trackBy, tracks.data, core.walks.data]);
 
   const rows = useMemo(() => {
     const needle = q.trim().toLowerCase();
-    return (walks.data ?? []).filter(
+    const r = walks.filter(
       (w) =>
-        (status === 'all' ||
-          (status === 'flagged'
-            ? w.validation_status === 'flagged'
-            : w.complete_session && w.protocol !== 'incidental')) &&
-        (kind === 'all' || w.protocol === kind) &&
-        (!needle || (w.observer?.display_name ?? '').toLowerCase().includes(needle))
+        !needle ||
+        core.nameOf(w.observer_id).toLowerCase().includes(needle) ||
+        core.routeName(w.route_id).toLowerCase().includes(needle) ||
+        (w.notes ?? '').toLowerCase().includes(needle)
     );
-  }, [walks.data, status, kind, q]);
+    return sortBy(r, sort, (w: Walk, k) =>
+      k === 'start'
+        ? w.start_time
+        : k === 'who'
+          ? core.nameOf(w.observer_id)
+          : k === 'time'
+            ? w.duration_min
+            : k === 'km'
+              ? w.distance_km
+              : k === 'animals'
+                ? (counts.get(w.id)?.animals ?? 0)
+                : (scores.get(w.id) ?? null)
+    );
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [walks, q, sort, counts, scores]);
 
-  const selected = walks.data?.find((w) => w.id === open) ?? null;
+  const km = walks
+    .filter((w) => w.validation_status !== 'flagged')
+    .reduce((a, w) => a + (w.distance_km ?? 0), 0);
 
   return (
     <>
       <PageHeader
         title="Walks"
-        description="Every survey session with its effort, completeness and validation result."
+        description="Every survey session with its effort, completeness, route protocol and validation result."
+        actions={
+          <Button
+            kind="pill"
+            size="sm"
+            icon={<Download />}
+            disabled={!core.ready}
+            onClick={() =>
+              download(
+                `hawem_walks_filtered_${new Date().toISOString().slice(0, 10)}.csv`,
+                toCsv(effortRows(rows, sightings))
+              )
+            }
+          >
+            Download These Walks
+          </Button>
+        }
       />
-      <div className="flex flex-wrap items-center gap-3 mb-4">
-        <Segmented
-          label="Validation"
-          value={status}
-          onChange={(v) => setParam('status', v === 'all' ? undefined : v)}
-          options={[
-            { value: 'all', label: 'All' },
-            { value: 'complete', label: 'Complete' },
-            { value: 'flagged', label: 'Flagged' },
-          ]}
+      <FilterBar
+        f={f}
+        summary={core.ready ? `${fmtInt(rows.length)} sessions, ${fmtKm(km)} km` : null}
+      />
+      <div className="relative max-w-[420px] mb-4">
+        <Search
+          aria-hidden
+          className="w-4 h-4 text-ink3 absolute start-4 top-1/2 -translate-y-1/2"
         />
-        <label className="sr-only" htmlFor="walk-type">
-          Record type
+        <label className="sr-only" htmlFor="walk-q">
+          Search walks
         </label>
-        <select
-          id="walk-type"
-          value={kind}
-          onChange={(e) => setParam('type', e.target.value === 'all' ? undefined : e.target.value)}
-          className={`${inputClass} w-auto h-10 bg-surface`}
-        >
-          <option value="all">All types</option>
-          <option value="transect">Survey walks</option>
-          <option value="stationary_point">Point counts</option>
-          <option value="incidental">Quick sightings</option>
-        </select>
-        <div className="relative flex-1 min-w-[200px] max-w-[320px]">
-          <Search
-            aria-hidden
-            className="w-4 h-4 text-ink3 absolute left-3.5 top-1/2 -translate-y-1/2"
-          />
-          <label className="sr-only" htmlFor="walk-q">
-            Search volunteers
-          </label>
-          <input
-            id="walk-q"
-            type="search"
-            autoComplete="off"
-            defaultValue={q}
-            onChange={(e) => setParam('q', e.target.value || undefined)}
-            placeholder="Search volunteers…"
-            className={`${inputClass} w-full h-10 pl-10 bg-surface`}
-          />
-        </div>
-        <span className="ml-auto text-[13px] text-ink2 tabular" aria-live="polite">
-          {walks.data ? `${fmtInt(rows.length)} of ${fmtInt(walks.data.length)}` : ''}
-        </span>
+        <input
+          id="walk-q"
+          type="search"
+          name="walk-search"
+          autoComplete="off"
+          defaultValue={q}
+          onChange={(e) => setParam('q', e.target.value || undefined)}
+          placeholder="Search by volunteer, route or note…"
+          className={`${inputClass} w-full h-11 ps-11 rounded-full bg-surface border-0 shadow-pill`}
+        />
       </div>
-      {walks.error ? <ErrorNote message={walks.error} onRetry={walks.reload} /> : null}
+      {core.error ? <ErrorNote message={core.error} onRetry={core.reload} /> : null}
       <Card>
-        {!walks.data ? (
-          <div className="p-5 space-y-2">
+        {!core.ready ? (
+          <div className="p-6 space-y-2">
             {Array.from({ length: 8 }, (_, i) => (
-              <Skeleton key={i} className="h-10" />
+              <Skeleton key={i} className="h-11" />
             ))}
           </div>
         ) : rows.length === 0 ? (
           <EmptyState
             icon={<Footprints />}
             title="No walks match"
-            body="Change the filters above to see more."
+            body="Widen the date range or clear the filters above."
           />
         ) : (
           <Table label="Walks">
             <thead>
               <tr>
-                <th className={th}>Started</th>
-                <th className={th}>Volunteer</th>
-                <th className={th}>Type</th>
-                <th className={`${th} text-right`}>Time</th>
-                <th className={`${th} text-right`}>km</th>
-                <th className={`${th} text-right`}>Animals</th>
+                <SortTh k="start" sort={sort} onSort={setSort}>
+                  Started
+                </SortTh>
+                <SortTh k="who" sort={sort} onSort={setSort}>
+                  Volunteer
+                </SortTh>
+                <th className={th}>Type and route</th>
+                <SortTh k="time" sort={sort} onSort={setSort} num>
+                  Time
+                </SortTh>
+                <SortTh k="km" sort={sort} onSort={setSort} num>
+                  km
+                </SortTh>
+                <SortTh k="animals" sort={sort} onSort={setSort} num>
+                  Animals
+                </SortTh>
+                <SortTh k="score" sort={sort} onSort={setSort} num>
+                  Protocol
+                </SortTh>
                 <th className={th}>Status</th>
-                <th className={th}>Why flagged</th>
               </tr>
             </thead>
             <tbody>
-              {rows.slice(0, 500).map((w) => (
-                <tr key={w.id} className="hover:bg-canvas">
-                  <td className={`${td} whitespace-nowrap`}>
-                    <button
-                      type="button"
-                      onClick={() => setParam('walk', w.id)}
-                      className="font-medium text-accent hover:underline"
-                    >
-                      {fmtDateTime(w.start_time)}
-                    </button>
-                  </td>
-                  <td className={`${td} max-w-[180px] truncate`}>
-                    {w.observer?.display_name || 'Anonymous'}
-                  </td>
-                  <td className={`${td} whitespace-nowrap text-ink2`}>
-                    {PROTOCOL_LABEL[w.protocol]}
-                  </td>
-                  <td className={tdNum}>
-                    {w.protocol === 'incidental' ? '-' : fmtDuration(w.duration_min)}
-                  </td>
-                  <td className={tdNum}>
-                    {w.protocol === 'transect' ? fmtKm(w.distance_km ?? 0) : '-'}
-                  </td>
-                  <td className={tdNum}>{fmtInt(counts.get(w.id)?.animals ?? 0)}</td>
-                  <td className={td}>
-                    <StatusBadge w={w} />
-                  </td>
-                  <td className={`${td} text-ink2 text-[13px]`}>
-                    {w.validation_reasons.map((r) => REASON_LABEL[r] ?? r).join(', ') || '-'}
-                  </td>
-                </tr>
-              ))}
+              {rows.slice(0, limit).map((w) => {
+                const s = scores.get(w.id);
+                return (
+                  <tr key={w.id} className="hover:bg-canvas">
+                    <td className={`${td} whitespace-nowrap`}>
+                      <a href={href(`walks/${w.id}`)} className="font-semibold hover:underline">
+                        {fmtDateTime(w.start_time)}
+                      </a>
+                    </td>
+                    <td className={`${td} max-w-[220px]`}>
+                      <a
+                        href={href(`people/${w.observer_id}`)}
+                        className="flex items-center gap-2.5 min-w-0 hover:underline"
+                      >
+                        <Avatar id={w.observer_id} name={core.nameOf(w.observer_id)} size={28} />
+                        <span className="truncate">{core.nameOf(w.observer_id)}</span>
+                      </a>
+                    </td>
+                    <td className={`${td} max-w-[240px]`}>
+                      <span className="block text-ink2 truncate">{PROTOCOL_LABEL[w.protocol]}</span>
+                      {w.route_id ? (
+                        <a
+                          href={href(`routes/${w.route_id}`)}
+                          className="block text-[12px] text-ink3 truncate hover:underline"
+                        >
+                          {core.routeName(w.route_id)}
+                          {w.route_version ? `, v${w.route_version}` : ''}
+                        </a>
+                      ) : null}
+                    </td>
+                    <td className={tdNum}>
+                      {w.protocol === 'incidental' ? '-' : fmtDuration(w.duration_min)}
+                    </td>
+                    <td className={tdNum}>
+                      {w.protocol === 'transect' ? fmtKm(w.distance_km ?? 0) : '-'}
+                    </td>
+                    <td className={tdNum}>{fmtInt(counts.get(w.id)?.animals ?? 0)}</td>
+                    <td className={tdNum}>
+                      {s == null ? (
+                        <span className="text-ink3">{w.route_id ? '…' : '-'}</span>
+                      ) : (
+                        <Badge tone={s >= 0.85 ? 'accent' : s >= 0.6 ? 'warn' : 'danger'}>
+                          {Math.round(s * 100)}%
+                        </Badge>
+                      )}
+                    </td>
+                    <td className={td}>
+                      <div className="flex flex-col items-start gap-1">
+                        <StatusBadge w={w} />
+                        {w.validation_status === 'flagged' ? (
+                          <span className="text-[12px] text-ink3">{reasons(w)}</span>
+                        ) : null}
+                      </div>
+                    </td>
+                  </tr>
+                );
+              })}
             </tbody>
           </Table>
         )}
-        {rows.length > 500 ? (
-          <p className="px-5 py-3 text-[13px] text-ink2 border-t border-line">
-            Showing the latest 500. Narrow the filters to see older walks.
-          </p>
+        {rows.length > limit ? (
+          <div className="flex items-center justify-between px-6 py-4 border-t border-line">
+            <p className="text-[13px] text-ink2">
+              Showing {fmtInt(limit)} of {fmtInt(rows.length)}
+            </p>
+            <Button kind="pill" size="sm" onClick={() => setLimit((l) => l + 200)}>
+              Show More
+            </Button>
+          </div>
         ) : null}
       </Card>
-
-      <Drawer
-        open={!!selected}
-        onClose={() => setParam('walk', undefined)}
-        title={selected ? `Walk on ${fmtDateTime(selected.start_time)}` : 'Walk'}
-      >
-        {selected ? <WalkDetail w={selected} /> : null}
-      </Drawer>
     </>
-  );
-}
-
-function WalkDetail({ w }: { w: Walk }) {
-  const track = useData(`track:${w.id}`, () => getTrack(w.id));
-  const sightings = useData('sightings', getSightings);
-  const mine = (sightings.data ?? []).filter((s) => s.session_id === w.id);
-  const coords = useMemo(() => {
-    const t = track.data?.[0]?.track_geojson;
-    if (!t) return [] as [number, number][];
-    try {
-      return (JSON.parse(t) as { coordinates: [number, number][] }).coordinates;
-    } catch {
-      return [];
-    }
-  }, [track.data]);
-  const lines: MapLine[] = coords.length ? [{ id: w.id, coords, kind: 'track' }] : [];
-  const points: MapPoint[] = mine.map((s) => ({
-    id: s.id,
-    lon: s.longitude,
-    lat: s.latitude,
-    kind: s.species,
-    label: `${s.public_code}: ${s.group_size}`,
-  }));
-  const facts: [string, string][] = [
-    ['Volunteer', w.observer?.display_name || 'Anonymous'],
-    ['Type', PROTOCOL_LABEL[w.protocol]],
-    ['Time', fmtDuration(w.duration_min)],
-    ['Distance', w.protocol === 'transect' ? `${fmtKm(w.distance_km ?? 0)} km` : '-'],
-    [
-      'Complete checklist',
-      w.protocol === 'incidental' ? 'Not a survey' : w.complete_session ? 'Yes' : 'No',
-    ],
-    ['People counting', String(w.number_of_observers)],
-    ['Weather', w.weather ? (WEATHER_LABEL[w.weather] ?? w.weather) : 'Not recorded'],
-    [
-      'Time of day',
-      w.time_of_day ? (TIME_OF_DAY_LABEL[w.time_of_day] ?? w.time_of_day) : 'Not recorded',
-    ],
-    ['Country', w.country_code ?? '-'],
-  ];
-  return (
-    <div className="flex flex-col gap-5">
-      {w.validation_status === 'flagged' ? (
-        <div
-          role="note"
-          className="rounded-control bg-warm-soft text-warm-ink px-4 py-3 text-[14px]"
-        >
-          <p className="font-semibold">Flagged and left out of effort totals</p>
-          <p>{w.validation_reasons.map((r) => REASON_LABEL[r] ?? r).join(', ')}</p>
-        </div>
-      ) : null}
-      {lines.length || points.length ? (
-        <MapView
-          points={points}
-          lines={lines}
-          height={280}
-          dark={document.documentElement.dataset.theme === 'dark'}
-          label="This walk's track and sightings"
-        />
-      ) : (
-        <p className="text-[14px] text-ink2">No track was recorded for this session.</p>
-      )}
-      <dl className="grid grid-cols-2 gap-x-6 gap-y-3">
-        {facts.map(([k, v]) => (
-          <div key={k} className="min-w-0">
-            <dt className="text-[12px] text-ink3">{k}</dt>
-            <dd className="text-[15px] truncate">{v}</dd>
-          </div>
-        ))}
-      </dl>
-      <div>
-        <h3 className="text-[15px] font-semibold mb-2">Animals ({mine.length})</h3>
-        {mine.length === 0 ? (
-          <p className="text-[14px] text-ink2">
-            {w.complete_session
-              ? 'None seen on a complete checklist: a recorded absence.'
-              : 'No animals recorded.'}
-          </p>
-        ) : (
-          <ul className="flex flex-col divide-y divide-line">
-            {mine.map((s) => (
-              <li key={s.id} className="flex items-center gap-3 py-2 text-[14px]">
-                <Badge tone={s.species === 'cat' ? 'cat' : s.species === 'dog' ? 'dog' : 'neutral'}>
-                  {s.species}
-                </Badge>
-                <span className="font-medium tabular" translate="no">
-                  {s.public_code}
-                </span>
-                <span className="text-ink2">x{s.group_size}</span>
-                <span className="ml-auto text-ink3 tabular">
-                  {s.perpendicular_distance_m != null
-                    ? `${fmtKm(s.perpendicular_distance_m)} m from path`
-                    : 'no distance'}
-                </span>
-              </li>
-            ))}
-          </ul>
-        )}
-      </div>
-    </div>
   );
 }

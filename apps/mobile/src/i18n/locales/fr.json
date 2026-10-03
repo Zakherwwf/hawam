@@ -667,7 +667,16 @@
     "walk_this": "Suivre cet itinéraire",
     "km": "{{km}} km",
     "walked_one": "Parcouru une fois",
-    "walked_other": "Parcouru {{count}} fois"
+    "walked_other": "Parcouru {{count}} fois",
+    "rules_title": "Règles de ce parcours",
+    "rule_one_way": "Partez du point de départ et marchez dans un seul sens, jusqu’à l’arrivée",
+    "rule_either": "Marchez dans le sens de votre choix",
+    "rule_side_both": "Notez les animaux des deux côtés",
+    "rule_side_left": "Notez seulement les animaux à votre gauche",
+    "rule_side_right": "Notez seulement les animaux à votre droite",
+    "rule_strip": "Jusqu’à {{m}} m du chemin",
+    "rule_window": "Marchez entre {{from}} et {{to}}",
+    "rule_complete": "Notez chaque chat et chien que vous voyez"
   },
   "ui_colonies_v3": {
     "new_title": "Nouvelle colonie",

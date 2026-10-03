@@ -1,47 +1,60 @@
-import { useEffect, useState } from 'react';
-import {
-  Cat,
-  ChartColumn,
-  Download,
-  Footprints,
-  LogOut,
-  Map as MapIcon,
-  Moon,
-  PawPrint,
-  Route as RouteIcon,
-  Sun,
-  Users,
-  Warehouse,
-} from 'lucide-react';
+import { lazy, Suspense, useEffect, useState, type ComponentType } from 'react';
 import { supabase } from './data/client';
 import { getMe, type Me } from './data/api';
-import { href, useRoute } from './lib/router';
-import { readTheme, saveTheme } from './lib/theme';
-import { cx, Skeleton } from './ui';
+import { useRoute } from './lib/router';
+import { Skeleton } from './ui';
+import { NAV, Shell } from './app/Shell';
 import { SignIn } from './pages/SignIn';
 import { NoAccess } from './pages/NoAccess';
 import { SetPassword } from './pages/SetPassword';
-import { Overview } from './pages/Overview';
-import { MapPage } from './pages/MapPage';
-import { Walks } from './pages/Walks';
-import { Sightings } from './pages/Sightings';
-import { Routes } from './pages/Routes';
-import { Colonies } from './pages/Colonies';
-import { Volunteers } from './pages/Volunteers';
-import { Exports } from './pages/Exports';
-import { Animals } from './pages/Animals';
+const Overview = lazy(() => import('./pages/Overview').then((m) => ({ default: m.Overview })));
+const Explore = lazy(() => import('./pages/Explore').then((m) => ({ default: m.Explore })));
+const Timeline = lazy(() => import('./pages/Timeline').then((m) => ({ default: m.Timeline })));
+const MapPage = lazy(() => import('./pages/MapPage').then((m) => ({ default: m.MapPage })));
+const Walks = lazy(() => import('./pages/Walks').then((m) => ({ default: m.Walks })));
+const WalkProfile = lazy(() =>
+  import('./pages/WalkProfile').then((m) => ({ default: m.WalkProfile }))
+);
+const Sightings = lazy(() => import('./pages/Sightings').then((m) => ({ default: m.Sightings })));
+const ObservationProfile = lazy(() =>
+  import('./pages/ObservationProfile').then((m) => ({ default: m.ObservationProfile }))
+);
+const Animals = lazy(() => import('./pages/Animals').then((m) => ({ default: m.Animals })));
+const AnimalProfile = lazy(() =>
+  import('./pages/AnimalProfile').then((m) => ({ default: m.AnimalProfile }))
+);
+const Routes = lazy(() => import('./pages/Routes').then((m) => ({ default: m.Routes })));
+const RouteProfile = lazy(() =>
+  import('./pages/RouteProfile').then((m) => ({ default: m.RouteProfile }))
+);
+const RouteEditor = lazy(() =>
+  import('./pages/RouteEditor').then((m) => ({ default: m.RouteEditor }))
+);
+const People = lazy(() => import('./pages/People').then((m) => ({ default: m.People })));
+const PersonProfile = lazy(() =>
+  import('./pages/PersonProfile').then((m) => ({ default: m.PersonProfile }))
+);
+const Colonies = lazy(() => import('./pages/Colonies').then((m) => ({ default: m.Colonies })));
+const Exports = lazy(() => import('./pages/Exports').then((m) => ({ default: m.Exports })));
+import type { PageProps } from './pages/types';
 
-const NAV = [
-  { page: 'overview', label: 'Overview', icon: ChartColumn },
-  { page: 'map', label: 'Map', icon: MapIcon },
-  { page: 'walks', label: 'Walks', icon: Footprints },
-  { page: 'sightings', label: 'Sightings', icon: PawPrint },
-  { page: 'animals', label: 'Animals', icon: Cat },
-  { page: 'routes', label: 'Routes', icon: RouteIcon },
-  { page: 'colonies', label: 'Colonies', icon: Warehouse },
-  { page: 'volunteers', label: 'Volunteers', icon: Users },
-  { page: 'exports', label: 'Exports', icon: Download },
-] as const;
+/** List pages, and the profile page each opens when the URL names a record. */
+const PAGES: Record<
+  string,
+  { list: ComponentType<PageProps>; profile?: ComponentType<PageProps> }
+> = {
+  overview: { list: Overview },
+  explore: { list: Explore },
+  timeline: { list: Timeline },
+  map: { list: MapPage },
+  walks: { list: Walks, profile: WalkProfile },
+  sightings: { list: Sightings, profile: ObservationProfile },
+  animals: { list: Animals, profile: AnimalProfile },
+  routes: { list: Routes, profile: RouteProfile },
+  people: { list: People, profile: PersonProfile },
+  colonies: { list: Colonies },
+  exports: { list: Exports },
+};
 
 export default function App() {
   const [me, setMe] = useState<Me | null | undefined>(undefined);
@@ -57,9 +70,19 @@ export default function App() {
     return () => data.subscription.unsubscribe();
   }, []);
 
+  // The old Volunteers page lives on as People
+  const pageId = route.page === 'volunteers' ? 'people' : route.page;
+  const page = NAV.some((n) => n.page === pageId) ? pageId : 'overview';
+
+  useEffect(() => {
+    const label = NAV.find((n) => n.page === page)?.label ?? 'Overview';
+    document.title = `${label} · Hawem Research`;
+    window.scrollTo({ top: 0 });
+  }, [page, route.id]);
+
   if (me === undefined) {
     return (
-      <div className="min-h-screen grid place-items-center" aria-busy="true">
+      <div className="min-h-[100dvh] grid place-items-center" aria-busy="true">
         <Skeleton className="w-48 h-6" />
       </div>
     );
@@ -68,116 +91,23 @@ export default function App() {
   if (!me) return <SignIn />;
   if (me.role !== 'researcher' && me.role !== 'admin') return <NoAccess me={me} />;
 
-  const page = NAV.some((n) => n.page === route.page) ? route.page : 'overview';
-  const Page = {
-    overview: Overview,
-    map: MapPage,
-    walks: Walks,
-    sightings: Sightings,
-    animals: Animals,
-    routes: Routes,
-    colonies: Colonies,
-    volunteers: Volunteers,
-    exports: Exports,
-  }[page]!;
+  const entry = PAGES[page];
+  let Page = entry.list;
+  if (page === 'routes' && (route.id === 'new' || route.sub === 'edit')) Page = RouteEditor;
+  else if (route.id && entry.profile) Page = entry.profile;
 
   return (
-    <div className="min-h-screen lg:grid lg:grid-cols-[240px_1fr]">
-      <a
-        href="#main"
-        className="sr-only focus:not-sr-only focus:fixed focus:top-3 focus:left-3 focus:z-50 bg-surface px-4 py-2 rounded-full shadow-card"
-      >
-        Skip to content
-      </a>
-      <aside className="lg:sticky lg:top-0 lg:h-screen bg-surface lg:border-r border-b lg:border-b-0 border-line flex lg:flex-col">
-        <div className="hidden lg:flex items-center gap-2.5 px-5 h-16">
-          <span
-            aria-hidden
-            className="w-8 h-8 rounded-[10px] bg-accent text-on-accent grid place-items-center"
-          >
-            <PawPrint className="w-4.5 h-4.5" />
-          </span>
-          <div className="leading-tight">
-            <p className="font-bold text-[15px]" translate="no">
-              Hawem
-            </p>
-            <p className="text-[12px] text-ink2">Research portal</p>
-          </div>
-        </div>
-        <nav
-          aria-label="Sections"
-          className="flex-1 flex lg:flex-col gap-1 px-3 py-2 overflow-x-auto"
-        >
-          {NAV.map(({ page: p, label, icon: Icon }) => {
-            const on = p === page;
-            return (
-              <a
-                key={p}
-                href={href(p)}
-                aria-current={on ? 'page' : undefined}
-                className={cx(
-                  'flex items-center gap-3 h-10 px-3 rounded-control text-[14px] font-medium whitespace-nowrap transition-colors',
-                  on
-                    ? 'bg-lime-soft text-accent font-semibold'
-                    : 'text-ink2 hover:bg-fill hover:text-ink'
-                )}
-              >
-                <Icon className="w-[18px] h-[18px] shrink-0" aria-hidden />
-                {label}
-              </a>
-            );
-          })}
-        </nav>
-        <UserBlock me={me} />
-      </aside>
-      <main
-        id="main"
-        tabIndex={-1}
-        className="min-w-0 px-4 sm:px-6 lg:px-10 py-6 lg:py-8 max-w-[1400px] w-full outline-none"
-      >
-        <Page me={me} params={route.params} />
-      </main>
-    </div>
-  );
-}
-
-function UserBlock({ me }: { me: Me }) {
-  const [theme, setTheme] = useState(readTheme());
-  const dark =
-    theme === 'dark' ||
-    (theme === 'system' && window.matchMedia('(prefers-color-scheme: dark)').matches);
-  return (
-    <div className="flex lg:flex-col items-center lg:items-stretch gap-2 px-3 py-2 lg:p-4 lg:border-t border-line">
-      <div className="hidden lg:block min-w-0">
-        <p className="text-[14px] font-semibold truncate">{me.display_name || me.email}</p>
-        <p className="text-[12px] text-ink2 capitalize">{me.role}</p>
-      </div>
-      <div className="flex gap-1">
-        <button
-          type="button"
-          aria-label={dark ? 'Use light theme' : 'Use dark theme'}
-          onClick={() => {
-            const next = dark ? 'light' : 'dark';
-            saveTheme(next);
-            setTheme(next);
-          }}
-          className="w-9 h-9 rounded-full hover:bg-fill grid place-items-center text-ink2"
-        >
-          {dark ? (
-            <Sun className="w-[18px] h-[18px]" aria-hidden />
-          ) : (
-            <Moon className="w-[18px] h-[18px]" aria-hidden />
-          )}
-        </button>
-        <button
-          type="button"
-          aria-label="Sign out"
-          onClick={() => supabase.auth.signOut()}
-          className="w-9 h-9 rounded-full hover:bg-fill grid place-items-center text-ink2"
-        >
-          <LogOut className="w-[18px] h-[18px]" aria-hidden />
-        </button>
-      </div>
-    </div>
+    <Shell me={me} page={page}>
+      {/* Each page is its own chunk; the shell stays while one loads */}
+      <Suspense fallback={<Skeleton className="h-[480px]" />}>
+        <Page
+          me={me}
+          params={route.params}
+          id={route.id}
+          sub={route.sub}
+          key={`${page}/${route.id ?? ''}/${route.sub ?? ''}`}
+        />
+      </Suspense>
+    </Shell>
   );
 }

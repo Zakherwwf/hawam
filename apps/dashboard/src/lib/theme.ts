@@ -1,3 +1,4 @@
+import { useEffect, useState } from 'react';
 import { hawemDark, hawemLight } from '@tunisia-survey/design-tokens';
 
 export type ThemeMode = 'light' | 'dark' | 'system';
@@ -38,4 +39,17 @@ export function watchSystemTheme() {
   const on = () => readTheme() === 'system' && applyTheme('system');
   mq.addEventListener('change', on);
   return () => mq.removeEventListener('change', on);
+}
+
+/** True while the dark scheme is applied; follows the toggle and the OS. */
+export function useDark() {
+  const [dark, setDark] = useState(() => document.documentElement.dataset.theme === 'dark');
+  useEffect(() => {
+    const mo = new MutationObserver(() =>
+      setDark(document.documentElement.dataset.theme === 'dark')
+    );
+    mo.observe(document.documentElement, { attributes: true, attributeFilter: ['data-theme'] });
+    return () => mo.disconnect();
+  }, []);
+  return dark;
 }

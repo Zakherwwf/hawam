@@ -29,6 +29,20 @@ export interface FixedRoute {
   timesSurveyed: number;
   lastSurveyedAt: string | null;
   bonusXp: number;
+  /** Walking protocol set by researchers in the portal (absent on older servers) */
+  rules?: RouteRules;
+}
+
+export interface RouteRules {
+  /** as_drawn: start at the first waypoint and walk to the last. either: any direction */
+  direction: 'as_drawn' | 'either';
+  side: 'both' | 'left' | 'right';
+  stripWidthM: number | null;
+  windowStart: string | null;
+  windowEnd: string | null;
+  requireComplete: boolean;
+  instructions: string | null;
+  version: number;
 }
 
 // No routes ship with the app: routes are real places surveyors define.

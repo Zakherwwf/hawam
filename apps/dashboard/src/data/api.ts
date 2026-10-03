@@ -26,6 +26,11 @@ export interface Walk {
   validation_reasons: string[];
   country_code: string | null;
   route_id: string | null;
+  /** Protocol version of the route at upload (after the route_protocols migration) */
+  route_version?: number | null;
+  notes?: string | null;
+  app_version?: string | null;
+  device_gps_accuracy_avg?: number | null;
   observer: { display_name: string | null } | null;
 }
 
@@ -47,6 +52,14 @@ export interface Sighting {
   ear_tip_or_notch: string | null;
   is_welfare_alert: boolean | null;
   perpendicular_distance_m: number | null;
+  observer_latitude?: number | null;
+  observer_longitude?: number | null;
+  bearing_deg?: number | null;
+  distance_estimate_m?: number | null;
+  location_method?: string | null;
+  gps_accuracy_m?: number | null;
+  coat_pattern?: string | null;
+  notes?: string | null;
 }
 
 export interface TrackRow {
@@ -67,6 +80,8 @@ export interface UserRow {
   display_name: string | null;
   role: Role;
   created_at: string;
+  preferred_language?: string | null;
+  consent_accepted_at?: string | null;
 }
 
 export interface RouteRow {
@@ -79,7 +94,35 @@ export interface RouteRow {
   is_active: boolean;
   created_at: string;
   geometry?: { type: 'LineString'; coordinates: [number, number][] } | null;
+  // Walking protocol (route_protocols migration). Absent on older databases.
+  direction_rule?: DirectionRule;
+  side_rule?: SideRule;
+  strip_width_m?: number | null;
+  target_duration_min?: number | null;
+  window_start?: string | null;
+  window_end?: string | null;
+  revisit_days?: number | null;
+  require_complete?: boolean;
+  instructions?: string | null;
+  version?: number;
+  updated_at?: string | null;
+  deleted_at?: string | null;
 }
+
+export type DirectionRule = 'as_drawn' | 'either';
+export type SideRule = 'both' | 'left' | 'right';
+export type RouteRules = Pick<
+  RouteRow,
+  | 'direction_rule'
+  | 'side_rule'
+  | 'strip_width_m'
+  | 'target_duration_min'
+  | 'window_start'
+  | 'window_end'
+  | 'revisit_days'
+  | 'require_complete'
+  | 'instructions'
+>;
 
 export interface ColonyRow {
   id: string;
@@ -95,6 +138,10 @@ export interface ColonyRow {
   visit_count: number;
   last_visit_at: string | null;
   created_at: string;
+  caretaker_name?: string | null;
+  feeding_schedule?: string | null;
+  notes?: string | null;
+  type?: string | null;
 }
 
 function ok<T>(res: { data: unknown; error: { message: string } | null }): T {
@@ -126,9 +173,8 @@ export const getWalks = async () =>
     : ok<Walk[]>(
         await supabase
           .from('sessions')
-          .select(
-            'id, observer_id, protocol, start_time, end_time, duration_min, distance_km, complete_session, number_of_observers, weather, time_of_day, validation_status, validation_reasons, country_code, route_id, observer:users!sessions_observer_id_fkey(display_name)'
-          )
+          // "*" so columns added by later migrations (route_version) arrive when present
+          .select('*, observer:users!sessions_observer_id_fkey(display_name)')
           .is('deleted_at', null)
           .order('start_time', { ascending: false })
           .limit(5000)
@@ -141,7 +187,7 @@ export const getSightings = async () =>
         await supabase
           .from('observations_map')
           .select(
-            'id, session_id, observed_at, species, group_size, latitude, longitude, observer_id, observer_name, protocol, public_code, body_condition_score, sex, age_class, ear_tip_or_notch, is_welfare_alert, perpendicular_distance_m'
+            'id, session_id, observed_at, species, group_size, latitude, longitude, observer_id, observer_name, protocol, public_code, body_condition_score, sex, age_class, ear_tip_or_notch, is_welfare_alert, perpendicular_distance_m, observer_latitude, observer_longitude, bearing_deg, distance_estimate_m, location_method, gps_accuracy_m, coat_pattern, notes'
           )
           .order('observed_at', { ascending: false })
           .limit(10000)
@@ -201,18 +247,30 @@ export const getUsers = async () =>
     : ok<UserRow[]>(
         await supabase
           .from('users')
-          .select('id, display_name, role, created_at')
+          .select('id, display_name, role, created_at, preferred_language, consent_accepted_at')
           .order('created_at', { ascending: false })
           .limit(5000)
       );
 
 export async function setRole(userId: string, role: Role) {
+  if (PREVIEW) {
+    const u = (await loadPreview()).previewUsers.find((x) => x.id === userId);
+    if (u) u.role = role;
+    return;
+  }
   const { error } = await supabase.from('users').update({ role }).eq('id', userId);
   if (error) throw new Error(error.message);
 }
 
 export async function getRoutes(): Promise<RouteRow[]> {
   if (PREVIEW) return (await loadPreview()).previewRoutes;
+  // routes_admin carries the walking rules and archived routes; it exists once
+  // the route_protocols migration is applied. Fall back to the older pair.
+  const admin = await supabase
+    .from('routes_admin')
+    .select('*')
+    .order('created_at', { ascending: false });
+  if (!admin.error) return (admin.data ?? []) as RouteRow[];
   const all = ok<RouteRow[]>(
     await supabase
       .from('routes')
@@ -226,13 +284,55 @@ export async function getRoutes(): Promise<RouteRow[]> {
   return all.map((r) => ({ ...r, geometry: byId.get(r.id) ?? null }));
 }
 
-export async function createRoute(r: {
+export interface RouteDraft extends RouteRules {
   name: string;
   area?: string;
   notes?: string;
   ewkt: string;
   lengthKm: number;
-}) {
+}
+
+/** Only the rule columns the database knows about are sent (older schemas). */
+function rulePatch(r: Partial<RouteRules>, hasRules: boolean) {
+  if (!hasRules) return {};
+  return {
+    direction_rule: r.direction_rule ?? 'as_drawn',
+    side_rule: r.side_rule ?? 'both',
+    strip_width_m: r.strip_width_m ?? null,
+    target_duration_min: r.target_duration_min ?? null,
+    window_start: r.window_start || null,
+    window_end: r.window_end || null,
+    revisit_days: r.revisit_days ?? null,
+    require_complete: r.require_complete ?? true,
+    instructions: r.instructions?.trim() || null,
+  };
+}
+
+export async function routesHaveRules() {
+  if (PREVIEW) return true;
+  const { error } = await supabase.from('routes_admin').select('id').limit(1);
+  return !error;
+}
+
+export async function createRoute(r: RouteDraft) {
+  if (PREVIEW) {
+    const p = await loadPreview();
+    p.previewRoutes.unshift({
+      id: `r${Date.now()}`,
+      name: r.name,
+      governorate: null,
+      delegation: r.area || null,
+      habitat_notes: r.notes || null,
+      length_km: r.lengthKm,
+      is_active: true,
+      created_at: new Date().toISOString(),
+      geometry: { type: 'LineString', coordinates: ewktCoords(r.ewkt) },
+      ...rulePatch(r, true),
+      version: 1,
+      deleted_at: null,
+    });
+    return;
+  }
   const { data: u } = await supabase.auth.getUser();
   const { error } = await supabase.from('routes').insert({
     name: r.name,
@@ -242,13 +342,212 @@ export async function createRoute(r: {
     length_km: Math.round(r.lengthKm * 1000) / 1000,
     is_active: true,
     created_by: u.user?.id,
+    ...rulePatch(r, await routesHaveRules()),
   });
   if (error) throw new Error(error.message);
 }
 
+export async function updateRoute(id: string, r: RouteDraft) {
+  if (PREVIEW) {
+    const p = await loadPreview();
+    const row = p.previewRoutes.find((x) => x.id === id);
+    if (row) {
+      Object.assign(row, {
+        name: r.name,
+        delegation: r.area || null,
+        habitat_notes: r.notes || null,
+        length_km: r.lengthKm,
+        geometry: { type: 'LineString', coordinates: ewktCoords(r.ewkt) },
+        ...rulePatch(r, true),
+        version: (row.version ?? 1) + 1,
+        updated_at: new Date().toISOString(),
+      });
+    }
+    return;
+  }
+  const { error } = await supabase
+    .from('routes')
+    .update({
+      name: r.name,
+      delegation: r.area || null,
+      habitat_notes: r.notes || null,
+      geometry: r.ewkt,
+      length_km: Math.round(r.lengthKm * 1000) / 1000,
+      ...rulePatch(r, await routesHaveRules()),
+    })
+    .eq('id', id);
+  if (error) throw new Error(error.message);
+}
+
+const ewktCoords = (ewkt: string) =>
+  ewkt
+    .replace(/^.*LINESTRING\(/, '')
+    .replace(/\)$/, '')
+    .split(',')
+    .map((p) => p.trim().split(' ').map(Number) as [number, number]);
+
 export async function setRouteActive(id: string, active: boolean) {
+  if (PREVIEW) {
+    const row = (await loadPreview()).previewRoutes.find((x) => x.id === id);
+    if (row) row.is_active = active;
+    return;
+  }
   const { error } = await supabase.from('routes').update({ is_active: active }).eq('id', id);
   if (error) throw new Error(error.message);
+}
+
+/** Archive: hidden from volunteers and lists, kept for the walks that used it. */
+export async function archiveRoute(id: string) {
+  if (PREVIEW) {
+    const row = (await loadPreview()).previewRoutes.find((x) => x.id === id);
+    if (row) Object.assign(row, { deleted_at: new Date().toISOString(), is_active: false });
+    return;
+  }
+  const { error } = await supabase
+    .from('routes')
+    .update({ deleted_at: new Date().toISOString(), is_active: false })
+    .eq('id', id);
+  if (error) throw new Error(error.message);
+}
+
+export async function restoreRoute(id: string) {
+  if (PREVIEW) {
+    const row = (await loadPreview()).previewRoutes.find((x) => x.id === id);
+    if (row) Object.assign(row, { deleted_at: null, is_active: true });
+    return;
+  }
+  const { error } = await supabase
+    .from('routes')
+    .update({ deleted_at: null, is_active: true })
+    .eq('id', id);
+  if (error) throw new Error(error.message);
+}
+
+/** Permanent removal; the database refuses it for any route that was walked. */
+export async function deleteRouteForever(id: string) {
+  if (PREVIEW) {
+    const p = await loadPreview();
+    const i = p.previewRoutes.findIndex((x) => x.id === id);
+    if (i >= 0) p.previewRoutes.splice(i, 1);
+    return;
+  }
+  const { error } = await supabase.from('routes').delete().eq('id', id);
+  if (error) throw new Error(error.message);
+}
+
+export interface RouteRevision {
+  version: number;
+  rules: Record<string, unknown>;
+  changed_by: string | null;
+  changed_at: string;
+}
+
+export async function getRouteRevisions(id: string): Promise<RouteRevision[]> {
+  if (PREVIEW) return (await loadPreview()).previewRevisions.filter((r) => r.route_id === id);
+  const res = await supabase
+    .from('route_revisions')
+    .select('version, rules, changed_by, changed_at')
+    .eq('route_id', id)
+    .order('version', { ascending: false });
+  return res.error ? [] : ((res.data ?? []) as RouteRevision[]);
+}
+
+export interface TrackPoint {
+  session_id: string;
+  recorded_at: string;
+  latitude: number;
+  longitude: number;
+  accuracy_m: number | null;
+  speed_mps: number | null;
+  is_mock: boolean;
+  rejected_reason: string | null;
+}
+
+/** Raw fixes for one walk, rejected ones included; null before the migration. */
+export async function getTrackPoints(sessionId: string): Promise<TrackPoint[] | null> {
+  if (PREVIEW) return (await loadPreview()).previewPoints(sessionId);
+  const res = await supabase
+    .from('track_points_app')
+    .select('*')
+    .eq('session_id', sessionId)
+    .order('recorded_at')
+    .limit(20000);
+  return res.error ? null : ((res.data ?? []) as TrackPoint[]);
+}
+
+export interface ObservationDetail {
+  id: string;
+  reproductive_status: string | null;
+  visible_health_issues: string[];
+  collar_or_tag: string | null;
+  behaviour: string | null;
+  being_fed_by_people: string | null;
+  habitat_type: string | null;
+  food_sources_visible: string[];
+  distance_from_path_m: number | null;
+  coordinate_uncertainty_m: number | null;
+  grid_cell_id: string | null;
+  linked_individual_id: string | null;
+  created_at: string;
+  synced_at: string | null;
+}
+
+export interface GroupAnimal {
+  id: string;
+  ordinal: number;
+  sex: string;
+  age_class: string;
+  body_condition_score: number | null;
+  ear_tip_or_notch: string;
+  coat_pattern: string | null;
+  primary_colour: string | null;
+  individual_id: string | null;
+}
+
+export async function getObservationDetail(id: string): Promise<ObservationDetail | null> {
+  if (PREVIEW) return (await loadPreview()).previewDetail(id);
+  const res = await supabase
+    .from('observations')
+    .select(
+      'id, reproductive_status, visible_health_issues, collar_or_tag, behaviour, being_fed_by_people, habitat_type, food_sources_visible, distance_from_path_m, coordinate_uncertainty_m, grid_cell_id, linked_individual_id, created_at, synced_at'
+    )
+    .eq('id', id)
+    .maybeSingle();
+  if (res.error) throw new Error(res.error.message);
+  return (res.data as ObservationDetail | null) ?? null;
+}
+
+export async function getGroupAnimals(observationId: string): Promise<GroupAnimal[]> {
+  if (PREVIEW) return [];
+  const res = await supabase
+    .from('observation_animals')
+    .select(
+      'id, ordinal, sex, age_class, body_condition_score, ear_tip_or_notch, coat_pattern, primary_colour, individual_id'
+    )
+    .eq('observation_id', observationId)
+    .order('ordinal');
+  return res.error ? [] : ((res.data ?? []) as GroupAnimal[]);
+}
+
+export interface ColonyVisit {
+  id: string;
+  colony_id: string;
+  user_id: string | null;
+  visited_at: string;
+  tags: string[];
+  notes: string | null;
+}
+
+export async function getColonyVisits(colonyId: string): Promise<ColonyVisit[]> {
+  if (PREVIEW) return (await loadPreview()).previewColonyVisits(colonyId);
+  return ok<ColonyVisit[]>(
+    await supabase
+      .from('colony_visits')
+      .select('id, colony_id, user_id, visited_at, tags, notes')
+      .eq('colony_id', colonyId)
+      .order('visited_at', { ascending: false })
+      .limit(500)
+  );
 }
 
 export const getColonies = async () =>

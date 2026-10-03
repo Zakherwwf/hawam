@@ -14,6 +14,15 @@ export interface RouteRow {
   habitat_notes?: string | null;
   length_km?: number | null;
   geometry: { type: 'LineString'; coordinates: [number, number][] } | null;
+  // Walking protocol (route_protocols migration)
+  direction_rule?: 'as_drawn' | 'either' | null;
+  side_rule?: 'both' | 'left' | 'right' | null;
+  strip_width_m?: number | null;
+  window_start?: string | null;
+  window_end?: string | null;
+  require_complete?: boolean | null;
+  instructions?: string | null;
+  version?: number | null;
 }
 
 /** Server route (GeoJSON lon, lat) to the app's route (lat, lon), keeping what this phone knows. */
@@ -35,6 +44,19 @@ export function routeFromServer(row: RouteRow, local?: FixedRoute): FixedRoute |
     timesSurveyed: local?.timesSurveyed ?? 0,
     lastSurveyedAt: local?.lastSurveyedAt ?? null,
     bonusXp: 0,
+    rules:
+      row.direction_rule !== undefined
+        ? {
+            direction: row.direction_rule ?? 'as_drawn',
+            side: row.side_rule ?? 'both',
+            stripWidthM: row.strip_width_m ?? null,
+            windowStart: row.window_start?.slice(0, 5) ?? null,
+            windowEnd: row.window_end?.slice(0, 5) ?? null,
+            requireComplete: row.require_complete ?? true,
+            instructions: row.instructions ?? null,
+            version: row.version ?? 1,
+          }
+        : undefined,
   };
 }
 

@@ -625,7 +625,16 @@
     "walk_this": "امشِ هذا المسار",
     "km": "{{km}} كم",
     "walked_one": "مُشي مرة",
-    "walked_other": "مُشي {{count}} مرات"
+    "walked_other": "مُشي {{count}} مرات",
+    "rules_title": "قواعد هذا المسار",
+    "rule_one_way": "ابدأ من نقطة البداية وامشِ في اتجاه واحد حتى النهاية",
+    "rule_either": "امشِ في أي اتجاه",
+    "rule_side_both": "سجّل الحيوانات على الجانبين",
+    "rule_side_left": "سجّل الحيوانات على يسارك فقط",
+    "rule_side_right": "سجّل الحيوانات على يمينك فقط",
+    "rule_strip": "حتى {{m}} م من الطريق",
+    "rule_window": "امشِ بين {{from}} و{{to}}",
+    "rule_complete": "سجّل كل قطة وكلب تراه"
   },
   "ui_colonies_v3": {
     "new_title": "مستعمرة جديدة",

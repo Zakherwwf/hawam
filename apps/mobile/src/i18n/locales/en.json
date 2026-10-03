@@ -1672,7 +1672,16 @@
     "walk_this": "Walk this route",
     "km": "{{km}} km",
     "walked_one": "Walked once",
-    "walked_other": "Walked {{count}} times"
+    "walked_other": "Walked {{count}} times",
+    "rules_title": "Rules for this route",
+    "rule_one_way": "Start at the start point and walk one way, to the end",
+    "rule_either": "Walk in either direction",
+    "rule_side_both": "Record animals on both sides",
+    "rule_side_left": "Record animals on your left only",
+    "rule_side_right": "Record animals on your right only",
+    "rule_strip": "Up to {{m}} m from the path",
+    "rule_window": "Walk between {{from}} and {{to}}",
+    "rule_complete": "Record every cat and dog you see"
   },
   "ui_colonies_v3": {
     "new_title": "New colony",

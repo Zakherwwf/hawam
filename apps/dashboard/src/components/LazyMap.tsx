@@ -7,9 +7,15 @@ const Inner = lazy(() => import('./MapView'));
 
 export function MapView(props: ComponentProps<typeof MapViewType>) {
   return (
-    <Suspense fallback={<Skeleton className="w-full" />}>
+    <Suspense
+      fallback={
+        <div style={{ height: props.height ?? 520 }}>
+          <Skeleton className="w-full h-full" />
+        </div>
+      }
+    >
       <Inner {...props} />
     </Suspense>
   );
 }
-export type { MapLine, MapPoint } from './MapView';
+export type { MapLine, MapPoint, PointKind, LineKind, BaseStyle } from './MapView';

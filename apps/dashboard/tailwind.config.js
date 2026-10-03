@@ -1,6 +1,8 @@
 /** @type {import('tailwindcss').Config} */
 // Colours are CSS variables set from packages/design-tokens (hawem.ts), so the
-// dashboard and the app share one palette and both schemes.
+// dashboard and the app share one palette and both schemes. The porcelain
+// shell tones (rail, glass, pill shadows) are dashboard-only and live in
+// index.css.
 const v = (name) => `var(--${name})`;
 export default {
   content: ['./index.html', './src/**/*.{ts,tsx}'],
@@ -12,6 +14,7 @@ export default {
           '-apple-system',
           'BlinkMacSystemFont',
           '"SF Pro Text"',
+          '"SF Arabic"',
           '"Segoe UI"',
           'Roboto',
           '"Noto Sans"',
@@ -21,6 +24,7 @@ export default {
       },
       colors: {
         canvas: v('canvas'),
+        shell: v('shell'),
         surface: v('surface'),
         raised: v('surfaceRaised'),
         ink: v('ink'),
@@ -45,11 +49,17 @@ export default {
         'cat-soft': v('catSoft'),
         dog: v('dog'),
         'dog-soft': v('dogSoft'),
+        // The black pill of the reference boards: selected tab, primary action
+        pill: v('pill'),
+        'on-pill': v('onPill'),
       },
-      borderRadius: { card: '18px', control: '12px' },
+      borderRadius: { card: '24px', tile: '18px', control: '12px' },
       boxShadow: {
-        card: '0 6px 18px -8px rgba(22, 24, 29, 0.10), 0 1px 2px rgba(22, 24, 29, 0.04)',
+        card: 'var(--shadow-card)',
+        pill: 'var(--shadow-pill)',
+        float: 'var(--shadow-float)',
       },
+      screens: { '3xl': '1680px' },
     },
   },
   plugins: [],
