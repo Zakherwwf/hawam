@@ -4,13 +4,7 @@ import { SightingsTab } from '../../src/screens/SightingsTab';
 import { useAppState } from '../../src/app-state/AppStateProvider';
 
 export default function SightingsRoute() {
-  const { sightings, updateSighting, deleteSighting } = useAppState();
-  return (
-    <SightingsTab
-      sightings={sightings}
-      onAddNew={() => router.push('/opportunistic')}
-      onUpdateSighting={updateSighting}
-      onDeleteSighting={deleteSighting}
-    />
-  );
+  const { sightings } = useAppState();
+  // Opening a sighting goes to its profile (app/sighting/[id].tsx), where it is edited
+  return <SightingsTab sightings={sightings} onAddNew={() => router.push('/opportunistic')} />;
 }

@@ -111,7 +111,8 @@ export const Button: React.FC<ButtonProps> = ({
                 ? 'rgba(255, 255, 255, 0.12)'
                 : 'rgba(0, 0, 0, 0.08)'
               : 'transparent',
-          borderWidth: variant === 'glass' || variant === 'secondary' ? StyleSheet.hairlineWidth : 0,
+          borderWidth:
+            variant === 'glass' || variant === 'secondary' ? StyleSheet.hairlineWidth : 0,
         },
         style,
       ]}
@@ -128,7 +129,7 @@ export const Button: React.FC<ButtonProps> = ({
                 color: getTextColor(),
                 fontSize: isLarge ? 18 : 15,
                 fontWeight: isLarge ? '700' : '600',
-                marginLeft: icon ? 8 : 0,
+                marginStart: icon ? 8 : 0,
               },
               labelStyle,
             ]}

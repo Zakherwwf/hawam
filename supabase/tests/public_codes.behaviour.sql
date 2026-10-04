@@ -49,12 +49,13 @@ DO $$ BEGIN
 EXCEPTION WHEN unique_violation THEN RAISE NOTICE 'PASS 3: duplicate codes are impossible';
 END $$;
 
--- 4. Every signed-in user sees everyone's observations, with codes, on the shared map
+-- 4. Exact map rows are your own (privacy_and_integrity); every code stays
+--    readable to signed-in users through observation_cards, rounded for others
 SET ROLE authenticated;
 SELECT set_config('request.jwt.claim.sub', 'bbbbbbbb-0000-0000-0000-00000000000b', true);
-SELECT CASE WHEN count(*) = 3 AND count(public_code) = 3
-  THEN 'PASS 4: observations_map shows all users'' observations with their codes' ELSE 'FAIL 4: saw ' || count(*) END
-FROM public.observations_map;
+SELECT CASE WHEN (SELECT count(*) FROM public.observations_map) = 1
+         AND (SELECT count(public_code) FROM public.observation_cards((SELECT array_agg(id) FROM public.observations))) = 3
+  THEN 'PASS 4: the exact map shows your own sightings; codes stay visible for all' ELSE 'FAIL 4' END;
 RESET ROLE;
 
 ROLLBACK;

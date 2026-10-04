@@ -56,8 +56,13 @@ WHERE NOT l.is_founder;
 -- 4. individuals_app: position, photo and both flanks now known
 SET ROLE authenticated;
 SELECT set_config('request.jwt.claim.sub', 'aaaaaaaa-0000-0000-0000-00000000000a', true);
-SELECT CASE WHEN nickname = 'Ginger' AND has_left_flank AND has_right_flank AND abs(latitude - 36.8001) < 1e-9 AND photo_path IS NOT NULL AND pending_links = 0
-  THEN 'PASS 4: individuals_app shows the latest position, photo and flanks' ELSE 'FAIL 4' END
+-- The latest sighting is B's: A sees it rounded to ~100 m (privacy_and_integrity), B exactly
+SELECT CASE WHEN nickname = 'Ginger' AND has_left_flank AND has_right_flank AND abs(latitude - 36.800) < 1e-9 AND photo_path IS NOT NULL AND pending_links = 0
+  THEN 'PASS 4: individuals_app shows the latest position (rounded for others), photo and flanks' ELSE 'FAIL 4' END
+FROM public.individuals_app;
+SELECT set_config('request.jwt.claim.sub', 'bbbbbbbb-0000-0000-0000-00000000000b', true);
+SELECT CASE WHEN abs(latitude - 36.8001) < 1e-9
+  THEN 'PASS 4b: the owner of the latest sighting sees the exact position' ELSE 'FAIL 4b' END
 FROM public.individuals_app;
 RESET ROLE;
 

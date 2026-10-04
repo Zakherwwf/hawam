@@ -23,6 +23,7 @@ import { IOSColors, IOSTypography } from '../../theme/ios';
 import { IOSIcon } from '../ios';
 import { MAP_STYLE_URL, WORLD_VIEW } from '../../config/map';
 import {
+  routeExtrasGeoJSON,
   USER_LOCATION_ZOOM,
   loadSavedCamera,
   saveCamera,
@@ -59,6 +60,8 @@ export const NativeMapView: React.FC<InteractiveMapViewProps> = ({
   transectMarkers = [],
   trackCoordinates = [],
   routeCorridorCoordinates = [],
+  routeDirection = null,
+  extraLines = [],
   showUserLocation = true,
   onMarkerPress,
   onColonyPress,
@@ -68,6 +71,10 @@ export const NativeMapView: React.FC<InteractiveMapViewProps> = ({
 }) => {
   const { t } = useTranslation();
   const cameraRef = useRef<CameraRef>(null);
+  const routeExtras = useMemo(
+    () => routeExtrasGeoJSON(routeCorridorCoordinates, routeDirection, extraLines),
+    [routeCorridorCoordinates, routeDirection, extraLines]
+  );
   const observationsRef = useRef<GeoJSONSourceRef>(null);
   const [showColonies, setShowColonies] = useState(true);
   const [userLocation, setUserLocation] = useState<{
@@ -227,6 +234,48 @@ export const NativeMapView: React.FC<InteractiveMapViewProps> = ({
                 'line-width': 3,
                 'line-dasharray': [2, 2],
                 'line-opacity': 0.9,
+              }}
+            />
+          </GeoJSONSource>
+        ) : null}
+
+        {routeExtras.lines.features.length ? (
+          <GeoJSONSource id="route-extra-lines" data={routeExtras.lines}>
+            <Layer
+              id="route-chevron-casing"
+              type="line"
+              filter={['==', ['get', 'kind'], 'chevron']}
+              layout={{ 'line-join': 'round', 'line-cap': 'round' }}
+              paint={{ 'line-color': '#FFFFFF', 'line-width': 6 }}
+            />
+            <Layer
+              id="route-extra-lines"
+              type="line"
+              layout={{ 'line-join': 'round', 'line-cap': 'round' }}
+              paint={{
+                'line-color': ['get', 'color'],
+                'line-width': ['get', 'width'],
+                'line-dasharray': [
+                  'case',
+                  ['==', ['get', 'dashed'], 1],
+                  ['literal', [2, 2]],
+                  ['literal', [1, 0]],
+                ],
+              }}
+            />
+          </GeoJSONSource>
+        ) : null}
+
+        {routeExtras.ends.features.length ? (
+          <GeoJSONSource id="route-ends" data={routeExtras.ends}>
+            <Layer
+              id="route-ends"
+              type="circle"
+              paint={{
+                'circle-radius': ['case', ['==', ['get', 'kind'], 'start'], 9, 7],
+                'circle-color': ['get', 'color'],
+                'circle-stroke-color': '#FFFFFF',
+                'circle-stroke-width': 3,
               }}
             />
           </GeoJSONSource>
@@ -431,7 +480,7 @@ const styles = StyleSheet.create({
   floatingControls: {
     position: 'absolute',
     top: 14,
-    right: 14,
+    end: 14,
     flexDirection: 'column',
     gap: 10,
     alignItems: 'flex-end',
@@ -470,7 +519,7 @@ const styles = StyleSheet.create({
   accuracyTag: {
     position: 'absolute',
     top: 14,
-    left: 14,
+    start: 14,
     flexDirection: 'row',
     alignItems: 'center',
     gap: 6,

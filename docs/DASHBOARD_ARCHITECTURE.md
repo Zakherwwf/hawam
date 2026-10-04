@@ -247,6 +247,20 @@ Score = (passes + ½ warns) / applicable checks. Shown on walk profiles, the wal
 - Views: `routes_app` (new columns appended; archived routes hidden), `routes_admin` (all routes with rules, gated by `is_researcher()`), `track_points_app` (raw fixes as lat/lon, same RLS as `track_points`).
 - Behaviour test: `supabase/tests/route_protocols.behaviour.sql` (version starts at 1, sessions record it, a reversed line bumps it and keeps the old one, a rename does not, walked routes refuse delete, archived routes leave the app view, researcher-only views, read-only history).
 
+### Privacy and integrity (`20261004000100_privacy_and_integrity.sql`)
+
+Who sees what, enforced by row-level security and tested in `supabase/tests/privacy_and_integrity.behaviour.sql`:
+
+| Data                                                                                                                               | Owner              | Other volunteers                                                             | Researchers/admins          |
+| ---------------------------------------------------------------------------------------------------------------------------------- | ------------------ | ---------------------------------------------------------------------------- | --------------------------- |
+| Profile totals (`people_stats`): cats and dogs counted, surveys, km, complete checklists, colonies and packs registered or visited | yes                | yes                                                                          | yes                         |
+| Exact animal position, standing point, bearing                                                                                     | yes                | no: `observation_cards()` and `individuals_app` round to 3 decimals (~100 m) | yes                         |
+| Walked tracks and raw GPS fixes                                                                                                    | yes                | no                                                                           | yes (outside privacy zones) |
+| Consent columns                                                                                                                    | via `my_consent()` | no                                                                           | no                          |
+| Emails (`user_directory()`)                                                                                                        | no                 | no                                                                           | yes                         |
+
+Effort and counts are fixed once uploaded: `sessions_protect_effort` and `observations_protect_counts` keep distance, times, protocol, completeness, species and group size unchanged for direct client edits (the sync functions run as owner and are unaffected), so the leaderboard cannot be inflated after the server checks ran. Phone sessions live in the encrypted keychain (`apps/mobile/src/services/authStorage.ts`). `supabase/tests/security_invariants.test.ts` checks the migrations for these rules; `run_sql_behaviour.sh` replays every migration on a throwaway PostGIS container and runs all behaviour checks.
+
 ### People's names and emails (`20261003000200_display_names.sql`)
 
 The app keeps each person's name in their auth profile (`full_name`, or the Google name) and never wrote it to `public.users.display_name`, so the portal showed everyone except the signed-in researcher as "Unnamed volunteer". The migration backfills `display_name` from the auth profile, else the part of the email before the @, and keeps it filled on sign-up and on profile changes (without overwriting a name already set). `user_directory()` returns email, last sign-in and sign-in method to researchers and admins only; the portal merges it into People and person profiles and falls back to display names alone when the function is missing. `personName()` in `data/api.ts` is the one naming rule, and `useCore()` fills `observer_name` on sightings with it.

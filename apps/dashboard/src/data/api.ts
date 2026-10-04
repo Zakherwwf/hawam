@@ -254,7 +254,7 @@ export async function getUsers(): Promise<UserRow[]> {
   const users = ok<UserRow[]>(
     await supabase
       .from('users')
-      .select('id, display_name, role, created_at, preferred_language, consent_accepted_at')
+      .select('id, display_name, role, created_at, preferred_language')
       .order('created_at', { ascending: false })
       .limit(5000)
   );

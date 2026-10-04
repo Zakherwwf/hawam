@@ -61,7 +61,7 @@ function TabBar({ state, navigation, onRecord }: BottomTabBarProps & { onRecord:
               style={{
                 position: 'absolute',
                 top: -4,
-                right: -10,
+                end: -10,
                 minWidth: 18,
                 height: 18,
                 borderRadius: 9,
@@ -238,7 +238,7 @@ export default function TabsLayout() {
             accessibilityLabel={t('ui_walk.discard')}
             style={{
               position: 'absolute',
-              right: 0,
+              end: 0,
               top: 0,
               width: 44,
               height: 44,

@@ -5,6 +5,7 @@
  */
 import type { DimensionValue } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import { directionChevrons, isLoop, type DirectionRule } from '../../features/routes/routeGuidance';
 
 export interface MapMarker {
   id: string;
@@ -88,6 +89,13 @@ export interface InteractiveMapViewProps {
   transectMarkers?: TransectMarker[];
   trackCoordinates?: [number, number][]; // [lat, lon]
   routeCorridorCoordinates?: [number, number][]; // Planned transect corridor [lat, lon]
+  /**
+   * The corridor's walking rule. When set, the start (green) and end (dark)
+   * points are drawn, and for one-way routes chevrons point the direction.
+   */
+  routeDirection?: DirectionRule | null;
+  /** Further lines: observer-to-animal bearing, an animal's movement path */
+  extraLines?: MapLine[];
   showUserLocation?: boolean;
   onMarkerPress?: (markerId: string) => void;
   onColonyPress?: (colonyId: string) => void;
@@ -100,3 +108,64 @@ export interface InteractiveMapViewProps {
 }
 
 export type MapStyle = 'streets' | 'satellite' | 'outdoors';
+
+export interface MapLine {
+  id: string;
+  coords: [number, number][]; // [lat, lon]
+  color: string;
+  width?: number;
+  dashed?: boolean;
+}
+
+export const ROUTE_START_COLOR = '#2F7A2B';
+export const ROUTE_END_COLOR = '#16181D';
+const CHEVRON_COLOR = '#0284C7';
+
+type GJ = GeoJSON.FeatureCollection<GeoJSON.Geometry, Record<string, unknown>>;
+
+/**
+ * Shared by both renderers: chevrons and extra lines as one line collection
+ * (properties carry colour, width and dash), start/end as points. [lon, lat].
+ */
+export function routeExtrasGeoJSON(
+  corridor: [number, number][],
+  direction: DirectionRule | null | undefined,
+  extra: MapLine[] = []
+): { lines: GJ; ends: GJ } {
+  const flip = (c: [number, number][]) => c.map(([lat, lon]) => [lon, lat]);
+  const lineFeatures: GJ['features'] = extra
+    .filter((l) => l.coords.length >= 2)
+    .map((l) => ({
+      type: 'Feature',
+      geometry: { type: 'LineString', coordinates: flip(l.coords) },
+      properties: { kind: 'extra', color: l.color, width: l.width ?? 2, dashed: l.dashed ? 1 : 0 },
+    }));
+  const endFeatures: GJ['features'] = [];
+  if (direction && corridor.length >= 2) {
+    if (direction === 'as_drawn')
+      for (const ch of directionChevrons(corridor))
+        lineFeatures.push({
+          type: 'Feature',
+          geometry: { type: 'LineString', coordinates: flip(ch) },
+          properties: { kind: 'chevron', color: CHEVRON_COLOR, width: 3, dashed: 0 },
+        });
+    const [sLat, sLon] = corridor[0];
+    endFeatures.push({
+      type: 'Feature',
+      geometry: { type: 'Point', coordinates: [sLon, sLat] },
+      properties: { kind: 'start', color: ROUTE_START_COLOR },
+    });
+    if (!isLoop(corridor)) {
+      const [eLat, eLon] = corridor[corridor.length - 1];
+      endFeatures.push({
+        type: 'Feature',
+        geometry: { type: 'Point', coordinates: [eLon, eLat] },
+        properties: { kind: 'end', color: ROUTE_END_COLOR },
+      });
+    }
+  }
+  return {
+    lines: { type: 'FeatureCollection', features: lineFeatures },
+    ends: { type: 'FeatureCollection', features: endFeatures },
+  };
+}

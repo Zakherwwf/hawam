@@ -9,6 +9,7 @@
  * app is not on screen.
  */
 
+import { formatTime } from '../utils/formatObservation';
 import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { Alert, Linking, View } from 'react-native';
 import * as Location from 'expo-location';
@@ -22,6 +23,12 @@ import { FinishWalkSheet, type WalkConditions } from '../components/survey/Finis
 import { RoutePickerModal } from '../components/routes/RoutePickerModal';
 import { useSurveyStore, type InSurveyDetection } from '../features/survey/surveyStore';
 import { useRoutesStore } from '../features/routes/routesStore';
+import {
+  guidance as routeGuidance,
+  inTimeWindow,
+  routeFrame,
+  type LatLon,
+} from '../features/routes/routeGuidance';
 import { useSyncStore } from '../features/sync/syncStore';
 import { buildWalkBundle } from '../features/survey/buildWalkBundle';
 import { surveyXpPreview, timeOfDay } from '../features/survey/walkMath';
@@ -86,6 +93,24 @@ export function SurveyWalkScreen({
   const [finishOpen, setFinishOpen] = useState(false);
   const [routePicker, setRoutePicker] = useState(false);
   const [offRouteM, setOffRouteM] = useState<number | null>(null);
+  // Live route guidance: distance to the start, walking against a one-way route
+  const [toStartM, setToStartM] = useState<number | null>(null);
+  const [wrongWay, setWrongWay] = useState(false);
+  const recentFixes = useRef<LatLon[]>([]);
+  const reachedStart = useRef(false);
+  const frame = useMemo(() => (route ? routeFrame(route.waypoints) : null), [route]);
+  const guideRef = useRef({ frame, rule: route?.rules?.direction ?? null });
+  guideRef.current = { frame, rule: route?.rules?.direction ?? null };
+  useEffect(() => {
+    // A different route starts the guidance over
+    recentFixes.current = [];
+    reachedStart.current = false;
+    setToStartM(null);
+    setWrongWay(false);
+  }, [routeId]);
+  const outsideWindow =
+    !!route?.rules?.windowStart &&
+    !inTimeWindow(new Date(), route.rules.windowStart, route.rules.windowEnd ?? null);
   const [focus, setFocus] = useState<FocusCoordinate | null>(null);
   const focused = useRef(false);
 
@@ -122,6 +147,17 @@ export function SurveyWalkScreen({
       if (rid) {
         const chk = checkOffRoute(lat, lon, rid);
         setOffRouteM(chk.isOffRoute ? Math.round(chk.distanceM) : null);
+        const { frame: f, rule } = guideRef.current;
+        // Only fixes good enough to judge direction (30 m, the same cut as the track filter)
+        if (f && rule && acc <= 30) {
+          recentFixes.current = [...recentFixes.current.slice(-11), [lat, lon]];
+          const g = routeGuidance(f, recentFixes.current, rule, {
+            startedOnRoute: reachedStart.current,
+          });
+          if (g.started) reachedStart.current = true;
+          setToStartM(g.toStartM);
+          setWrongWay(g.wrongWay);
+        }
       }
     };
 
@@ -399,6 +435,7 @@ export function SurveyWalkScreen({
         markers={markers}
         trackCoordinates={track}
         routeCorridorCoordinates={route?.waypoints ?? []}
+        routeDirection={route?.rules?.direction ?? null}
         showUserLocation
         hideControls
         onMarkerPress={(id) => {
@@ -479,6 +516,21 @@ export function SurveyWalkScreen({
             </Glass>
           ) : null}
         </View>
+        {wrongWay ? (
+          <GuidanceBanner tone="danger" icon="route" text={t('ui_walk.wrong_way')} />
+        ) : toStartM != null ? (
+          <GuidanceBanner tone="info" icon="pin" text={t('ui_walk.go_to_start', { m: toStartM })} />
+        ) : null}
+        {outsideWindow && route?.rules ? (
+          <GuidanceBanner
+            tone="info"
+            icon="clock"
+            text={t('ui_walk.outside_window', {
+              from: route.rules.windowStart,
+              to: route.rules.windowEnd,
+            })}
+          />
+        ) : null}
         {offRouteM != null ? (
           <View
             style={{
@@ -626,10 +678,7 @@ export function SurveyWalkScreen({
                 </Text>
                 <Text variant="footnote" tone="ink2">
                   {[
-                    new Date(d.observed_at).toLocaleTimeString([], {
-                      hour: '2-digit',
-                      minute: '2-digit',
-                    }),
+                    formatTime(d.observed_at),
                     d.distance_estimate_m != null
                       ? t('ui_walk.metres', { m: d.distance_estimate_m })
                       : t('ui_walk.add_distance'),
@@ -662,6 +711,39 @@ export function SurveyWalkScreen({
         onSelectRoute={(r) => useSurveyStore.setState({ selectedRouteId: r?.id ?? null })}
         onClose={() => setRoutePicker(false)}
       />
+    </View>
+  );
+}
+
+/** A one-line guidance banner under the walk HUD, announced to screen readers. */
+function GuidanceBanner({
+  tone,
+  icon,
+  text,
+}: {
+  tone: 'info' | 'danger';
+  icon: 'route' | 'pin' | 'clock';
+  text: string;
+}) {
+  const { c } = useTheme();
+  const bg = tone === 'danger' ? c.dangerSoft : c.accentSoft;
+  const fg = tone === 'danger' ? c.danger : c.accent;
+  return (
+    <View
+      style={{
+        backgroundColor: bg,
+        borderRadius: 14,
+        padding: 10,
+        flexDirection: 'row',
+        gap: 8,
+        alignItems: 'center',
+      }}
+      accessibilityLiveRegion={tone === 'danger' ? 'assertive' : 'polite'}
+    >
+      <Symbol name={icon} size={16} color={fg} />
+      <Text variant="footnote" weight="600" style={{ color: fg, flex: 1 }}>
+        {text}
+      </Text>
     </View>
   );
 }

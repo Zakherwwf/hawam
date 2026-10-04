@@ -6,7 +6,7 @@
 import type { ColonyRow, RouteRow, colonyToServer } from '../features/sync/serverMapping';
 import type { IndividualRow } from '../features/animals/knownAnimals';
 import { createClient } from '@supabase/supabase-js';
-import AsyncStorage from '@react-native-async-storage/async-storage';
+import { authStorage } from './authStorage.ts';
 
 export const SUPABASE_URL =
   process.env.EXPO_PUBLIC_SUPABASE_URL || 'https://opglgsidxoedlmgegojz.supabase.co';
@@ -14,39 +14,8 @@ export const SUPABASE_ANON_KEY =
   process.env.EXPO_PUBLIC_SUPABASE_ANON_KEY ||
   'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im9wZ2xnc2lkeG9lZGxtZ2Vnb2p6Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTAxOTI0NzYsImV4cCI6MjEwNTc2ODQ3Nn0.XURVPJme6rqr3HPiQUnOXgcjfYMwuaMMNtZNy2hNh0w';
 
-const storageAdapter = {
-  getItem: async (key: string): Promise<string | null> => {
-    try {
-      if (typeof AsyncStorage?.getItem === 'function') {
-        return await AsyncStorage.getItem(key);
-      }
-      if (typeof (AsyncStorage as any)?.default?.getItem === 'function') {
-        return await (AsyncStorage as any).default.getItem(key);
-      }
-      return null;
-    } catch {
-      return null;
-    }
-  },
-  setItem: async (key: string, value: string): Promise<void> => {
-    try {
-      if (typeof AsyncStorage?.setItem === 'function') {
-        await AsyncStorage.setItem(key, value);
-      } else if (typeof (AsyncStorage as any)?.default?.setItem === 'function') {
-        await (AsyncStorage as any).default.setItem(key, value);
-      }
-    } catch {}
-  },
-  removeItem: async (key: string): Promise<void> => {
-    try {
-      if (typeof AsyncStorage?.removeItem === 'function') {
-        await AsyncStorage.removeItem(key);
-      } else if (typeof (AsyncStorage as any)?.default?.removeItem === 'function') {
-        await (AsyncStorage as any).default.removeItem(key);
-      }
-    } catch {}
-  },
-};
+// Tokens live in the encrypted keychain/keystore (services/authStorage.ts)
+const storageAdapter = authStorage;
 
 const isTestEnv =
   typeof process !== 'undefined' && (process.env.NODE_ENV === 'test' || !process.env.EXPO_OS);
@@ -164,14 +133,9 @@ export async function ensureUserConsentAccepted(): Promise<void> {
       data: { session },
     } = await supabase.auth.getSession();
     if (session?.user?.id) {
-      await supabase
-        .from('users')
-        .update({
-          consent_version: 1,
-          consent_accepted_at: new Date().toISOString(),
-        })
-        .eq('id', session.user.id)
-        .is('consent_accepted_at', null);
+      // Consent columns are private; the server function keeps the first
+      // acceptance time and only writes the caller's own row
+      await supabase.rpc('accept_consent', { version: 1 });
     }
   } catch (err) {
     console.warn('Failed to ensure user consent:', err);

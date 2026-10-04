@@ -124,10 +124,7 @@ export function SettingsView({
         />
       </Section>
 
-      <Section
-        header={t('settings.language_header')}
-        footer={languages.enabled.length < 3 ? t('ui_settings_v3.language_footer') : undefined}
-      >
+      <Section header={t('settings.language_header')} footer={t('ui_settings_v3.language_footer')}>
         {languages.enabled.map((lng) => (
           <Row
             key={lng}
@@ -140,8 +137,9 @@ export function SettingsView({
               ) : undefined
             }
             onPress={() => {
-              setAppLanguage(lng as 'ar' | 'fr' | 'en');
-              onLanguageChange?.(lng as 'ar' | 'fr' | 'en');
+              if (current === lng) return;
+              if (onLanguageChange) onLanguageChange(lng as 'ar' | 'fr' | 'en');
+              else setAppLanguage(lng);
             }}
           />
         ))}

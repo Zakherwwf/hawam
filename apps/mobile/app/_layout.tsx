@@ -40,6 +40,9 @@ function RootNavigator() {
           <Stack.Screen name="opportunistic" />
           <Stack.Screen name="training" />
           <Stack.Screen name="settings" />
+          <Stack.Screen name="sighting/[id]" />
+          <Stack.Screen name="animal/[id]" />
+          <Stack.Screen name="person/[id]" />
         </Stack.Protected>
 
         {/* Authentication is mandatory before any map or data access */}

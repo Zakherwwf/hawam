@@ -33,4 +33,5 @@ export type {
   FocusCoordinate,
   TransectMarker,
   InteractiveMapViewProps,
+  MapLine,
 } from './mapTypes';

@@ -1,5 +1,5 @@
 import React from 'react';
-import { Platform } from 'react-native';
+import { Platform, I18nManager, View } from 'react-native';
 import { SymbolView } from 'expo-symbols';
 import {
   Award,
@@ -110,6 +110,7 @@ const ICONS = {
 } as const;
 
 export type SymbolName = keyof typeof ICONS;
+const DIRECTIONAL = new Set<string>(['chevronLeft', 'chevronRight']);
 
 export function Symbol({
   name,
@@ -127,15 +128,21 @@ export function Symbol({
   const fallback = (
     <Fallback size={size} color={color} strokeWidth={weight === 'regular' ? 1.8 : 2.2} />
   );
-  if (Platform.OS !== 'ios') return fallback;
-  return (
-    <SymbolView
-      name={entry.sf as any}
-      size={size}
-      tintColor={color}
-      weight={weight}
-      type="monochrome"
-      fallback={fallback}
-    />
-  );
+  const icon =
+    Platform.OS !== 'ios' ? (
+      fallback
+    ) : (
+      <SymbolView
+        name={entry.sf as any}
+        size={size}
+        tintColor={color}
+        weight={weight}
+        type="monochrome"
+        fallback={fallback}
+      />
+    );
+  // Back and forward chevrons point the other way in Arabic (right-to-left)
+  if (I18nManager.isRTL && DIRECTIONAL.has(name))
+    return <View style={{ transform: [{ scaleX: -1 }] }}>{icon}</View>;
+  return icon;
 }

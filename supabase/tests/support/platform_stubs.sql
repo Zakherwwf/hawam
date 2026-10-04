@@ -35,6 +35,7 @@ CREATE TABLE auth.users (
   email TEXT,
   raw_user_meta_data JSONB DEFAULT '{}'::jsonb,
   raw_app_meta_data JSONB DEFAULT '{}'::jsonb,
+  last_sign_in_at TIMESTAMPTZ,
   created_at TIMESTAMPTZ DEFAULT now()
 );
 CREATE FUNCTION auth.uid() RETURNS UUID LANGUAGE sql STABLE AS

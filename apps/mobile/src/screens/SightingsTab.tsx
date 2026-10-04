@@ -6,6 +6,7 @@
 
 import React, { useEffect, useMemo, useState } from 'react';
 import { Alert, Image, TextInput, View } from 'react-native';
+import { router } from 'expo-router';
 import { useTranslation } from 'react-i18next';
 import {
   AnimalFace,
@@ -18,7 +19,6 @@ import {
   Screen,
   Section,
   Segmented,
-  Sheet,
   StreetScene,
   Symbol,
   Tag,
@@ -31,20 +31,16 @@ import { useToast } from '../ui/Toast';
 import { useKnownAnimals } from '../features/animals/knownAnimals';
 import { supabase } from '../services/supabase';
 import { resolveAnimalPhotoUrl } from '../services/storageService';
-import { formatCoordinates, formatDay, formatObservedAt } from '../utils/formatObservation';
+import { formatDay, formatObservedAt, formatTime } from '../utils/formatObservation';
 
 type Filter = 'all' | 'cat' | 'dog' | 'photo';
 
 export function SightingsTab({
   sightings,
   onAddNew,
-  onUpdateSighting,
-  onDeleteSighting,
 }: {
   sightings: SightingItem[];
   onAddNew: () => void;
-  onUpdateSighting: (s: SightingItem) => void;
-  onDeleteSighting: (id: string) => void;
 }) {
   const { t } = useTranslation();
   const { c } = useTheme();
@@ -54,7 +50,6 @@ export function SightingsTab({
   const [view, setView] = useState<'all' | 'known'>('all');
   const [filter, setFilter] = useState<Filter>('all');
   const [query, setQuery] = useState('');
-  const [open, setOpen] = useState<SightingItem | null>(null);
 
   const filtered = useMemo(() => {
     const q = query.trim().toLowerCase();
@@ -241,7 +236,11 @@ export function SightingsTab({
                 byDay.map((g) => (
                   <Section key={g.label} header={g.label}>
                     {g.items.map((s) => (
-                      <SightingRow key={s.id} s={s} onPress={() => setOpen(s)} />
+                      <SightingRow
+                        key={s.id}
+                        s={s}
+                        onPress={() => router.push(`/sighting/${s.id}`)}
+                      />
                     ))}
                   </Section>
                 ))
@@ -276,26 +275,13 @@ export function SightingsTab({
                   ]
                     .filter(Boolean)
                     .join(' · ')}
-                  chevron={false}
+                  onPress={() => router.push(`/animal/${a.id}`)}
                 />
               ))}
             </Section>
           )}
         </>
       )}
-
-      <SightingSheet
-        s={open}
-        onClose={() => setOpen(null)}
-        onSave={(u) => {
-          onUpdateSighting(u);
-          setOpen(null);
-        }}
-        onDelete={(id) => {
-          onDeleteSighting(id);
-          setOpen(null);
-        }}
-      />
     </Screen>
   );
 }
@@ -382,10 +368,7 @@ function speciesLabel(t: (k: string) => string, s: SightingItem['species']) {
 function SightingRow({ s, onPress }: { s: SightingItem; onPress: () => void }) {
   const { t } = useTranslation();
   const title = s.identifier?.trim() || speciesLabel(t, s.species);
-  const time = new Date(s.observed_at).toLocaleTimeString([], {
-    hour: '2-digit',
-    minute: '2-digit',
-  });
+  const time = formatTime(s.observed_at);
   const code = s.publicCode ?? t('ui_common.code_pending');
   const status = s.syncPending ? t('ui_sightings_v3.waiting_tag') : t('ui_sightings_v3.uploaded');
   return (
@@ -417,124 +400,5 @@ function SightingRow({ s, onPress }: { s: SightingItem; onPress: () => void }) {
         <Tag label={status} tone={s.syncPending ? 'warning' : 'accent'} />
       </View>
     </Press>
-  );
-}
-
-function SightingSheet({
-  s,
-  onClose,
-  onSave,
-  onDelete,
-}: {
-  s: SightingItem | null;
-  onClose: () => void;
-  onSave: (s: SightingItem) => void;
-  onDelete: (id: string) => void;
-}) {
-  const { t } = useTranslation();
-  const { c, radius } = useTheme();
-  const [tag, setTag] = useState('');
-  const [notes, setNotes] = useState('');
-  useEffect(() => {
-    setTag(s?.identifier ?? '');
-    setNotes(s?.notes ?? '');
-  }, [s]);
-  const url = usePhotoUrl(s?.photos?.[0]);
-  if (!s) return null;
-  const changed = tag.trim() !== (s.identifier ?? '') || notes.trim() !== (s.notes ?? '');
-  const input = {
-    backgroundColor: c.surface,
-    borderRadius: radius.sm,
-    paddingHorizontal: 12,
-    paddingVertical: 10,
-    fontSize: 17,
-    color: c.ink,
-  } as const;
-  return (
-    <Sheet visible={!!s} onClose={onClose} title={s.publicCode ?? speciesLabel(t, s.species)}>
-      <View style={{ gap: 16 }}>
-        <View style={{ flexDirection: 'row', gap: 14 }}>
-          {url ? (
-            <Image
-              source={{ uri: url }}
-              style={{ width: 112, height: 112, borderRadius: radius.lg, backgroundColor: c.fill }}
-              accessibilityLabel={t('ui_quick.photo_taken')}
-            />
-          ) : (
-            <Thumb s={s} size={112} />
-          )}
-          <View style={{ flex: 1, gap: 4, justifyContent: 'center' }}>
-            <Text variant="headline">
-              {speciesLabel(t, s.species)} · {t('ui_quick.count_value', { count: s.group_size })}
-            </Text>
-            <Text variant="footnote" tone="ink2">
-              {formatObservedAt(s.observed_at, {
-                today: t('ui_common.today'),
-                yesterday: t('ui_common.yesterday'),
-              })}
-            </Text>
-            <Text variant="footnote" tone="ink2" tabular>
-              {formatCoordinates(s.latitude, s.longitude)}
-            </Text>
-            <Text variant="footnote" style={{ color: s.syncPending ? c.warning : c.accent }}>
-              {s.syncPending ? t('ui_sightings_v3.not_uploaded') : t('ui_sightings_v3.uploaded')}
-            </Text>
-          </View>
-        </View>
-        <View style={{ gap: 6 }}>
-          <Text variant="subhead" weight="600">
-            {t('ui_sightings_v3.tag')}
-          </Text>
-          <TextInput
-            value={tag}
-            onChangeText={setTag}
-            placeholder={t('ui_sightings_v3.tag_placeholder')}
-            placeholderTextColor={c.ink3}
-            style={input}
-            accessibilityLabel={t('ui_sightings_v3.tag')}
-            maxLength={40}
-          />
-          <Text variant="footnote" tone="ink2">
-            {t('ui_sightings_v3.tag_hint')}
-          </Text>
-        </View>
-        <View style={{ gap: 6 }}>
-          <Text variant="subhead" weight="600">
-            {t('ui_quick.notes')}
-          </Text>
-          <TextInput
-            value={notes}
-            onChangeText={setNotes}
-            multiline
-            placeholder={t('ui_quick.notes_placeholder')}
-            placeholderTextColor={c.ink3}
-            style={[input, { minHeight: 72, textAlignVertical: 'top' }]}
-            accessibilityLabel={t('ui_quick.notes')}
-            maxLength={500}
-          />
-        </View>
-        <Button
-          title={t('common.save')}
-          disabled={!changed}
-          onPress={() =>
-            onSave({ ...s, identifier: tag.trim() || undefined, notes: notes.trim() || undefined })
-          }
-        />
-        <Button
-          kind="destructive"
-          title={t('ui_sightings_v3.remove')}
-          onPress={() =>
-            Alert.alert(t('ui_sightings_v3.remove_title'), t('ui_sightings_v3.remove_body'), [
-              { text: t('common.cancel'), style: 'cancel' },
-              {
-                text: t('ui_sightings_v3.remove'),
-                style: 'destructive',
-                onPress: () => onDelete(s.id),
-              },
-            ])
-          }
-        />
-      </View>
-    </Sheet>
   );
 }

@@ -9,6 +9,7 @@
  * - Automatic retry with dependency ordering
  */
 
+import { formatTime } from '../../utils/formatObservation.ts';
 import { create } from 'zustand';
 import { storage } from '../../services/storageAdapter.ts';
 import { localDb } from '../../db/localDb.ts';
@@ -406,7 +407,7 @@ export const useSyncStore = create<SyncState>((set, get) => ({
           return item;
         });
 
-      const nowStr = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+      const nowStr = formatTime(new Date());
 
       set({
         isSyncing: false,

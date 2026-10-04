@@ -75,7 +75,7 @@ export function KnownAnimalPicker({
         <ScrollView
           horizontal
           showsHorizontalScrollIndicator={false}
-          contentContainerStyle={{ gap: 10, paddingRight: 4 }}
+          contentContainerStyle={{ gap: 10, paddingEnd: 4 }}
         >
           {near.map((a) => (
             <AnimalCard
@@ -258,7 +258,7 @@ function AnimalCard({
           style={{
             position: 'absolute',
             top: 6,
-            right: 6,
+            end: 6,
             width: 24,
             height: 24,
             borderRadius: 12,

@@ -1,5 +1,5 @@
 import { useTranslation } from 'react-i18next';
-import React, { useRef, useEffect, useState } from 'react';
+import React, { useMemo, useRef, useEffect, useState } from 'react';
 import { View, StyleSheet, TouchableOpacity, Text } from 'react-native';
 import { WebView } from 'react-native-webview';
 import * as Location from 'expo-location';
@@ -9,6 +9,7 @@ import { IOSIcon } from '../ios';
 import { MAPBOX_CONFIG } from '../../config/mapbox';
 import {
   CAMERA_STORAGE_KEY,
+  routeExtrasGeoJSON,
   USER_LOCATION_ZOOM,
   loadSavedCamera,
   type InteractiveMapViewProps,
@@ -32,6 +33,8 @@ export const InteractiveMapView: React.FC<InteractiveMapViewProps> = ({
   transectMarkers = [],
   trackCoordinates = [],
   routeCorridorCoordinates = [],
+  routeDirection = null,
+  extraLines = [],
   showUserLocation = true,
   onMarkerPress,
   onColonyPress,
@@ -100,6 +103,33 @@ export const InteractiveMapView: React.FC<InteractiveMapViewProps> = ({
     };
   }, []);
 
+  // Texts drawn inside the web map, in the app's language ({x} is filled in the page)
+  const labels = useMemo(
+    () => ({
+      cat: t('ui_mapPopup.cat'),
+      dog: t('ui_mapPopup.dog'),
+      fromPath: t('ui_mapPopup.from_path'),
+      packPin: t('ui_mapPopup.pack_pin'),
+      colonyPin: t('ui_mapPopup.colony_pin'),
+      dogPack: t('ui_mapPopup.dog_pack'),
+      catColony: t('ui_mapPopup.cat_colony'),
+      popCats: t('ui_mapPopup.pop_cats'),
+      popDogs: t('ui_mapPopup.pop_dogs'),
+      adoptedPin: t('ui_mapPopup.adopted_pin'),
+      routePin: t('ui_mapPopup.route_pin'),
+      route: t('ui_mapPopup.route'),
+      length: t('ui_mapPopup.length'),
+      adopted: t('ui_mapPopup.adopted'),
+    }),
+    [t]
+  );
+
+  // Start/end points, direction chevrons and extra lines, as GeoJSON [lon, lat]
+  const routeExtras = useMemo(
+    () => routeExtrasGeoJSON(routeCorridorCoordinates, routeDirection, extraLines),
+    [routeCorridorCoordinates, routeDirection, extraLines]
+  );
+
   // Sync markers, colonies, transects, corridor, track coordinates, and user location to Mapbox GL JS
   useEffect(() => {
     if (!mapLoaded || !webViewRef.current) return;
@@ -110,6 +140,8 @@ export const InteractiveMapView: React.FC<InteractiveMapViewProps> = ({
       transectMarkers,
       trackCoordinates,
       routeCorridorCoordinates,
+      routeExtras,
+      labels,
       userLocation: showUserLocation ? userLocation : null,
     });
 
@@ -122,6 +154,8 @@ export const InteractiveMapView: React.FC<InteractiveMapViewProps> = ({
     showColoniesLayer,
     trackCoordinates,
     routeCorridorCoordinates,
+    routeExtras,
+    labels,
     userLocation,
     mapLoaded,
     showUserLocation,
@@ -423,9 +457,56 @@ export const InteractiveMapView: React.FC<InteractiveMapViewProps> = ({
     var userMarker = null;
     var currentTrackCoords = [];
     var currentCorridorCoords = [];
+    var currentRouteExtras = null;
+
+    // Direction chevrons, start/end points and extra lines (observer to
+    // animal, an animal's path), drawn above the corridor
+    function renderRouteExtras() {
+      var empty = { type: 'FeatureCollection', features: [] };
+      var lines = (currentRouteExtras && currentRouteExtras.lines) || empty;
+      var ends = (currentRouteExtras && currentRouteExtras.ends) || empty;
+      if (map.getSource('route-extra-lines')) {
+        map.getSource('route-extra-lines').setData(lines);
+        map.getSource('route-ends').setData(ends);
+        return;
+      }
+      map.addSource('route-extra-lines', { type: 'geojson', data: lines });
+      map.addSource('route-ends', { type: 'geojson', data: ends });
+      map.addLayer({
+        id: 'route-extra-lines-casing',
+        type: 'line',
+        source: 'route-extra-lines',
+        filter: ['==', ['get', 'kind'], 'chevron'],
+        layout: { 'line-join': 'round', 'line-cap': 'round' },
+        paint: { 'line-color': '#FFFFFF', 'line-width': 6 }
+      });
+      map.addLayer({
+        id: 'route-extra-lines',
+        type: 'line',
+        source: 'route-extra-lines',
+        layout: { 'line-join': 'round', 'line-cap': 'round' },
+        paint: {
+          'line-color': ['get', 'color'],
+          'line-width': ['get', 'width'],
+          'line-dasharray': ['case', ['==', ['get', 'dashed'], 1], ['literal', [2, 2]], ['literal', [1, 0]]]
+        }
+      });
+      map.addLayer({
+        id: 'route-ends',
+        type: 'circle',
+        source: 'route-ends',
+        paint: {
+          'circle-radius': ['case', ['==', ['get', 'kind'], 'start'], 9, 7],
+          'circle-color': ['get', 'color'],
+          'circle-stroke-color': '#FFFFFF',
+          'circle-stroke-width': 3
+        }
+      });
+    }
     var lastData = null;
 
     function renderRouteCorridor() {
+      try { renderRouteExtras(); } catch (e) {}
       if (!currentCorridorCoords || currentCorridorCoords.length < 2) {
         if (map.getSource('corridor-line')) {
           map.getSource('corridor-line').setData({ type: 'FeatureCollection', features: [] });
@@ -476,6 +557,15 @@ export const InteractiveMapView: React.FC<InteractiveMapViewProps> = ({
           }
         });
       }
+      raiseRouteExtras();
+    }
+
+    function raiseRouteExtras() {
+      try {
+        ['route-extra-lines-casing', 'route-extra-lines', 'route-ends'].forEach(function(id) {
+          if (map.getLayer(id)) map.moveLayer(id);
+        });
+      } catch (e) {}
     }
 
     function renderRouteLine() {
@@ -565,7 +655,10 @@ export const InteractiveMapView: React.FC<InteractiveMapViewProps> = ({
       }));
     });
 
+    // Pop-up and pin texts arrive translated from the app (data.labels)
+    var L = { cat: 'Cat', dog: 'Dog', fromPath: '{m} m from path', packPin: 'PACK', colonyPin: 'COLONY', dogPack: 'Dog pack', catColony: 'Cat colony', popCats: 'About {n} cats ({p}% sterilised)', popDogs: 'About {n} dogs ({p}% sterilised)', adoptedPin: 'ADOPTED', routePin: 'ROUTE', route: 'Route: {name}', length: '{km} km', adopted: 'Adopted' };
     window.updateMapboxData = function(data) {
+      if (data && data.labels) L = data.labels;
       lastData = data;
 
       // 1. Clear existing observation markers
@@ -591,12 +684,12 @@ export const InteractiveMapView: React.FC<InteractiveMapViewProps> = ({
           var pinLabel = m.identifier || m.label || seqCode;
           pinEl.innerText = pinLabel;
 
-          var displayTitle = (m.identifier || m.title || seqCode) + ' • ' + (isCat ? 'Cat' : 'Dog');
+          var displayTitle = (m.identifier || m.title || seqCode) + ' • ' + (isCat ? L.cat : L.dog);
           var popupHtml =
             '<div class="popup-species-badge ' + (isCat ? 'popup-cat-badge' : 'popup-dog-badge') + '">' +
               displayTitle +
             '</div>' +
-            (m.distance_from_path_m !== undefined ? '<div style="font-size:12px;font-weight:600;">Distance: ' + m.distance_from_path_m + 'm</div>' : '') +
+            (m.distance_from_path_m !== undefined ? '<div style="font-size:12px;font-weight:600;">' + L.fromPath.replace('{m}', m.distance_from_path_m) + '</div>' : '') +
             '<div class=\"popup-coords\">' + fmtCoords(m.latitude, m.longitude) + '</div>';
 
           var popup = new mapboxgl.Popup({ offset: 18, closeButton: true }).setHTML(popupHtml);
@@ -622,14 +715,13 @@ export const InteractiveMapView: React.FC<InteractiveMapViewProps> = ({
           var isDogPack = c.species === 'dog';
           var pinEl = document.createElement('div');
           pinEl.className = 'colony-pin' + (isDogPack ? ' dog-pack-pin' : '');
-          pinEl.innerText = isDogPack ? 'PACK' : 'COLONY';
+          pinEl.innerText = isDogPack ? L.packPin : L.colonyPin;
 
           var badgeClass = 'popup-colony-badge' + (isDogPack ? ' popup-dog-pack-badge' : '');
-          var animalNoun = isDogPack ? 'dogs' : 'cats';
-          var groupLabel = isDogPack ? 'Dog Pack' : 'Cat Colony';
+          var groupLabel = isDogPack ? L.dogPack : L.catColony;
           var popupHtml =
             '<div class="' + badgeClass + '">' + groupLabel + ': ' + c.name + '</div>' +
-            '<div style="font-size:12px;font-weight:600;margin-top:2px;">Pop: ~' + c.estimatedPopulation + ' ' + animalNoun + ' (' + c.tnrPercent + '% TNR)</div>' +
+            '<div style="font-size:12px;font-weight:600;margin-top:2px;">' + (isDogPack ? L.popDogs : L.popCats).replace('{n}', c.estimatedPopulation).replace('{p}', c.tnrPercent) + '</div>' +
             '<div class=\"popup-coords\">' + fmtCoords(c.latitude, c.longitude) + '</div>';
 
           var popup = new mapboxgl.Popup({ offset: 18, closeButton: true }).setHTML(popupHtml);
@@ -654,11 +746,11 @@ export const InteractiveMapView: React.FC<InteractiveMapViewProps> = ({
         data.transectMarkers.forEach(function(t) {
           var pinEl = document.createElement('div');
           pinEl.className = 'transect-pin' + (t.isAdopted ? ' adopted' : '') + (t.isSelected ? ' selected' : '');
-          pinEl.innerText = t.isAdopted ? 'GUARDIAN' : 'TRANSECT';
+          pinEl.innerText = t.isAdopted ? L.adoptedPin : L.routePin;
 
           var popupHtml =
-            '<div class="popup-transect-badge">' + (t.isAdopted ? '[Adopted] ' : '') + 'Transect: ' + t.name + '</div>' +
-            '<div style="font-size:12px;font-weight:600;margin-top:2px;">Length: ' + t.distanceKm + ' km ' + (t.isAdopted ? '(Adopted)' : '') + '</div>' +
+            '<div class="popup-transect-badge">' + L.route.replace('{name}', t.name) + '</div>' +
+            '<div style="font-size:12px;font-weight:600;margin-top:2px;">' + L.length.replace('{km}', t.distanceKm) + (t.isAdopted ? ' · ' + L.adopted : '') + '</div>' +
             '<div class=\"popup-coords\">' + fmtCoords(t.latitude, t.longitude) + '</div>';
 
           var popup = new mapboxgl.Popup({ offset: 18, closeButton: true }).setHTML(popupHtml);
@@ -679,6 +771,7 @@ export const InteractiveMapView: React.FC<InteractiveMapViewProps> = ({
       }
 
       // 3. Render planned corridor
+      if (data.routeExtras) currentRouteExtras = data.routeExtras;
       if (data.routeCorridorCoordinates) {
         currentCorridorCoords = data.routeCorridorCoordinates;
         if (map.isStyleLoaded()) {
@@ -840,7 +933,7 @@ const styles = StyleSheet.create({
   floatingControls: {
     position: 'absolute',
     top: 14,
-    right: 14,
+    end: 14,
     flexDirection: 'column',
     gap: 10,
     alignItems: 'flex-end',

@@ -1,5 +1,5 @@
 {
-  "enabled": ["en"],
-  "draft": ["fr", "ar"],
-  "default": "en"
+  "enabled": ["ar", "fr", "en"],
+  "draft": [],
+  "default": "ar"
 }

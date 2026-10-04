@@ -9,7 +9,7 @@ import { Linking } from 'react-native';
 import { router } from 'expo-router';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
-import i18n, { setAppLanguage } from '../i18n';
+import i18n, { initAppLanguage, setAppLanguage, type AppLanguage } from '../i18n';
 import { useToast } from '../ui/Toast';
 import { useRoutesStore } from '../features/routes/routesStore';
 import { useColoniesStore } from '../features/colonies/coloniesStore';
@@ -34,6 +34,7 @@ import {
   PREVIEW_ACCOUNT,
   PREVIEW_KNOWN_ANIMALS,
   PREVIEW_MODE,
+  PREVIEW_ROUTE,
   PREVIEW_SIGHTINGS,
   PREVIEW_STATS,
 } from './previewData';
@@ -155,10 +156,16 @@ export function AppStateProvider({ children }: { children: React.ReactNode }) {
     else setRemoteObservations([]);
   }, [userAccount?.email, lastSyncedAt, refreshMapObservations]);
 
+  // The language chosen on this phone (else the phone's own language)
+  useEffect(() => {
+    initAppLanguage();
+  }, []);
+
   // Routes and colonies: restore what the phone holds, then share with the server
   useEffect(() => {
     useRoutesStore.getState().loadRoutes();
     useColoniesStore.getState().loadColonies();
+    if (PREVIEW_MODE) useRoutesStore.getState().mergeServerRoutes([PREVIEW_ROUTE]);
     if (PREVIEW_MODE) useKnownAnimals.getState().replace(PREVIEW_KNOWN_ANIMALS);
     else useKnownAnimals.getState().load();
   }, []);
@@ -320,10 +327,7 @@ export function AppStateProvider({ children }: { children: React.ReactNode }) {
         data: { session },
       } = await supabase.auth.getSession();
       if (session?.user?.id) {
-        await supabase
-          .from('users')
-          .update({ consent_version: 1, consent_accepted_at: new Date().toISOString() })
-          .eq('id', session.user.id);
+        await supabase.rpc('accept_consent', { version: 1 });
       }
     } catch (err) {
       console.warn('Failed to save consent status:', err);
@@ -585,7 +589,10 @@ export function AppStateProvider({ children }: { children: React.ReactNode }) {
     setSelectedRouteForSurvey,
     closeModal,
     acceptConsent,
-    changeLanguage: (lng) => setAppLanguage(lng),
+    changeLanguage: (lng) => {
+      setAppLanguage(lng);
+      saveLanguageToProfile(lng);
+    },
     saveAccount,
     signOut,
     saveOpportunistic,
@@ -597,4 +604,16 @@ export function AppStateProvider({ children }: { children: React.ReactNode }) {
   };
 
   return <AppStateContext.Provider value={value}>{children}</AppStateContext.Provider>;
+}
+
+/** Keep the account's preferred language in step with the app (best effort, offline-safe). */
+async function saveLanguageToProfile(lng: AppLanguage) {
+  if (PREVIEW_MODE) return;
+  try {
+    const { data } = await supabase.auth.getUser();
+    if (data.user)
+      await supabase.from('users').update({ preferred_language: lng }).eq('id', data.user.id);
+  } catch {
+    // Offline: the phone still remembers the choice
+  }
 }

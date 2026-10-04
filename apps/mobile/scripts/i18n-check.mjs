@@ -67,9 +67,19 @@ for (const [key, file] of used) {
   if (!en.has(key) && !enBase.has(key)) errors.push(`missing in en.json: ${key} (${file})`);
 }
 
+// A real plural in English has both _one and _other
+const pluralBases = new Set(
+  [...en.keys()]
+    .filter((k) => k.endsWith('_one') && en.has(k.replace(/_one$/, '_other')))
+    .map(baseKey)
+);
+const isPluralKey = (k) => PLURAL.test(k) && pluralBases.has(baseKey(k));
+
 for (const lng of languages.enabled.filter((l) => l !== 'en')) {
   const tr = load(lng);
   for (const [key, value] of en) {
+    // Plural keys are checked per form below (languages have different forms)
+    if (isPluralKey(key)) continue;
     if (!tr.has(key)) {
       errors.push(`[${lng}] missing: ${key}`);
       continue;
@@ -78,6 +88,22 @@ for (const lng of languages.enabled.filter((l) => l !== 'en')) {
       b = placeholders(tr.get(key));
     if (a.size !== b.size || [...a].some((p) => !b.has(p)))
       errors.push(`[${lng}] placeholder mismatch: ${key}`);
+  }
+  // Every plural category the language uses must exist, or i18next falls back
+  // to English for that count (Arabic "few" for 3 to 10, for example)
+  const categories = new Intl.PluralRules(lng).resolvedOptions().pluralCategories;
+  for (const b of pluralBases) {
+    const enPh = placeholders(en.get(`${b}_other`));
+    for (const cat of categories) {
+      const k = `${b}_${cat}`;
+      if (!tr.has(k)) {
+        errors.push(`[${lng}] missing plural form: ${k}`);
+        continue;
+      }
+      // A form may leave the number out ("one cat"), but may not invent placeholders
+      const ph = placeholders(tr.get(k));
+      if ([...ph].some((p) => !enPh.has(p))) errors.push(`[${lng}] placeholder mismatch: ${k}`);
+    }
   }
 }
 

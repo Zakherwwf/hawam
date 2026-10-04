@@ -93,7 +93,10 @@ export async function capturePhotoFromCamera(options?: {
     };
   } catch (error) {
     console.error('Failed to capture photo with camera:', error);
-    Alert.alert('Camera Error', 'Could not open camera on this device.');
+    Alert.alert(
+      i18n.t('ui_cameraService.camera_error'),
+      i18n.t('ui_cameraService.camera_error_body')
+    );
     return null;
   }
 }

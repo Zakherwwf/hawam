@@ -10,6 +10,35 @@ export function formatCoordinates(latitude: number, longitude: number): string {
   return `${lat}, ${lon}`;
 }
 
+/**
+ * The locale dates and numbers are shown in. It follows the language chosen
+ * in the app (set from src/i18n), not the phone's region, so an Arabic screen
+ * never shows an English month or AM/PM. Arabic uses Western digits, as is
+ * usual in Tunisia.
+ */
+let displayLocale = 'en';
+const LOCALE_TAGS: Record<string, string> = { ar: 'ar-TN-u-nu-latn', fr: 'fr-FR', en: 'en-GB' };
+export function setDisplayLocale(language: string) {
+  displayLocale = LOCALE_TAGS[language] ?? language;
+}
+export function appLocale() {
+  return displayLocale;
+}
+/** A number in the app's language: 1 234,5 (fr), 1,234.5 (en/ar). */
+export function formatNumber(n: number, maxFractionDigits = 0) {
+  try {
+    return new Intl.NumberFormat(displayLocale, {
+      maximumFractionDigits: maxFractionDigits,
+    }).format(n);
+  } catch {
+    return String(n);
+  }
+}
+/** "09:29" in the app's language. */
+export function formatTime(iso: string | Date) {
+  return time(new Date(iso));
+}
+
 function sameDay(a: Date, b: Date): boolean {
   return (
     a.getFullYear() === b.getFullYear() &&
@@ -20,7 +49,7 @@ function sameDay(a: Date, b: Date): boolean {
 
 function time(d: Date): string {
   try {
-    return d.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+    return d.toLocaleTimeString(displayLocale, { hour: '2-digit', minute: '2-digit' });
   } catch {
     return `${String(d.getHours()).padStart(2, '0')}:${String(d.getMinutes()).padStart(2, '0')}`;
   }
@@ -28,7 +57,7 @@ function time(d: Date): string {
 
 function shortDate(d: Date, withYear: boolean): string {
   try {
-    return d.toLocaleDateString([], {
+    return d.toLocaleDateString(displayLocale, {
       day: 'numeric',
       month: 'short',
       ...(withYear ? { year: 'numeric' } : {}),

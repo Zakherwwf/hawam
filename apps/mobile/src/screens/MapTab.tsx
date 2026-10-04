@@ -9,6 +9,7 @@ import { Platform, View } from 'react-native';
 import * as Location from 'expo-location';
 import { BlurView } from 'expo-blur';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { router } from 'expo-router';
 import { useTranslation } from 'react-i18next';
 import { InteractiveMap } from '../components/map/InteractiveMap';
 import type { FocusCoordinate, MapMarker, MapStyle } from '../components/map/mapTypes';
@@ -354,6 +355,16 @@ function PinCard({ s, onClose }: { s: SightingItem; onClose: () => void }) {
             ? detail('profile', t('ui_map_v3.seen_by', { name: s.observer_name }))
             : null}
         </View>
+        {/* Map pins include other volunteers' uploaded sightings; the profile handles both */}
+        <Button
+          size="small"
+          kind="secondary"
+          title={t('ui_profiles.open_sighting')}
+          onPress={() => {
+            onClose();
+            router.push(`/sighting/${s.id}`);
+          }}
+        />
       </View>
     </Glass>
   );

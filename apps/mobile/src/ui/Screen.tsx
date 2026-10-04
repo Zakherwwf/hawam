@@ -78,9 +78,7 @@ export function Screen({
             marginTop: -8,
           }}
         >
-          <View style={I18nManager.isRTL ? { transform: [{ scaleX: -1 }] } : undefined}>
-            <Symbol name="chevronLeft" size={20} color={c.accent} weight="semibold" />
-          </View>
+          <Symbol name="chevronLeft" size={20} color={c.accent} weight="semibold" />
           <Text variant="body" tone="accent">
             {t('ui_common.back')}
           </Text>

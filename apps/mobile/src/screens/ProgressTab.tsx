@@ -4,8 +4,10 @@
  * nothing here ranks or rewards by animals counted (CLAUDE.md section 2).
  */
 
+import { formatNumber } from '../utils/formatObservation';
 import React, { useMemo, useState } from 'react';
 import { View } from 'react-native';
+import { router } from 'expo-router';
 import { useTranslation } from 'react-i18next';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import {
@@ -141,7 +143,7 @@ export function ProgressTab({
                     style={{
                       position: 'absolute',
                       top: 9,
-                      right: 10,
+                      end: 10,
                       width: 9,
                       height: 9,
                       borderRadius: 5,
@@ -187,7 +189,7 @@ export function ProgressTab({
                 }}
               >
                 <Text variant="subhead" weight="600" tabular style={{ color: '#FFFFFF' }}>
-                  {t('ui_progress_v3.xp_total', { xp: (s?.xp ?? 0).toLocaleString() })}
+                  {t('ui_progress_v3.xp_total', { xp: formatNumber(s?.xp ?? 0) })}
                 </Text>
               </Glass>
               <Text variant="footnote" style={{ color: 'rgba(255,255,255,0.85)' }}>
@@ -388,6 +390,7 @@ export function ProgressTab({
           top.map((r) => (
             <LeaderRowView
               key={r.user_id}
+              userId={r.user_id}
               rank={r.rank}
               name={r.isMe ? t('ui_common.you') : r.display_name}
               value={r.value}
@@ -549,12 +552,14 @@ function BadgeTile({ b }: { b: BadgeProgress }) {
 }
 
 function LeaderRowView({
+  userId,
   rank,
   name,
   value,
   metric,
   isMe,
 }: {
+  userId?: string;
   rank: number;
   name: string;
   value: number;
@@ -568,7 +573,12 @@ function LeaderRowView({
       ? t('ui_progress_v3.km_value', { km: fmtKm(value) })
       : t('ui_progress_v3.checklist_value', { count: value });
   return (
-    <View
+    <Press
+      onPress={userId ? () => router.push(`/person/${userId}`) : undefined}
+      disabled={!userId}
+      haptic={false}
+      accessibilityRole={userId ? 'button' : undefined}
+      accessibilityHint={userId ? t('ui_profiles.open_profile') : undefined}
       style={{
         minHeight: 52,
         paddingHorizontal: 16,
@@ -577,7 +587,6 @@ function LeaderRowView({
         gap: 12,
         backgroundColor: isMe ? c.accentSoft : undefined,
       }}
-      accessible
       accessibilityLabel={t('ui_progress_v3.rank_row', { rank, name, value: v })}
     >
       <Text variant="headline" tabular tone={rank <= 3 ? 'accent' : 'ink2'} style={{ width: 32 }}>
@@ -589,6 +598,6 @@ function LeaderRowView({
       <Text variant="subhead" tone="ink2" tabular>
         {v}
       </Text>
-    </View>
+    </Press>
   );
 }

@@ -4,6 +4,7 @@
  * the volunteer types; the app never fills them in for anyone.
  */
 
+import { formatNumber } from '../utils/formatObservation';
 import React, { useState } from 'react';
 import { Alert, Image, TextInput, View } from 'react-native';
 import * as ImagePicker from 'expo-image-picker';
@@ -121,7 +122,7 @@ export function ProfileTab({
               accessibilityLabel={t('ui_profile.edit_title')}
               style={{
                 position: 'absolute',
-                right: -6,
+                end: -6,
                 bottom: -6,
                 width: 40,
                 height: 40,
@@ -186,7 +187,7 @@ export function ProfileTab({
             <Text variant="headline">{t(lv.rankKey)}</Text>
             <View style={{ flexDirection: 'row', alignItems: 'center', gap: 12, marginTop: 2 }}>
               <Text variant="footnote" tone="ink2" tabular>
-                {t('ui_progress_v3.xp_total', { xp: (stats.data?.xp ?? 0).toLocaleString() })}
+                {t('ui_progress_v3.xp_total', { xp: formatNumber(stats.data?.xp ?? 0) })}
               </Text>
               <View style={{ flexDirection: 'row', alignItems: 'center', gap: 4 }}>
                 <Symbol
