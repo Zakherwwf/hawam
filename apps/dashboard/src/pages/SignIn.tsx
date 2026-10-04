@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { PawPrint } from 'lucide-react';
+import { Mascot } from '../app/Shell';
 import { supabase } from '../data/client';
 import { Button, Field, inputClass } from '../ui';
 
@@ -56,28 +56,51 @@ export function SignIn() {
   return (
     <div className="min-h-screen grid lg:grid-cols-2">
       <div
-        className="hidden lg:flex flex-col justify-end p-12 text-white"
+        className="hidden lg:flex flex-col text-white min-h-screen overflow-hidden"
         style={{ background: 'linear-gradient(160deg, #144513 0%, #2F7A2B 60%, #8FD45C 100%)' }}
       >
-        <h1 className="text-[40px] font-bold leading-tight max-w-[16ch]">
-          Every walk becomes evidence.
-        </h1>
-        <p className="text-[17px] mt-3 max-w-[44ch] text-white/85">
-          Review surveys, check data quality and export analysis-ready records for your research.
-        </p>
+        <div className="px-12 pt-14">
+          <h1 className="text-[40px] font-bold leading-tight max-w-[16ch]">
+            Every walk becomes evidence.
+          </h1>
+          <p className="text-[17px] mt-3 max-w-[44ch] text-white/85">
+            Review surveys, check data quality and export analysis-ready records for your research.
+          </p>
+        </div>
+        {/* The same street dog and cat as the app's welcome screen, standing on the bottom edge */}
+        <div
+          role="img"
+          aria-label="A street dog and a street cat looking up"
+          className="flex-1 flex items-end justify-center min-h-0"
+        >
+          <img
+            src="/auth_dog.png"
+            alt=""
+            width={515}
+            height={560}
+            className="h-[min(44vh,420px)] w-auto object-contain"
+          />
+          <img
+            src="/auth_cat.png"
+            alt=""
+            width={464}
+            height={560}
+            className="h-[min(39vh,372px)] w-auto object-contain -ms-[12%]"
+          />
+        </div>
       </div>
       <main className="flex items-center justify-center p-6">
         <form onSubmit={submit} className="w-full max-w-[380px] flex flex-col gap-5" noValidate>
           <div className="flex items-center gap-2.5 mb-2">
             <span
               aria-hidden
-              className="w-10 h-10 rounded-[12px] bg-accent text-on-accent grid place-items-center"
+              className="w-12 h-12 rounded-[14px] bg-[#FAF5EE] grid place-items-end overflow-hidden"
             >
-              <PawPrint className="w-5 h-5" />
+              <Mascot className="w-11 h-11" />
             </span>
             <div>
               <p className="font-bold text-[17px]" translate="no">
-                Hawem
+                Strayo
               </p>
               <p className="text-[13px] text-ink2">Research portal</p>
             </div>
@@ -134,7 +157,7 @@ export function SignIn() {
             Forgot Password
           </Button>
           <p className="text-[13px] text-ink2">
-            Use the same account as in the Hawem app. The portal is open to researchers and
+            Use the same account as in the Strayo app. The portal is open to researchers and
             administrators.
           </p>
         </form>

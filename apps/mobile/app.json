@@ -1,12 +1,12 @@
 {
   "expo": {
-    "name": "Hawem - Cat & Dog Survey",
+    "name": "Strayo",
     "slug": "tunisia-cat-dog-survey",
     "scheme": "hawem",
     "version": "1.0.0",
     "orientation": "portrait",
     "userInterfaceStyle": "light",
-    "icon": "./assets/icon_app_square.png",
+    "icon": "./assets/icon_strayo.png",
     "ios": {
       "supportsTablet": true,
       "bundleIdentifier": "tn.pasteur.dogcat.survey",
@@ -21,7 +21,7 @@
     "android": {
       "package": "tn.pasteur.dogcat.survey",
       "adaptiveIcon": {
-        "foregroundImage": "./assets/icon_app_square.png",
+        "foregroundImage": "./assets/adaptive_strayo.png",
         "backgroundColor": "#FAF5EE"
       },
       "permissions": [

@@ -30,7 +30,7 @@ export async function requestCameraPermission(): Promise<boolean> {
     if (status !== 'granted') {
       Alert.alert(
         'Camera Permission Required',
-        'Hawem requires camera access to document animal sightings and perform AI identification.'
+        'Strayo requires camera access to document animal sightings and perform AI identification.'
       );
       return false;
     }
@@ -50,7 +50,7 @@ export async function requestMediaLibraryPermission(): Promise<boolean> {
     if (status !== 'granted') {
       Alert.alert(
         'Photo Library Permission Required',
-        'Hawem requires photo library access to import field photos.'
+        'Strayo requires photo library access to import field photos.'
       );
       return false;
     }

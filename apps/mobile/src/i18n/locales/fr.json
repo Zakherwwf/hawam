@@ -22,7 +22,7 @@
   },
   "opportunistic": {
     "no_gps_title": "Position indisponible",
-    "no_gps_body": "Hawem a besoin d'un signal GPS pour enregistrer l'endroit où l'animal a été vu. Placez-vous à découvert ou autorisez la localisation, puis réessayez."
+    "no_gps_body": "Strayo a besoin d'un signal GPS pour enregistrer l'endroit où l'animal a été vu. Placez-vous à découvert ou autorisez la localisation, puis réessayez."
   },
   "ui_common": {
     "code_pending": "En attente de synchro",
@@ -158,7 +158,7 @@
     "saved": "Observation enregistrée",
     "saved_detail": "Elle sera envoyée dès que vous serez en ligne. Les XP arrivent une fois reçue par le serveur.",
     "photo_permission_title": "Autoriser les photos",
-    "photo_permission_body": "Hawem a besoin de l'appareil photo ou de la photothèque pour joindre une image. Vous pouvez enregistrer sans photo.",
+    "photo_permission_body": "Strayo a besoin de l'appareil photo ou de la photothèque pour joindre une image. Vous pouvez enregistrer sans photo.",
     "open_settings": "Ouvrir les réglages",
     "photo_taken": "Photo de l'animal",
     "retake": "Reprendre la photo",
@@ -316,7 +316,7 @@
     "layout_title": "Changement de mise en page",
     "layout_body_dev": "L’application se recharge pour passer de droite à gauche à gauche à droite.",
     "layout_restart": "Recharger",
-    "layout_body": "Fermez Hawem puis rouvrez-la pour changer le sens de la mise en page. Les textes ont déjà changé."
+    "layout_body": "Fermez Strayo puis rouvrez l’application pour changer le sens de la mise en page. Les textes ont déjà changé."
   },
   "ui_map_v3": {
     "all": "Tout",
@@ -336,7 +336,7 @@
     "showing_many": "{{count}} observations sur la carte"
   },
   "ui_auth_v3": {
-    "title": "Hawem",
+    "title": "Strayo",
     "subtitle": "Comptez les chats et les chiens de vos rues. Vos marches deviennent des données utiles aux chercheurs.",
     "google": "Continuer avec Google",
     "or_email": "ou avec un e-mail",
@@ -354,11 +354,11 @@
     "get_started": "Commencer",
     "have_account_q": "Déjà un compte ?",
     "sign_in": "Se connecter",
-    "scene": "Une rue avec des maisons, un chat et un chien"
+    "scene": "Un chien et un chat des rues qui regardent vers le haut"
   },
   "ui_consent_v3": {
     "step": "Étape {{n}} sur {{total}}",
-    "p1_title": "Bienvenue sur Hawem",
+    "p1_title": "Bienvenue sur Strayo",
     "p1_body": "Vous aidez les chercheurs à comprendre les chats et les chiens des rues, avec un téléphone et une marche.",
     "p1_a": "Observations rapides",
     "p1_a_body": "Un chat ou un chien ? Une photo et un nombre, environ 20 secondes.",
@@ -740,7 +740,7 @@
     "sign_in_failed": "Échec de la connexion",
     "account_creation_failed": "Échec de la création du compte",
     "account_ready": "Compte prêt",
-    "welcome_to_hawem_observatory_2": "Bienvenue sur Hawem, {{v0}}.",
+    "welcome_to_hawem_observatory_2": "Bienvenue sur Strayo, {{v0}}.",
     "account_created": "Compte créé",
     "a_confirmation_email_has_been_sent": "Un e-mail de confirmation a été envoyé à {{v0}}. Cliquez sur le lien pour activer votre compte, puis connectez-vous.",
     "authentication_error": "Erreur d’authentification",
@@ -858,7 +858,7 @@
     "delete_the_session_because_an_empty": "Supprimer la sortie, car une sortie vide n’apporte rien",
     "invent_at_least_one_sighting_nearby": "Inventer au moins une observation pour gagner des points",
     "save_the_session_and_confirm_yes": "Enregistrer la sortie et répondre « Oui » à la liste complète (absence)",
-    "non_detections_establish_the_absence_probability": "Les absences mesurent la probabilité qu’aucun animal ne soit présent. Dans Hawem, une sortie complète sans animal reçoit tous les points d’effort (+20 XP de fin de sortie), sans pénalité.",
+    "non_detections_establish_the_absence_probability": "Les absences mesurent la probabilité qu’aucun animal ne soit présent. Dans Strayo, une sortie complète sans animal reçoit tous les points d’effort (+20 XP de fin de sortie), sans pénalité.",
     "full_completion_xp_awarded_for_zero": "Tous les points de fin de sortie, même sans animal"
   },
   "ui_mapPopup": {

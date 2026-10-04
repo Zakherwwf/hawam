@@ -76,7 +76,7 @@ export default function App() {
 
   useEffect(() => {
     const label = NAV.find((n) => n.page === page)?.label ?? 'Overview';
-    document.title = `${label} · Hawem Research`;
+    document.title = `${label} · Strayo Research`;
     window.scrollTo({ top: 0 });
   }, [page, route.id]);
 

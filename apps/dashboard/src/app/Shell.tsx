@@ -103,10 +103,10 @@ function Rail({ page }: { page: string }) {
     >
       <a
         href={href('overview')}
-        className="hidden lg:grid place-items-center w-11 h-11 mt-3 mb-2 rounded-[14px] shrink-0 bg-accent text-on-accent"
-        aria-label="Hawem research portal, overview"
+        className="hidden lg:grid place-items-end w-12 h-12 mt-3 mb-2 rounded-[14px] shrink-0 bg-[#FAF5EE] overflow-hidden"
+        aria-label="Strayo research portal, overview"
       >
-        <PawPrint aria-hidden className="w-6 h-6" />
+        <Mascot className="w-11 h-11" />
       </a>
       <nav className="flex lg:flex-col gap-1 lg:gap-0.5 overflow-x-auto lg:overflow-y-auto scrollbar-none px-2 py-2 lg:py-0 w-full lg:items-center flex-1">
         {NAV.map(({ page: p, label, icon: Icon, group }, i) => {
@@ -180,10 +180,10 @@ function TopBar({ me, onSearch }: { me: Me; onSearch: () => void }) {
     <header className="sticky top-0 lg:top-4 z-20 mx-0 lg:mx-0 glass lg:rounded-card shadow-card px-3 sm:px-4 h-[72px] flex items-center gap-3">
       <a
         href={href('overview')}
-        className="lg:hidden grid place-items-center w-10 h-10 rounded-[14px] bg-accent text-on-accent shrink-0"
+        className="lg:hidden grid place-items-end w-10 h-10 rounded-[14px] bg-[#FAF5EE] overflow-hidden shrink-0"
         aria-label="Overview"
       >
-        <PawPrint aria-hidden className="w-5 h-5" />
+        <Mascot className="w-9 h-9" />
       </a>
       <button
         type="button"
@@ -283,5 +283,19 @@ function TopBar({ me, onSearch }: { me: Me; onSearch: () => void }) {
         )}
       </Popover>
     </header>
+  );
+}
+
+/** The Strayo mascot (public/mascot.png): a cat-dog emerging from the lower-left corner. */
+export function Mascot({ className }: { className?: string }) {
+  return (
+    <img
+      src="/mascot.png"
+      alt=""
+      aria-hidden
+      width={256}
+      height={255}
+      className={cx('object-contain object-left-bottom', className)}
+    />
   );
 }

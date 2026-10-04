@@ -39,7 +39,7 @@
   },
   "opportunistic": {
     "no_gps_title": "Location unavailable",
-    "no_gps_body": "Hawem needs a GPS fix to record where the animal was seen. Move to open sky or enable location access, then try again."
+    "no_gps_body": "Strayo needs a GPS fix to record where the animal was seen. Move to open sky or enable location access, then try again."
   },
   "ui_createColonyModal": {
     "location_permission": "Location Permission",
@@ -78,7 +78,7 @@
     "sign_in_failed": "Sign In Failed",
     "account_creation_failed": "Account Creation Failed",
     "account_ready": "Account Ready",
-    "welcome_to_hawem_observatory_2": "Welcome to Hawem, {{v0}}.",
+    "welcome_to_hawem_observatory_2": "Welcome to Strayo, {{v0}}.",
     "account_created": "Account Created",
     "a_confirmation_email_has_been_sent": "A confirmation email has been sent to {{v0}}. Please click the link in your email to activate your account, then sign in.",
     "authentication_error": "Authentication Error",
@@ -170,7 +170,7 @@
     "delete_the_session_because_an_empty": "Delete the session because an empty survey contains no useful data",
     "invent_at_least_one_sighting_nearby": "Invent at least one sighting nearby to ensure you earn experience points",
     "save_the_session_and_confirm_yes": "Save the session and confirm \"Yes\" to the complete checklist (Non-detection)",
-    "non_detections_establish_the_absence_probability": "Non-detections establish the absence probability in statistical models. In Hawem, complete zero-count surveys receive full effort XP (+20 XP completion bonus) with zero penalty.",
+    "non_detections_establish_the_absence_probability": "Non-detections establish the absence probability in statistical models. In Strayo, complete zero-count surveys receive full effort XP (+20 XP completion bonus) with zero penalty.",
     "full_completion_xp_awarded_for_zero": "Full completion XP awarded for zero counts"
   },
   "ui_app": {
@@ -327,7 +327,7 @@
     "saved": "Sighting saved",
     "saved_detail": "It uploads when you are online. XP is added once the server has it.",
     "photo_permission_title": "Allow photos",
-    "photo_permission_body": "Hawem needs the camera or photo library to attach a picture. You can still save the sighting without one.",
+    "photo_permission_body": "Strayo needs the camera or photo library to attach a picture. You can still save the sighting without one.",
     "open_settings": "Open Settings",
     "photo_taken": "Photo of the animal",
     "retake": "Retake photo",
@@ -478,7 +478,7 @@
     "layout_title": "Switching the layout",
     "layout_body_dev": "The app reloads to switch between right-to-left and left-to-right.",
     "layout_restart": "Reload Now",
-    "layout_body": "Close Hawem and open it again to switch the layout direction. The texts have already changed."
+    "layout_body": "Close Strayo and open it again to switch the layout direction. The texts have already changed."
   },
   "ui_map_v3": {
     "all": "All",
@@ -497,7 +497,7 @@
     "style_outdoors": "outdoors"
   },
   "ui_auth_v3": {
-    "title": "Hawem",
+    "title": "Strayo",
     "subtitle": "Count the cats and dogs in your streets. Your walks become data researchers can use.",
     "google": "Continue with Google",
     "or_email": "or with email",
@@ -515,11 +515,11 @@
     "get_started": "Get started",
     "have_account_q": "Already have an account?",
     "sign_in": "Sign in",
-    "scene": "A street with houses, a cat and a dog"
+    "scene": "A street dog and a street cat looking up"
   },
   "ui_consent_v3": {
     "step": "Step {{n}} of {{total}}",
-    "p1_title": "Welcome to Hawem",
+    "p1_title": "Welcome to Strayo",
     "p1_body": "You help researchers understand the cats and dogs living on the streets, with a phone and a walk.",
     "p1_a": "Quick sightings",
     "p1_a_body": "Saw a cat or dog? One photo and a count, about 20 seconds.",

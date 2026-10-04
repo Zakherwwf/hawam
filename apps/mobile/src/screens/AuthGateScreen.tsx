@@ -4,10 +4,19 @@
  * never has to pick between two modes first.
  */
 import React, { useState } from 'react';
-import { Alert, KeyboardAvoidingView, Platform, ScrollView, TextInput, View } from 'react-native';
+import {
+  Alert,
+  Image,
+  KeyboardAvoidingView,
+  Platform,
+  ScrollView,
+  TextInput,
+  View,
+  useWindowDimensions,
+} from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useTranslation } from 'react-i18next';
-import { Button, Press, StreetScene, Symbol, Text, useTheme } from '../ui';
+import { Button, Press, Symbol, Text, useTheme } from '../ui';
 import { supabase } from '../services/supabase';
 import { signInWithGoogle, getOAuthRedirectUri } from '../services/googleAuthService';
 import type { UserAccount } from '../app-state/types';
@@ -270,7 +279,7 @@ function AuthForm(p: {
         keyboardShouldPersistTaps="handled"
       >
         <View style={{ alignItems: 'center', gap: 12, marginBottom: 16 }}>
-          <StreetScene style={{ width: '80%' }} />
+          <PetDuo height={170} label={t('ui_auth_v3.scene')} />
           <Text variant="largeTitle" align="center">
             {t('ui_auth_v3.title')}
           </Text>
@@ -385,7 +394,7 @@ function Welcome({ onStart, onSignIn }: { onStart: () => void; onSignIn: () => v
       }}
     >
       <View style={{ flex: 1, justifyContent: 'center' }}>
-        <StreetScene label={t('ui_auth_v3.scene')} style={{ transform: [{ scale: 1.08 }] }} />
+        <PetDuo height={300} label={t('ui_auth_v3.scene')} />
       </View>
       <View style={{ gap: 14, paddingBottom: 28 }}>
         <Text
@@ -413,6 +422,49 @@ function Welcome({ onStart, onSignIn }: { onStart: () => void; onSignIn: () => v
           </Text>
         </Text>
       </Press>
+    </View>
+  );
+}
+
+// Photos of a street cat and dog looking up (transparent PNGs, 560 px tall)
+const CAT = require('../../assets/auth_cat.png');
+const DOG = require('../../assets/auth_dog.png');
+const CAT_RATIO = 1284 / 1550;
+const DOG_RATIO = 1336 / 1454;
+
+/** The dog behind on the left, the cat in front on the right, both looking up. */
+function PetDuo({ height, label }: { height: number; label: string }) {
+  // Never wider than ~78% of the screen, so the pair keeps clear of the edges
+  const { width: screen } = useWindowDimensions();
+  const widthAt = (h: number) => {
+    const dW = h * DOG_RATIO;
+    return dW + h * 0.88 * CAT_RATIO - dW * 0.28;
+  };
+  const maxW = screen * 0.78;
+  const h = widthAt(height) > maxW ? (height * maxW) / widthAt(height) : height;
+  const dogH = Math.round(h);
+  const catH = Math.round(h * 0.88);
+  const dogW = Math.round(dogH * DOG_RATIO);
+  const catW = Math.round(catH * CAT_RATIO);
+  const overlap = Math.round(dogW * 0.28);
+  return (
+    <View
+      accessible
+      accessibilityRole="image"
+      accessibilityLabel={label}
+      style={{
+        flexDirection: 'row',
+        alignItems: 'flex-end',
+        justifyContent: 'center',
+        height: dogH,
+      }}
+    >
+      <Image source={DOG} style={{ width: dogW, height: dogH }} resizeMode="contain" />
+      <Image
+        source={CAT}
+        style={{ width: catW, height: catH, marginStart: -overlap }}
+        resizeMode="contain"
+      />
     </View>
   );
 }

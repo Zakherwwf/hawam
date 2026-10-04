@@ -84,7 +84,7 @@ export async function startBackgroundLocationTracking(): Promise<boolean> {
       deferredUpdatesDistance: 3,
       showsBackgroundLocationIndicator: true,
       foregroundService: {
-        notificationTitle: 'Hawem Survey Active',
+        notificationTitle: 'Strayo survey active',
         notificationBody: 'Recording scientific GPS transect track...',
         notificationColor: '#0F172A',
       },
