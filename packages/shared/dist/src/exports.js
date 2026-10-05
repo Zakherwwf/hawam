@@ -4,6 +4,19 @@
  * 2. Capture-History Matrix (SECR / MARK / unmarked)
  * 3. Distance Sampling (R Distance package)
  */
+import { generalizeTo1KmGrid } from './grid';
+/** Bump when a column is added, removed or changes meaning. */
+export const EXPORT_SCHEMA_VERSION = '2.0.0';
+/** GBIF backbone taxonomy, mirrored in public.ref_taxa (verified via api.gbif.org). */
+export const GBIF_TAXA = {
+    cat: { scientificName: 'Felis catus Linnaeus, 1758', taxonRank: 'species', taxonKey: 2435035 },
+    dog: {
+        scientificName: 'Canis lupus familiaris Linnaeus, 1758',
+        taxonRank: 'subspecies',
+        taxonKey: 6164210,
+    },
+    unknown: { scientificName: 'Carnivora', taxonRank: 'order', taxonKey: 732 },
+};
 /**
  * Maps public observations and non-detection sessions to Darwin Core standard records.
  */
@@ -32,17 +45,17 @@ export function exportToDarwinCore(sessions, observations, options = {}) {
                 withheld = 'None';
             }
         }
-        const scientificName = obs.species === 'cat'
-            ? 'Felis catus'
-            : obs.species === 'dog'
-                ? 'Canis lupus familiaris'
-                : 'Carnivora';
+        const taxon = GBIF_TAXA[obs.species] ?? GBIF_TAXA.unknown;
         records.push({
             occurrenceID: obs.id,
             eventID: obs.session_id,
             eventDate: obs.observed_at,
-            countryCode: 'TN',
-            scientificName,
+            eventTimeZone: obs.timezone ?? '',
+            countryCode: obs.country_code ?? session?.country_code ?? '',
+            stateProvince: obs.admin1_code ?? '',
+            scientificName: taxon.scientificName,
+            taxonRank: taxon.taxonRank,
+            taxonKey: taxon.taxonKey,
             vernacularName: obs.species,
             individualCount: obs.group_size,
             occurrenceStatus: 'present',
@@ -65,26 +78,34 @@ export function exportToDarwinCore(sessions, observations, options = {}) {
     for (const session of sessions) {
         if (session.complete_session && !observedSessionIds.has(session.id)) {
             // Create non-detection absence records for target species (cat and dog)
+            // The track start is often the volunteer's home: publish it only as a
+            // 1 km grid centroid, and publish no position at all when there is no track.
+            const start = session.track?.coordinates?.[0];
+            const cell = start ? generalizeTo1KmGrid(start[0], start[1]) : null;
             for (const sp of ['cat', 'dog']) {
-                const sciName = sp === 'cat' ? 'Felis catus' : 'Canis lupus familiaris';
-                // Use track centroid or start point if available
-                const coords = session.track?.coordinates?.[0] ?? [10.1815, 36.8065]; // Fallback center of Tunis
+                const taxon = GBIF_TAXA[sp];
                 records.push({
                     occurrenceID: `absence-${session.id}-${sp}`,
                     eventID: session.id,
                     eventDate: session.start_time,
-                    countryCode: 'TN',
-                    scientificName: sciName,
+                    eventTimeZone: session.timezone ?? '',
+                    countryCode: session.country_code ?? '',
+                    stateProvince: '',
+                    scientificName: taxon.scientificName,
+                    taxonRank: taxon.taxonRank,
+                    taxonKey: taxon.taxonKey,
                     vernacularName: sp,
                     individualCount: 0,
                     occurrenceStatus: 'absent',
                     samplingProtocol: session.protocol,
                     samplingEffort: `duration_min=${session.duration_min ?? 0};distance_km=${session.distance_km ?? 0};protocol=${session.protocol}`,
-                    decimalLatitude: coords[1],
-                    decimalLongitude: coords[0],
-                    coordinateUncertaintyInMeters: 1000,
-                    dataGeneralizations: 'Absence record inferred from complete checklist survey session',
-                    informationWithheld: 'None',
+                    decimalLatitude: cell ? cell.centroid[1] : null,
+                    decimalLongitude: cell ? cell.centroid[0] : null,
+                    coordinateUncertaintyInMeters: cell ? cell.coordinateUncertaintyInMeters : null,
+                    dataGeneralizations: cell
+                        ? 'Absence record inferred from complete checklist; position is the 1 km grid centroid of the survey start'
+                        : 'Absence record inferred from complete checklist; no GPS track recorded',
+                    informationWithheld: 'Exact survey track restricted to certified researchers and administrators',
                     sex: 'unknown',
                     lifeStage: 'unknown',
                     reproductiveCondition: 'unknown',
@@ -121,16 +142,19 @@ export function exportCaptureHistoryMatrix(individuals, occasions, observations)
         };
     });
 }
-export function exportDistanceSampling(sessions, observations, regionLabel = 'Tunisia') {
+export function exportDistanceSampling(sessions, observations, 
+/** Stratum label; defaults to each session's country code */
+regionLabel) {
     const records = [];
     const transectSessions = sessions.filter((s) => s.protocol === 'transect');
     for (const session of transectSessions) {
         const sessionObs = observations.filter((o) => o.session_id === session.id);
         const effortMeters = (session.distance_km ?? 0) * 1000;
+        const stratum = regionLabel ?? session.country_code ?? 'unassigned';
         if (sessionObs.length === 0) {
             // Non-detection session still provides effort
             records.push({
-                'Region.Label': regionLabel,
+                'Region.Label': stratum,
                 'Sample.Label': session.id,
                 Effort: effortMeters,
                 distance: '',
@@ -142,7 +166,7 @@ export function exportDistanceSampling(sessions, observations, regionLabel = 'Tu
         else {
             for (const obs of sessionObs) {
                 records.push({
-                    'Region.Label': regionLabel,
+                    'Region.Label': stratum,
                     'Sample.Label': session.id,
                     Effort: effortMeters,
                     distance: obs.distance_from_path_m != null ? obs.distance_from_path_m : '',

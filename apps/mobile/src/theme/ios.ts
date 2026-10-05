@@ -1,74 +1,13 @@
 import { StyleSheet, Platform } from 'react-native';
+import { brandPalette } from '@tunisia-survey/design-tokens';
 
 /**
  * Apple Design System (iOS Human Interface Guidelines) Tokens.
  * https://developer.apple.com/design/resources/
  */
 
-export const IOSColors = {
-  // System Backgrounds (Soft warm porcelain canvas from Reference 1 & 3)
-  systemBackground: '#F7F6F2',
-  secondarySystemBackground: '#FFFFFF',
-  tertiarySystemBackground: '#F1F5F9',
-  systemGroupedBackground: '#F7F6F2',
-  secondarySystemGroupedBackground: '#FFFFFF',
-
-  // Reference 1 & 3 Signature Brand Gradients
-  sunsetGradient: ['#DD4B34', '#ED6C44', '#FBA567'] as const,
-  sunsetSoftGradient: ['#E25841', '#EE7B53', '#FDBA78'] as const,
-  citronGlowGradient: ['#D9F944', '#B6EA22'] as const,
-  obsidianGradient: ['#18181B', '#0F172A'] as const,
-
-  // Reference 1 (OxeliaMetrix) Electric Citron & Accents
-  citron: '#D9F944',
-  citronLight: '#F5FDCE',
-  citronDark: '#8DAE0A',
-
-  // Reference 3 (Willie Schulist) Warm Terracotta & Peach
-  terracotta: '#DD4B34',
-  terracottaLight: '#FFEDE8',
-  coral: '#ED6C44',
-  coralLight: '#FFF1EC',
-  amberWarm: '#FBA567',
-  amberLight: '#FEF3C7',
-
-  // Reference 2 (TripGlide) Obsidian
-  obsidian: '#111827',
-  obsidianPill: '#18181B',
-
-  // Labels & Text
-  label: '#0F172A',
-  secondaryLabel: '#64748B',
-  tertiaryLabel: '#94A3B8',
-  quaternaryLabel: '#CBD5E1',
-
-  // Separators & Fills
-  separator: '#E2E8F0',
-  opaqueSeparator: '#CBD5E1',
-  systemFill: 'rgba(15, 23, 42, 0.06)',
-  secondarySystemFill: 'rgba(15, 23, 42, 0.04)',
-  tertiarySystemFill: 'rgba(15, 23, 42, 0.02)',
-  quaternarySystemFill: 'rgba(15, 23, 42, 0.01)',
-
-  // Semantic Tints
-  systemBlue: '#2563EB',
-  systemTeal: '#0F172A',
-  systemGreen: '#10B981',
-  systemIndigo: '#6366F1',
-  systemOrange: '#ED6C44',
-  systemPink: '#EC4899',
-  systemPurple: '#8B5CF6',
-  systemRed: '#EF4444',
-  systemYellow: '#F59E0B',
-
-  // System Grays
-  systemGray: '#8E8E93',
-  systemGray2: '#AEAEB2',
-  systemGray3: '#C7C7CC',
-  systemGray4: '#D1D1D6',
-  systemGray5: '#E5E5EA',
-  systemGray6: '#F1F5F9',
-};
+// Values live in packages/design-tokens (brandPalette); this is a view over them
+export const IOSColors = brandPalette;
 
 export const IOSTypography = StyleSheet.create({
   largeTitle: {

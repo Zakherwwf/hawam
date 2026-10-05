@@ -1,0 +1,182 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/*
+ * Porcelain shell (reference boards 1 and 2): a cool grey canvas, white
+ * cards with a soft drop, white pill controls with an inner highlight, and
+ * a near-black pill for the selected item. Dark mode is designed, not
+ * inverted: raised greys with a hairline ring instead of shadows.
+ *
+ * Chart colours follow the dataviz method: categorical slots validated with
+ * validate_palette.js on these surfaces in both schemes (species pair and
+ * the 8-slot breakdown palette both pass every check).
+ */
+:root {
+  --shell: #e7eaee;
+  --pill: #16181d;
+  --onPill: #ffffff;
+  --glass: rgba(255, 255, 255, 0.72);
+  --shadow-card:
+    0 1px 0 rgba(255, 255, 255, 0.9) inset, 0 12px 32px -18px rgba(22, 24, 29, 0.18),
+    0 2px 6px -2px rgba(22, 24, 29, 0.06);
+  --shadow-pill:
+    0 1px 0 rgba(255, 255, 255, 1) inset, 0 6px 14px -8px rgba(22, 24, 29, 0.22),
+    0 1px 2px rgba(22, 24, 29, 0.08);
+  --shadow-float: 0 24px 60px -24px rgba(22, 24, 29, 0.35), 0 4px 12px -4px rgba(22, 24, 29, 0.12);
+
+  --grid: rgba(22, 24, 29, 0.08);
+  --chart-1: #2f7a2b;
+  --chart-cat: #3865cc;
+  --chart-dog: #c2410c;
+  --chart-unknown: #8a8f98;
+  --series-1: #2a78d6;
+  --series-2: #eb6834;
+  --series-3: #1baf7a;
+  --series-4: #eda100;
+  --series-5: #e87ba4;
+  --series-6: #008300;
+  --series-7: #4a3aa7;
+  --series-8: #e34948;
+  --heat-0: #eef1ec;
+  --heat-1: #cfeab3;
+  --heat-2: #9fd477;
+  --heat-3: #5ea83c;
+  --heat-4: #2f7a2b;
+}
+
+:root[data-theme='dark'] {
+  --shell: #050605;
+  --pill: #f3f6f1;
+  --onPill: #102b0f;
+  --glass: rgba(26, 29, 26, 0.72);
+  --shadow-card: 0 0 0 1px rgba(255, 255, 255, 0.07);
+  --shadow-pill: 0 0 0 1px rgba(255, 255, 255, 0.1);
+  --shadow-float: 0 0 0 1px rgba(255, 255, 255, 0.1), 0 24px 60px -20px rgba(0, 0, 0, 0.7);
+
+  --grid: rgba(255, 255, 255, 0.09);
+  --chart-1: #7fc95a;
+  --chart-cat: #3987e5;
+  --chart-dog: #d95926;
+  --chart-unknown: #8a8f98;
+  --series-1: #3987e5;
+  --series-2: #d95926;
+  --series-3: #199e70;
+  --series-4: #c98500;
+  --series-5: #d55181;
+  --series-6: #008300;
+  --series-7: #9085e9;
+  --series-8: #e66767;
+  --heat-0: #222622;
+  --heat-1: #24411a;
+  --heat-2: #346b24;
+  --heat-3: #5ea83c;
+  --heat-4: #9fd477;
+}
+
+@layer base {
+  html {
+    -webkit-text-size-adjust: 100%;
+    text-rendering: optimizeLegibility;
+  }
+  body {
+    @apply bg-shell text-ink antialiased;
+    font-feature-settings: 'cv11', 'ss01';
+    touch-action: manipulation;
+    -webkit-tap-highlight-color: transparent;
+  }
+  h1,
+  h2,
+  h3 {
+    text-wrap: balance;
+  }
+  [id] {
+    scroll-margin-top: 96px;
+  }
+  :focus-visible {
+    outline: 2px solid var(--accent);
+    outline-offset: 2px;
+    border-radius: 8px;
+  }
+  select {
+    background-color: var(--surface);
+    color: var(--ink);
+  }
+  @media (prefers-reduced-motion: reduce) {
+    *,
+    *::before,
+    *::after {
+      animation-duration: 0.01ms !important;
+      transition-duration: 0.01ms !important;
+    }
+  }
+}
+
+@layer utilities {
+  .tabular {
+    font-variant-numeric: tabular-nums;
+  }
+  .skeleton {
+    background: linear-gradient(90deg, var(--fill) 25%, transparent 50%, var(--fill) 75%);
+    background-size: 200% 100%;
+    animation: shimmer 1.4s ease-in-out infinite;
+  }
+  .glass {
+    background: var(--glass);
+    -webkit-backdrop-filter: saturate(180%) blur(20px);
+    backdrop-filter: saturate(180%) blur(20px);
+  }
+  @media (prefers-reduced-transparency: reduce) {
+    .glass {
+      background: var(--surface);
+      -webkit-backdrop-filter: none;
+      backdrop-filter: none;
+    }
+  }
+  /* Weekend and no-data cells in the schedule (reference board 2) */
+  .hatch {
+    background-image: repeating-linear-gradient(135deg, var(--fill) 0 2px, transparent 2px 9px);
+  }
+  .scrollbar-none {
+    scrollbar-width: none;
+  }
+  .scrollbar-none::-webkit-scrollbar {
+    display: none;
+  }
+  .rise {
+    animation: rise 0.28s cubic-bezier(0.2, 0.8, 0.2, 1) both;
+  }
+}
+
+@keyframes shimmer {
+  from {
+    background-position: 200% 0;
+  }
+  to {
+    background-position: -200% 0;
+  }
+}
+@keyframes rise {
+  from {
+    opacity: 0;
+    transform: translateY(6px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+.mapboxgl-popup-content {
+  @apply rounded-control bg-surface text-ink shadow-float;
+  padding: 10px 12px;
+  font: inherit;
+}
+.mapboxgl-popup-tip {
+  display: none;
+}
+.mapboxgl-ctrl-group {
+  border-radius: 999px !important;
+  box-shadow: var(--shadow-pill) !important;
+  overflow: hidden;
+}

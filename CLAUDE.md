@@ -1,6 +1,7 @@
 # Project Guidelines: Hawem (حايم) Citizen-Science Platform (v2)
 
 ## 1. Scientific Data Rules (Non-Negotiable)
+
 1. **The App Does Not Estimate Population Size**: The app collects structured, analysis-ready empirical data for scientific researchers.
 2. **Every Observation Must Carry Effort Metadata**:
    - Who observed it (observer ID, role, experience level).
@@ -21,12 +22,13 @@
 ---
 
 ## 2. Gamification Integrity & Anti-Cheat Rules
+
 1. **Effort Over Count**:
    - XP is heavily weighted toward survey duration, distance walked, completeness, and ID photo quality.
    - Animal count XP is strictly capped (max 20 XP per session) to prevent users from artificially inflating animal counts or double-counting.
    - Zero-animal surveys receive the full completion bonus (+20 XP).
 2. **Anti-Cheat Validation**:
-   - Server-side validation (`validate_session` Edge Function) checks for Android mock location flags, speeds >15 km/h during walking surveys, and GPS teleports.
+   - Server-side validation (`validate_session_record`, run by a deferred trigger on every submitted session) checks for Android mock location flags, speeds >15 km/h during walking surveys, GPS teleports, average transect speed and implausible density; reasons go in `sessions.validation_reasons`.
    - Flagged sessions are marked `validation_status = 'flagged'` and do not count toward leaderboards.
 3. **Leaderboard Metrics**:
    - Leaderboards rank by **km surveyed** and **complete survey checklists**, never by animal counts.
@@ -34,6 +36,7 @@
 ---
 
 ## 3. Design System Rules (Apple Human Interface Guidelines)
+
 1. **Visual Language**:
    - Strict Apple HIG and iOS Liquid Glass material language on both iOS and Android.
    - Translucent blurs for top navigation, tab bars, and floating HUDs.
@@ -52,6 +55,7 @@
 ---
 
 ## 4. Technical Architecture & Monorepo Structure
+
 - `apps/mobile`: Expo SDK 57, TypeScript strict, Expo Router, Drizzle ORM + SQLite, Mapbox GL / `@rnmapbox/maps`.
 - `apps/dashboard`: Research portal (Vite, React, Tailwind).
 - `packages/shared`: Shared Zod schemas, TypeScript types, Darwin Core Archive & SECR R matrix exporters.

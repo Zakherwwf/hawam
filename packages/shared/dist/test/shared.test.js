@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { generalizeTo1KmGrid, } from '../src/grid';
+import { generalizeTo1KmGrid } from '../src/grid';
 import { exportToDarwinCore, exportCaptureHistoryMatrix, exportDistanceSampling, objectsToCSV, } from '../src/exports';
 test('1 km grid generalization protects precise locations', () => {
     // Test coordinate in Tunis: Avenue Habib Bourguiba (10.1815, 36.8000)
@@ -44,7 +44,10 @@ test('Darwin Core exporter handles detections and non-detections', () => {
         app_version: '1.0.0',
         track: {
             type: 'LineString',
-            coordinates: [[10.18, 36.80], [10.19, 36.81]],
+            coordinates: [
+                [10.18, 36.8],
+                [10.19, 36.81],
+            ],
         },
     };
     const obs1 = {
@@ -75,8 +78,9 @@ test('Darwin Core exporter handles detections and non-detections', () => {
     const presence = dwc.find((r) => r.occurrenceID === 'obs-001');
     assert.ok(presence);
     assert.equal(presence?.occurrenceStatus, 'present');
-    assert.equal(presence?.countryCode, 'TN');
-    assert.equal(presence?.scientificName, 'Felis catus');
+    assert.equal(presence?.countryCode, '');
+    assert.equal(presence?.scientificName, 'Felis catus Linnaeus, 1758');
+    assert.equal(presence?.taxonKey, 2435035);
     assert.match(presence?.dataGeneralizations, /1 km grid/);
     const absences = dwc.filter((r) => r.occurrenceStatus === 'absent');
     assert.equal(absences.length, 2);
@@ -157,9 +161,33 @@ test('Capture-History Matrix generates binary encounter histories for SECR', () 
         },
     ];
     const sessions = [
-        { id: 's1', observer_id: 'u1', protocol: 'transect', start_time: '2026-09-20T08:00:00Z', complete_session: true, number_of_observers: 1, app_version: '1' },
-        { id: 's2', observer_id: 'u1', protocol: 'transect', start_time: '2026-09-21T08:00:00Z', complete_session: true, number_of_observers: 1, app_version: '1' },
-        { id: 's3', observer_id: 'u1', protocol: 'transect', start_time: '2026-09-22T08:00:00Z', complete_session: true, number_of_observers: 1, app_version: '1' },
+        {
+            id: 's1',
+            observer_id: 'u1',
+            protocol: 'transect',
+            start_time: '2026-09-20T08:00:00Z',
+            complete_session: true,
+            number_of_observers: 1,
+            app_version: '1',
+        },
+        {
+            id: 's2',
+            observer_id: 'u1',
+            protocol: 'transect',
+            start_time: '2026-09-21T08:00:00Z',
+            complete_session: true,
+            number_of_observers: 1,
+            app_version: '1',
+        },
+        {
+            id: 's3',
+            observer_id: 'u1',
+            protocol: 'transect',
+            start_time: '2026-09-22T08:00:00Z',
+            complete_session: true,
+            number_of_observers: 1,
+            app_version: '1',
+        },
     ];
     const obs = [
         {
@@ -264,4 +292,112 @@ test('Distance sampling export produces valid R format with effort and detection
     const csv = objectsToCSV(distRecords);
     assert.match(csv, /Sample\.Label,Effort,distance,size/);
     assert.match(csv, /"transect-1","1500","8.5","2"/);
+});
+test('generalizeTo1KmGrid: cells are ~1 km wide and tall at every latitude', () => {
+    const R = 6371000;
+    const haversine = (a, b) => {
+        const [lon1, lat1] = a.map((v) => (v * Math.PI) / 180);
+        const [lon2, lat2] = b.map((v) => (v * Math.PI) / 180);
+        const h = Math.sin((lat2 - lat1) / 2) ** 2 +
+            Math.cos(lat1) * Math.cos(lat2) * Math.sin((lon2 - lon1) / 2) ** 2;
+        return 2 * R * Math.asin(Math.sqrt(h));
+    };
+    // Tunis, Lima, Mumbai, Oslo, Ushuaia
+    for (const [lon, lat] of [
+        [10.18, 36.8],
+        [-77.04, -12.05],
+        [72.88, 19.07],
+        [10.75, 59.91],
+        [-68.3, -54.8],
+    ]) {
+        const here = generalizeTo1KmGrid(lon, lat).centroid;
+        const lonStep = 1000 / (111000 * Math.cos((here[1] * Math.PI) / 180));
+        const east = generalizeTo1KmGrid(here[0] + lonStep, here[1]).centroid;
+        const north = generalizeTo1KmGrid(here[0], here[1] + 1000 / 111000).centroid;
+        const width = haversine(here, east);
+        const height = haversine(here, [here[0], north[1]]);
+        assert.ok(width > 950 && width < 1050, `cell width ${width} m at ${lat}`);
+        assert.ok(height > 950 && height < 1050, `cell height ${height} m at ${lat}`);
+    }
+});
+test('generalizeTo1KmGrid: points in one cell share its id and centroid', () => {
+    const a = generalizeTo1KmGrid(-77.04, -12.05);
+    const b = generalizeTo1KmGrid(a.centroid[0] + 0.001, a.centroid[1] - 0.001);
+    assert.equal(a.gridCellId, b.gridCellId);
+    assert.deepEqual(a.centroid, b.centroid);
+});
+test('exportToDarwinCore: country comes from the observation, not a fixed default', () => {
+    const session = {
+        id: 's-pe',
+        observer_id: 'u',
+        protocol: 'transect',
+        start_time: '2026-09-29T11:00:00Z',
+        complete_session: true,
+        number_of_observers: 1,
+        app_version: '1',
+        country_code: 'PE',
+        timezone: 'America/Lima',
+    };
+    const obs = {
+        id: 'o-pe',
+        session_id: 's-pe',
+        observer_id: 'u',
+        observed_at: '2026-09-29T11:30:00Z',
+        location_public: {
+            type: 'Point',
+            coordinates: [-77.04433, -12.04955],
+        },
+        grid_cell_id: '1KM-S1338-W8364',
+        species: 'dog',
+        group_size: 2,
+        sex: 'unknown',
+        age_class: 'adult',
+        reproductive_status: 'unknown',
+        body_condition_score: 3,
+        visible_health_issues: ['none'],
+        ear_tip_or_notch: 'no',
+        collar_or_tag: 'no',
+        behaviour: 'neutral',
+        being_fed_by_people: 'no',
+        habitat_type: 'residential',
+        food_sources_visible: ['none'],
+        country_code: 'PE',
+        admin1_code: 'PE-LIM',
+        timezone: 'America/Lima',
+    };
+    const [rec] = exportToDarwinCore([session], [obs]);
+    assert.equal(rec.countryCode, 'PE');
+    assert.equal(rec.stateProvince, 'PE-LIM');
+    assert.equal(rec.eventTimeZone, 'America/Lima');
+    assert.equal(rec.taxonKey, 6164210);
+});
+test('exportToDarwinCore: absence records never expose a precise track start or invent a position', () => {
+    const base = {
+        observer_id: 'u',
+        protocol: 'transect',
+        start_time: '2026-09-29T06:00:00Z',
+        complete_session: true,
+        number_of_observers: 1,
+        app_version: '1',
+    };
+    const withTrack = {
+        ...base,
+        id: 's-track',
+        track: {
+            type: 'LineString',
+            coordinates: [
+                [-77.041234, -12.051234],
+                [-77.03, -12.04],
+            ],
+        },
+    };
+    const noTrack = { ...base, id: 's-none' };
+    const dwc = exportToDarwinCore([withTrack, noTrack], []);
+    const tracked = dwc.find((r) => r.eventID === 's-track');
+    assert.notEqual(tracked.decimalLatitude, -12.051234);
+    assert.equal(tracked.decimalLatitude, generalizeTo1KmGrid(-77.041234, -12.051234).centroid[1]);
+    assert.equal(tracked.coordinateUncertaintyInMeters, 707);
+    const untracked = dwc.find((r) => r.eventID === 's-none');
+    assert.equal(untracked.decimalLatitude, null);
+    assert.equal(untracked.decimalLongitude, null);
 });

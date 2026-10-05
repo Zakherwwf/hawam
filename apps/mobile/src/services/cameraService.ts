@@ -1,3 +1,4 @@
+import i18n from '../i18n';
 /**
  * Camera & Photo Capture Service
  * Hawem (حايم) Citizen-Science Platform
@@ -29,7 +30,7 @@ export async function requestCameraPermission(): Promise<boolean> {
     if (status !== 'granted') {
       Alert.alert(
         'Camera Permission Required',
-        'Hawem requires camera access to document animal sightings and perform AI identification.'
+        'Strayo requires camera access to document animal sightings and perform AI identification.'
       );
       return false;
     }
@@ -49,7 +50,7 @@ export async function requestMediaLibraryPermission(): Promise<boolean> {
     if (status !== 'granted') {
       Alert.alert(
         'Photo Library Permission Required',
-        'Hawem requires photo library access to import field photos.'
+        'Strayo requires photo library access to import field photos.'
       );
       return false;
     }
@@ -92,7 +93,10 @@ export async function capturePhotoFromCamera(options?: {
     };
   } catch (error) {
     console.error('Failed to capture photo with camera:', error);
-    Alert.alert('Camera Error', 'Could not open camera on this device.');
+    Alert.alert(
+      i18n.t('ui_cameraService.camera_error'),
+      i18n.t('ui_cameraService.camera_error_body')
+    );
     return null;
   }
 }
@@ -148,7 +152,11 @@ export function promptPhotoCaptureChoice(
         {
           title,
           message,
-          options: ['Cancel', 'Take Photo with Camera', 'Choose from Photo Library'],
+          options: [
+            i18n.t('ui_cameraService.cancel'),
+            i18n.t('ui_cameraService.take_photo_with_camera'),
+            i18n.t('ui_cameraService.choose_from_photo_library'),
+          ],
           cancelButtonIndex: 0,
         },
         async (buttonIndex) => {
@@ -166,19 +174,19 @@ export function promptPhotoCaptureChoice(
     } else {
       Alert.alert(title, message, [
         {
-          text: 'Cancel',
+          text: i18n.t('ui_cameraService.cancel'),
           style: 'cancel',
           onPress: () => resolve(null),
         },
         {
-          text: 'Camera',
+          text: i18n.t('ui_cameraService.camera'),
           onPress: async () => {
             const photo = await capturePhotoFromCamera();
             resolve(photo);
           },
         },
         {
-          text: 'Gallery',
+          text: i18n.t('ui_cameraService.gallery'),
           onPress: async () => {
             const photo = await pickPhotoFromLibrary();
             resolve(photo);

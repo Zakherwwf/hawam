@@ -4,6 +4,7 @@
  * Ensures continuous transect track recording while the screen is locked or app is backgrounded.
  */
 
+import { AppState } from 'react-native';
 import * as Location from 'expo-location';
 import * as TaskManager from 'expo-task-manager';
 import { useSurveyStore } from '../../features/survey/surveyStore.ts';
@@ -21,6 +22,9 @@ try {
     if (data && data.locations && Array.isArray(data.locations)) {
       const store = useSurveyStore.getState();
       if (store.status !== 'recording') return;
+      // While the app is open the walk screen's own watcher records the
+      // track; taking both would count every metre twice
+      if (AppState.currentState === 'active') return;
 
       for (const loc of data.locations) {
         if (!loc || !loc.coords) continue;
@@ -65,7 +69,9 @@ export async function startBackgroundLocationTracking(): Promise<boolean> {
       return false;
     }
 
-    const hasStarted = await Location.hasStartedLocationUpdatesAsync(HAWEM_BACKGROUND_LOCATION_TASK);
+    const hasStarted = await Location.hasStartedLocationUpdatesAsync(
+      HAWEM_BACKGROUND_LOCATION_TASK
+    );
     if (hasStarted) {
       return true;
     }
@@ -78,7 +84,7 @@ export async function startBackgroundLocationTracking(): Promise<boolean> {
       deferredUpdatesDistance: 3,
       showsBackgroundLocationIndicator: true,
       foregroundService: {
-        notificationTitle: 'Hawem Survey Active',
+        notificationTitle: 'Strayo survey active',
         notificationBody: 'Recording scientific GPS transect track...',
         notificationColor: '#0F172A',
       },
@@ -93,7 +99,9 @@ export async function startBackgroundLocationTracking(): Promise<boolean> {
 
 export async function stopBackgroundLocationTracking(): Promise<void> {
   try {
-    const hasStarted = await Location.hasStartedLocationUpdatesAsync(HAWEM_BACKGROUND_LOCATION_TASK);
+    const hasStarted = await Location.hasStartedLocationUpdatesAsync(
+      HAWEM_BACKGROUND_LOCATION_TASK
+    );
     if (hasStarted) {
       await Location.stopLocationUpdatesAsync(HAWEM_BACKGROUND_LOCATION_TASK);
     }

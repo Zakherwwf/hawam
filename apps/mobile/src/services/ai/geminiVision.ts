@@ -22,7 +22,7 @@ export interface AnimalVisionAnalysis {
   source: 'gemini-3-flash' | 'gemini-3.1-pro' | 'offline-heuristic';
 }
 
-const SYSTEM_PROMPT = `You are an expert veterinary epidemiologist and animal welfare scientist specializing in free-roaming dogs and cats in North Africa (Tunisia).
+const SYSTEM_PROMPT = `You are an expert veterinary epidemiologist and animal welfare scientist specializing in free-roaming dogs and cats worldwide.
 Analyze the provided animal image and return ONLY a valid JSON object matching this exact schema:
 {
   "species": "cat" | "dog" | "unknown",
@@ -45,7 +45,10 @@ export function parseGeminiVisionResponse(
 ): AnimalVisionAnalysis {
   try {
     // Strip markdown code fences if present
-    const cleaned = rawText.replace(/```json/g, '').replace(/```/g, '').trim();
+    const cleaned = rawText
+      .replace(/```json/g, '')
+      .replace(/```/g, '')
+      .trim();
     const parsed = JSON.parse(cleaned);
 
     const validSpecies = ['cat', 'dog', 'unknown'].includes(parsed.species)
@@ -63,7 +66,10 @@ export function parseGeminiVisionResponse(
 
     return {
       species: validSpecies,
-      confidence: typeof parsed.confidence === 'number' ? Math.min(1.0, Math.max(0.0, parsed.confidence)) : 0.85,
+      confidence:
+        typeof parsed.confidence === 'number'
+          ? Math.min(1.0, Math.max(0.0, parsed.confidence))
+          : 0.85,
       breedOrType: parsed.breedOrType || 'Domestic regional breed',
       coatPattern: parsed.coatPattern || 'Standard coat pattern',
       estimatedBodyConditionScore: bcs,
@@ -81,14 +87,16 @@ export function parseGeminiVisionResponse(
 /**
  * Deterministic offline fallback heuristic when device is offline or API key is not configured.
  */
-export function generateOfflineHeuristicAnalysis(
-  hints?: { speciesHint?: 'cat' | 'dog'; notesHint?: string }
-): AnimalVisionAnalysis {
+export function generateOfflineHeuristicAnalysis(hints?: {
+  speciesHint?: 'cat' | 'dog';
+  notesHint?: string;
+}): AnimalVisionAnalysis {
   const species = hints?.speciesHint || 'cat';
   return {
     species,
     confidence: 0.8,
-    breedOrType: species === 'cat' ? 'North African Local Cat (Mau)' : 'Local Mixed-Breed Dog (Baladi)',
+    breedOrType:
+      species === 'cat' ? 'North African Local Cat (Mau)' : 'Local Mixed-Breed Dog (Baladi)',
     coatPattern: species === 'cat' ? 'Tabby with white chest' : 'Sandy fawn short coat',
     estimatedBodyConditionScore: 3,
     bcsRationale: 'Normal abdominal tuck, ribs palpable with light fat cover (ICAM BCS 3).',

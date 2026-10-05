@@ -1,90 +1,67 @@
-import React, { useRef, useEffect, useState } from 'react';
-import { View, StyleSheet, TouchableOpacity, Text, DimensionValue } from 'react-native';
+import { useTranslation } from 'react-i18next';
+import React, { useMemo, useRef, useEffect, useState } from 'react';
+import { View, StyleSheet, TouchableOpacity, Text } from 'react-native';
 import { WebView } from 'react-native-webview';
 import * as Location from 'expo-location';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import { IOSColors, IOSTypography } from '../../theme/ios';
 import { IOSIcon } from '../ios';
 import { MAPBOX_CONFIG } from '../../config/mapbox';
+import {
+  CAMERA_STORAGE_KEY,
+  routeExtrasGeoJSON,
+  USER_LOCATION_ZOOM,
+  loadSavedCamera,
+  type InteractiveMapViewProps,
+} from './mapTypes';
 
-export interface MapMarker {
-  id: string;
-  latitude: number;
-  longitude: number;
-  species: 'cat' | 'dog' | 'unknown';
-  title?: string;
-  subtitle?: string;
-  identifier?: string;
-  label?: string;
-  distance_from_path_m?: number;
-}
-
-export interface ColonyMarker {
-  id: string;
-  name: string;
-  species?: 'cat' | 'dog' | 'mixed';
-  latitude: number;
-  longitude: number;
-  estimatedPopulation: number;
-  tnrPercent: number;
-  hasWaterStation?: boolean;
-  hasShelter?: boolean;
-}
-
-export interface FocusCoordinate {
-  latitude: number;
-  longitude: number;
-  zoom?: number;
-}
-
-export interface TransectMarker {
-  id: string;
-  name: string;
-  nameAr?: string;
-  latitude: number;
-  longitude: number;
-  distanceKm: number;
-  isAdopted: boolean;
-  isSelected?: boolean;
-}
-
-interface InteractiveMapViewProps {
-  initialLat?: number;
-  initialLon?: number;
-  initialZoom?: number;
-  focusCoordinate?: FocusCoordinate | null;
-  markers?: MapMarker[];
-  colonyMarkers?: ColonyMarker[];
-  transectMarkers?: TransectMarker[];
-  trackCoordinates?: [number, number][]; // [lat, lon]
-  routeCorridorCoordinates?: [number, number][]; // Planned transect corridor [lat, lon]
-  showUserLocation?: boolean;
-  onMarkerPress?: (markerId: string) => void;
-  onColonyPress?: (colonyId: string) => void;
-  onTransectPress?: (transectId: string) => void;
-  height?: DimensionValue;
-}
+export type {
+  MapMarker,
+  ColonyMarker,
+  FocusCoordinate,
+  TransectMarker,
+  InteractiveMapViewProps,
+} from './mapTypes';
 
 export const InteractiveMapView: React.FC<InteractiveMapViewProps> = ({
-  initialLat = MAPBOX_CONFIG.defaultCenter.latitude,
-  initialLon = MAPBOX_CONFIG.defaultCenter.longitude,
-  initialZoom = MAPBOX_CONFIG.defaultZoom,
+  initialLat,
+  initialLon,
+  initialZoom,
   focusCoordinate,
   markers = [],
   colonyMarkers = [],
   transectMarkers = [],
   trackCoordinates = [],
   routeCorridorCoordinates = [],
+  routeDirection = null,
+  extraLines = [],
   showUserLocation = true,
   onMarkerPress,
   onColonyPress,
   onTransectPress,
   height = '100%',
+  hideControls = false,
+  mapStyle,
 }) => {
+  const { t } = useTranslation();
   const webViewRef = useRef<WebView>(null);
   const [mapLoaded, setMapLoaded] = useState(false);
   const [currentLayer, setCurrentLayer] = useState<'streets' | 'satellite' | 'outdoors'>('streets');
   const [showColoniesLayer, setShowColoniesLayer] = useState(true);
-  const [userLocation, setUserLocation] = useState<{ lat: number; lon: number; acc: number } | null>(null);
+  const [userLocation, setUserLocation] = useState<{
+    lat: number;
+    lon: number;
+    acc: number;
+  } | null>(null);
+
+  // Without an explicit centre the viewport resolves in order: last camera
+  // position, then the device location, then the world view the map opens on.
+  const hasExplicitCenter = initialLat !== undefined && initialLon !== undefined;
+  const startLat = initialLat ?? MAPBOX_CONFIG.defaultCenter.latitude;
+  const startLon = initialLon ?? MAPBOX_CONFIG.defaultCenter.longitude;
+  const startZoom = initialZoom ?? (hasExplicitCenter ? 16 : MAPBOX_CONFIG.defaultZoom);
+  const viewportResolved = useRef(hasExplicitCenter || !!focusCoordinate);
+  const [savedCameraChecked, setSavedCameraChecked] = useState(hasExplicitCenter);
 
   // Request live device GPS location using expo-location
   useEffect(() => {
@@ -113,7 +90,7 @@ export const InteractiveMapView: React.FC<InteractiveMapViewProps> = ({
           );
         }
       } catch (e) {
-        setUserLocation({ lat: initialLat, lon: initialLon, acc: 3.5 });
+        // No fix: show no user marker rather than a fabricated position
       }
     }
 
@@ -126,6 +103,33 @@ export const InteractiveMapView: React.FC<InteractiveMapViewProps> = ({
     };
   }, []);
 
+  // Texts drawn inside the web map, in the app's language ({x} is filled in the page)
+  const labels = useMemo(
+    () => ({
+      cat: t('ui_mapPopup.cat'),
+      dog: t('ui_mapPopup.dog'),
+      fromPath: t('ui_mapPopup.from_path'),
+      packPin: t('ui_mapPopup.pack_pin'),
+      colonyPin: t('ui_mapPopup.colony_pin'),
+      dogPack: t('ui_mapPopup.dog_pack'),
+      catColony: t('ui_mapPopup.cat_colony'),
+      popCats: t('ui_mapPopup.pop_cats'),
+      popDogs: t('ui_mapPopup.pop_dogs'),
+      adoptedPin: t('ui_mapPopup.adopted_pin'),
+      routePin: t('ui_mapPopup.route_pin'),
+      route: t('ui_mapPopup.route'),
+      length: t('ui_mapPopup.length'),
+      adopted: t('ui_mapPopup.adopted'),
+    }),
+    [t]
+  );
+
+  // Start/end points, direction chevrons and extra lines, as GeoJSON [lon, lat]
+  const routeExtras = useMemo(
+    () => routeExtrasGeoJSON(routeCorridorCoordinates, routeDirection, extraLines),
+    [routeCorridorCoordinates, routeDirection, extraLines]
+  );
+
   // Sync markers, colonies, transects, corridor, track coordinates, and user location to Mapbox GL JS
   useEffect(() => {
     if (!mapLoaded || !webViewRef.current) return;
@@ -136,12 +140,26 @@ export const InteractiveMapView: React.FC<InteractiveMapViewProps> = ({
       transectMarkers,
       trackCoordinates,
       routeCorridorCoordinates,
+      routeExtras,
+      labels,
       userLocation: showUserLocation ? userLocation : null,
     });
 
     const js = `if (window.updateMapboxData) { window.updateMapboxData(${dataPayload}); } true;`;
     webViewRef.current.injectJavaScript(js);
-  }, [markers, colonyMarkers, transectMarkers, showColoniesLayer, trackCoordinates, routeCorridorCoordinates, userLocation, mapLoaded, showUserLocation]);
+  }, [
+    markers,
+    colonyMarkers,
+    transectMarkers,
+    showColoniesLayer,
+    trackCoordinates,
+    routeCorridorCoordinates,
+    routeExtras,
+    labels,
+    userLocation,
+    mapLoaded,
+    showUserLocation,
+  ]);
 
   // Smooth camera auto-centering effect on target coordinate
   useEffect(() => {
@@ -151,6 +169,48 @@ export const InteractiveMapView: React.FC<InteractiveMapViewProps> = ({
     webViewRef.current.injectJavaScript(js);
   }, [focusCoordinate, mapLoaded]);
 
+  useEffect(() => {
+    if (!mapLoaded || viewportResolved.current) return;
+    let cancelled = false;
+    loadSavedCamera().then((saved) => {
+      if (cancelled) return;
+      if (saved && !viewportResolved.current && webViewRef.current) {
+        viewportResolved.current = true;
+        webViewRef.current.injectJavaScript(
+          `if (window.jumpToCamera) { window.jumpToCamera(${saved.latitude}, ${saved.longitude}, ${saved.zoom}); } true;`
+        );
+      }
+      setSavedCameraChecked(true);
+    });
+    return () => {
+      cancelled = true;
+    };
+  }, [mapLoaded]);
+
+  useEffect(() => {
+    if (
+      !mapLoaded ||
+      !savedCameraChecked ||
+      viewportResolved.current ||
+      !userLocation ||
+      !webViewRef.current
+    )
+      return;
+    viewportResolved.current = true;
+    webViewRef.current.injectJavaScript(
+      `if (window.centerOnUser) { window.centerOnUser(${userLocation.lat}, ${userLocation.lon}, ${USER_LOCATION_ZOOM}); } true;`
+    );
+  }, [mapLoaded, savedCameraChecked, userLocation]);
+
+  // The screen may own the base style (MapTab's layer button)
+  useEffect(() => {
+    if (!mapStyle || !mapLoaded || mapStyle === currentLayer) return;
+    setCurrentLayer(mapStyle);
+    webViewRef.current?.injectJavaScript(
+      `if (window.switchMapboxStyle) { window.switchMapboxStyle("${mapStyle}"); } true;`
+    );
+  }, [mapStyle, mapLoaded, currentLayer]);
+
   const toggleLayer = () => {
     let next: 'streets' | 'satellite' | 'outdoors' = 'streets';
     if (currentLayer === 'streets') next = 'satellite';
@@ -159,13 +219,17 @@ export const InteractiveMapView: React.FC<InteractiveMapViewProps> = ({
 
     setCurrentLayer(next);
     if (webViewRef.current) {
-      webViewRef.current.injectJavaScript(`if (window.switchMapboxStyle) { window.switchMapboxStyle("${next}"); } true;`);
+      webViewRef.current.injectJavaScript(
+        `if (window.switchMapboxStyle) { window.switchMapboxStyle("${next}"); } true;`
+      );
     }
   };
 
   const centerOnUser = () => {
     if (webViewRef.current && userLocation) {
-      webViewRef.current.injectJavaScript(`if (window.centerOnUser) { window.centerOnUser(${userLocation.lat}, ${userLocation.lon}); } true;`);
+      webViewRef.current.injectJavaScript(
+        `if (window.centerOnUser) { window.centerOnUser(${userLocation.lat}, ${userLocation.lon}); } true;`
+      );
     }
   };
 
@@ -382,8 +446,8 @@ export const InteractiveMapView: React.FC<InteractiveMapViewProps> = ({
     var map = new mapboxgl.Map({
       container: 'map',
       style: STYLES.streets,
-      center: [${initialLon}, ${initialLat}],
-      zoom: ${initialZoom},
+      center: [${startLon}, ${startLat}],
+      zoom: ${startZoom},
       attributionControl: false
     });
 
@@ -393,9 +457,56 @@ export const InteractiveMapView: React.FC<InteractiveMapViewProps> = ({
     var userMarker = null;
     var currentTrackCoords = [];
     var currentCorridorCoords = [];
+    var currentRouteExtras = null;
+
+    // Direction chevrons, start/end points and extra lines (observer to
+    // animal, an animal's path), drawn above the corridor
+    function renderRouteExtras() {
+      var empty = { type: 'FeatureCollection', features: [] };
+      var lines = (currentRouteExtras && currentRouteExtras.lines) || empty;
+      var ends = (currentRouteExtras && currentRouteExtras.ends) || empty;
+      if (map.getSource('route-extra-lines')) {
+        map.getSource('route-extra-lines').setData(lines);
+        map.getSource('route-ends').setData(ends);
+        return;
+      }
+      map.addSource('route-extra-lines', { type: 'geojson', data: lines });
+      map.addSource('route-ends', { type: 'geojson', data: ends });
+      map.addLayer({
+        id: 'route-extra-lines-casing',
+        type: 'line',
+        source: 'route-extra-lines',
+        filter: ['==', ['get', 'kind'], 'chevron'],
+        layout: { 'line-join': 'round', 'line-cap': 'round' },
+        paint: { 'line-color': '#FFFFFF', 'line-width': 6 }
+      });
+      map.addLayer({
+        id: 'route-extra-lines',
+        type: 'line',
+        source: 'route-extra-lines',
+        layout: { 'line-join': 'round', 'line-cap': 'round' },
+        paint: {
+          'line-color': ['get', 'color'],
+          'line-width': ['get', 'width'],
+          'line-dasharray': ['case', ['==', ['get', 'dashed'], 1], ['literal', [2, 2]], ['literal', [1, 0]]]
+        }
+      });
+      map.addLayer({
+        id: 'route-ends',
+        type: 'circle',
+        source: 'route-ends',
+        paint: {
+          'circle-radius': ['case', ['==', ['get', 'kind'], 'start'], 9, 7],
+          'circle-color': ['get', 'color'],
+          'circle-stroke-color': '#FFFFFF',
+          'circle-stroke-width': 3
+        }
+      });
+    }
     var lastData = null;
 
     function renderRouteCorridor() {
+      try { renderRouteExtras(); } catch (e) {}
       if (!currentCorridorCoords || currentCorridorCoords.length < 2) {
         if (map.getSource('corridor-line')) {
           map.getSource('corridor-line').setData({ type: 'FeatureCollection', features: [] });
@@ -446,6 +557,15 @@ export const InteractiveMapView: React.FC<InteractiveMapViewProps> = ({
           }
         });
       }
+      raiseRouteExtras();
+    }
+
+    function raiseRouteExtras() {
+      try {
+        ['route-extra-lines-casing', 'route-extra-lines', 'route-ends'].forEach(function(id) {
+          if (map.getLayer(id)) map.moveLayer(id);
+        });
+      } catch (e) {}
     }
 
     function renderRouteLine() {
@@ -517,7 +637,28 @@ export const InteractiveMapView: React.FC<InteractiveMapViewProps> = ({
       });
     };
 
+    // Hemisphere-aware coordinates for popups ("12.04955° S, 77.04433° W")
+    function fmtCoords(lat, lon) {
+      return Math.abs(lat).toFixed(5) + '° ' + (lat < 0 ? 'S' : 'N') + ', ' +
+        Math.abs(lon).toFixed(5) + '° ' + (lon < 0 ? 'W' : 'E');
+    }
+
+    window.jumpToCamera = function(lat, lon, zoom) {
+      map.jumpTo({ center: [lon, lat], zoom: zoom });
+    };
+
+    map.on('moveend', function(e) {
+      if (!window.ReactNativeWebView) return;
+      var c = map.getCenter();
+      window.ReactNativeWebView.postMessage(JSON.stringify({
+        type: 'camera', lat: c.lat, lon: c.lng, zoom: map.getZoom(), byUser: !!(e && e.originalEvent)
+      }));
+    });
+
+    // Pop-up and pin texts arrive translated from the app (data.labels)
+    var L = { cat: 'Cat', dog: 'Dog', fromPath: '{m} m from path', packPin: 'PACK', colonyPin: 'COLONY', dogPack: 'Dog pack', catColony: 'Cat colony', popCats: 'About {n} cats ({p}% sterilised)', popDogs: 'About {n} dogs ({p}% sterilised)', adoptedPin: 'ADOPTED', routePin: 'ROUTE', route: 'Route: {name}', length: '{km} km', adopted: 'Adopted' };
     window.updateMapboxData = function(data) {
+      if (data && data.labels) L = data.labels;
       lastData = data;
 
       // 1. Clear existing observation markers
@@ -543,13 +684,13 @@ export const InteractiveMapView: React.FC<InteractiveMapViewProps> = ({
           var pinLabel = m.identifier || m.label || seqCode;
           pinEl.innerText = pinLabel;
 
-          var displayTitle = (m.identifier || m.title || seqCode) + ' • ' + (isCat ? 'Cat' : 'Dog');
+          var displayTitle = (m.identifier || m.title || seqCode) + ' • ' + (isCat ? L.cat : L.dog);
           var popupHtml =
             '<div class="popup-species-badge ' + (isCat ? 'popup-cat-badge' : 'popup-dog-badge') + '">' +
               displayTitle +
             '</div>' +
-            (m.distance_from_path_m !== undefined ? '<div style="font-size:12px;font-weight:600;">Distance: ' + m.distance_from_path_m + 'm</div>' : '') +
-            '<div class="popup-coords">' + m.latitude.toFixed(5) + '° N, ' + m.longitude.toFixed(5) + '° E</div>';
+            (m.distance_from_path_m !== undefined ? '<div style="font-size:12px;font-weight:600;">' + L.fromPath.replace('{m}', m.distance_from_path_m) + '</div>' : '') +
+            '<div class=\"popup-coords\">' + fmtCoords(m.latitude, m.longitude) + '</div>';
 
           var popup = new mapboxgl.Popup({ offset: 18, closeButton: true }).setHTML(popupHtml);
 
@@ -574,15 +715,14 @@ export const InteractiveMapView: React.FC<InteractiveMapViewProps> = ({
           var isDogPack = c.species === 'dog';
           var pinEl = document.createElement('div');
           pinEl.className = 'colony-pin' + (isDogPack ? ' dog-pack-pin' : '');
-          pinEl.innerText = isDogPack ? 'PACK' : 'COLONY';
+          pinEl.innerText = isDogPack ? L.packPin : L.colonyPin;
 
           var badgeClass = 'popup-colony-badge' + (isDogPack ? ' popup-dog-pack-badge' : '');
-          var animalNoun = isDogPack ? 'dogs' : 'cats';
-          var groupLabel = isDogPack ? 'Dog Pack' : 'Cat Colony';
+          var groupLabel = isDogPack ? L.dogPack : L.catColony;
           var popupHtml =
             '<div class="' + badgeClass + '">' + groupLabel + ': ' + c.name + '</div>' +
-            '<div style="font-size:12px;font-weight:600;margin-top:2px;">Pop: ~' + c.estimatedPopulation + ' ' + animalNoun + ' (' + c.tnrPercent + '% TNR)</div>' +
-            '<div class="popup-coords">' + c.latitude.toFixed(5) + '° N, ' + c.longitude.toFixed(5) + '° E</div>';
+            '<div style="font-size:12px;font-weight:600;margin-top:2px;">' + (isDogPack ? L.popDogs : L.popCats).replace('{n}', c.estimatedPopulation).replace('{p}', c.tnrPercent) + '</div>' +
+            '<div class=\"popup-coords\">' + fmtCoords(c.latitude, c.longitude) + '</div>';
 
           var popup = new mapboxgl.Popup({ offset: 18, closeButton: true }).setHTML(popupHtml);
 
@@ -606,12 +746,12 @@ export const InteractiveMapView: React.FC<InteractiveMapViewProps> = ({
         data.transectMarkers.forEach(function(t) {
           var pinEl = document.createElement('div');
           pinEl.className = 'transect-pin' + (t.isAdopted ? ' adopted' : '') + (t.isSelected ? ' selected' : '');
-          pinEl.innerText = t.isAdopted ? 'GUARDIAN' : 'TRANSECT';
+          pinEl.innerText = t.isAdopted ? L.adoptedPin : L.routePin;
 
           var popupHtml =
-            '<div class="popup-transect-badge">' + (t.isAdopted ? '[Adopted] ' : '') + 'Transect: ' + t.name + '</div>' +
-            '<div style="font-size:12px;font-weight:600;margin-top:2px;">Length: ' + t.distanceKm + ' km ' + (t.isAdopted ? '(Adopted)' : '') + '</div>' +
-            '<div class="popup-coords">' + t.latitude.toFixed(5) + '° N, ' + t.longitude.toFixed(5) + '° E</div>';
+            '<div class="popup-transect-badge">' + L.route.replace('{name}', t.name) + '</div>' +
+            '<div style="font-size:12px;font-weight:600;margin-top:2px;">' + L.length.replace('{km}', t.distanceKm) + (t.isAdopted ? ' · ' + L.adopted : '') + '</div>' +
+            '<div class=\"popup-coords\">' + fmtCoords(t.latitude, t.longitude) + '</div>';
 
           var popup = new mapboxgl.Popup({ offset: 18, closeButton: true }).setHTML(popupHtml);
 
@@ -631,6 +771,7 @@ export const InteractiveMapView: React.FC<InteractiveMapViewProps> = ({
       }
 
       // 3. Render planned corridor
+      if (data.routeExtras) currentRouteExtras = data.routeExtras;
       if (data.routeCorridorCoordinates) {
         currentCorridorCoords = data.routeCorridorCoordinates;
         if (map.isStyleLoaded()) {
@@ -694,7 +835,7 @@ export const InteractiveMapView: React.FC<InteractiveMapViewProps> = ({
   `;
 
   return (
-    <View style={[styles.container, { height }]}>
+    <View style={[styles.container, { height }, hideControls && { borderRadius: 0 }]}>
       <WebView
         ref={webViewRef}
         originWhitelist={['*']}
@@ -714,6 +855,14 @@ export const InteractiveMapView: React.FC<InteractiveMapViewProps> = ({
               onColonyPress(data.id);
             } else if (data.type === 'transect_click' && onTransectPress) {
               onTransectPress(data.id);
+            } else if (data.type === 'camera' && !hasExplicitCenter) {
+              // A pan or zoom by the user settles the viewport; GPS must not yank it away
+              if (data.byUser) viewportResolved.current = true;
+              if (!viewportResolved.current) return;
+              AsyncStorage.setItem(
+                CAMERA_STORAGE_KEY,
+                JSON.stringify({ latitude: data.lat, longitude: data.lon, zoom: data.zoom })
+              ).catch(() => {});
             }
           } catch (e) {}
         }}
@@ -722,59 +871,46 @@ export const InteractiveMapView: React.FC<InteractiveMapViewProps> = ({
       />
 
       {/* Floating Modern Map Controls (Airy Apple/Tactile Style) */}
-      <View style={styles.floatingControls}>
-        <TouchableOpacity
-          style={styles.controlPill}
-          onPress={toggleLayer}
-          activeOpacity={0.7}
-        >
-          <IOSIcon name="map" size={15} color={IOSColors.label} />
-          <Text style={styles.controlPillText}>
-            {currentLayer === 'streets'
-              ? 'Satellite'
-              : currentLayer === 'satellite'
-              ? 'Outdoors'
-              : 'Streets'}
-          </Text>
-        </TouchableOpacity>
-
-        {colonyMarkers.length > 0 && (
-          <TouchableOpacity
-            style={[styles.controlPill, showColoniesLayer && styles.controlPillActive]}
-            onPress={() => setShowColoniesLayer(!showColoniesLayer)}
-            activeOpacity={0.7}
-          >
-            <IOSIcon
-              name="shield"
-              size={13}
-              color={showColoniesLayer ? '#FFFFFF' : '#7C3AED'}
-            />
-            <Text
-              style={[
-                styles.controlPillText,
-                showColoniesLayer && styles.controlPillTextActive,
-              ]}
-            >
-              Colonies {showColoniesLayer ? 'ON' : 'OFF'}
+      {!hideControls ? (
+        <View style={styles.floatingControls}>
+          <TouchableOpacity style={styles.controlPill} onPress={toggleLayer} activeOpacity={0.7}>
+            <IOSIcon name="map" size={15} color={IOSColors.label} />
+            <Text style={styles.controlPillText}>
+              {currentLayer === 'streets'
+                ? t('ui_interactiveMapView.satellite')
+                : currentLayer === 'satellite'
+                  ? t('ui_interactiveMapView.outdoors')
+                  : t('ui_interactiveMapView.streets')}
             </Text>
           </TouchableOpacity>
-        )}
 
-        <TouchableOpacity
-          style={styles.controlCircle}
-          onPress={centerOnUser}
-          activeOpacity={0.7}
-        >
-          <IOSIcon name="location" size={18} color={IOSColors.systemTeal} />
-        </TouchableOpacity>
-      </View>
+          {colonyMarkers.length > 0 && (
+            <TouchableOpacity
+              style={[styles.controlPill, showColoniesLayer && styles.controlPillActive]}
+              onPress={() => setShowColoniesLayer(!showColoniesLayer)}
+              activeOpacity={0.7}
+            >
+              <IOSIcon name="shield" size={13} color={showColoniesLayer ? '#FFFFFF' : '#7C3AED'} />
+              <Text
+                style={[styles.controlPillText, showColoniesLayer && styles.controlPillTextActive]}
+              >
+                {t('ui_interactiveMapView.colonies', { v1: showColoniesLayer ? 'ON' : 'OFF' })}
+              </Text>
+            </TouchableOpacity>
+          )}
+
+          <TouchableOpacity style={styles.controlCircle} onPress={centerOnUser} activeOpacity={0.7}>
+            <IOSIcon name="location" size={18} color={IOSColors.systemTeal} />
+          </TouchableOpacity>
+        </View>
+      ) : null}
 
       {/* Accuracy Tag */}
-      {userLocation ? (
+      {userLocation && !hideControls ? (
         <View style={styles.accuracyTag}>
           <View style={styles.pulseDot} />
           <Text style={styles.accuracyText}>
-            GPS ±{userLocation.acc.toFixed(1)}m · Live
+            {t('ui_interactiveMapView.gps_m_live', { v1: userLocation.acc.toFixed(1) })}
           </Text>
         </View>
       ) : null}
@@ -797,7 +933,7 @@ const styles = StyleSheet.create({
   floatingControls: {
     position: 'absolute',
     top: 14,
-    right: 14,
+    end: 14,
     flexDirection: 'column',
     gap: 10,
     alignItems: 'flex-end',

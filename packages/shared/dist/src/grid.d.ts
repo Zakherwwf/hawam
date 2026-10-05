@@ -1,7 +1,7 @@
 /**
  * Spatial Grid Generalization Utilities for Animal Protection.
  *
- * Free-roaming cats and dogs in Tunisia face risks of municipal culling.
+ * Free-roaming cats and dogs face risks of culling in many places.
  * Public and volunteer-facing coordinates are strictly generalized to ~1 km grid cells.
  */
 export interface GeneralizedLocation {
@@ -13,7 +13,11 @@ export interface GeneralizedLocation {
 }
 /**
  * Calculates a 1 km grid cell ID and its centroid for any given coordinate.
- * Uses spherical approximation tailored for Tunisia (~30N to 37.5N).
+ *
+ * Latitude bands are 1 km tall; within a band the longitude step is 1 km at
+ * the band's centre latitude, so cells are ~1 km x 1 km anywhere on Earth.
+ * Bands are clamped at +/-85 degrees. Must stay identical to
+ * public.grid_1km_indices() in supabase/migrations/20260929000002.
  *
  * @param longitude Longitude in decimal degrees (EPSG:4326)
  * @param latitude Latitude in decimal degrees (EPSG:4326)

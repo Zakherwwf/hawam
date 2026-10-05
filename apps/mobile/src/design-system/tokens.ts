@@ -3,80 +3,11 @@
  * Hawem (حايم) Citizen-Science Platform
  */
 
+import { brandGradients, brandPalette } from '@tunisia-survey/design-tokens';
+
 export const DesignTokens = {
-  colors: {
-    // Semantic System Colors (Soft warm porcelain canvas from Reference 1 & 3)
-    systemBackground: '#F7F6F2',
-    secondarySystemBackground: '#FFFFFF',
-    tertiarySystemBackground: '#F1F5F9',
-    systemGroupedBackground: '#F7F6F2',
-    secondarySystemGroupedBackground: '#FFFFFF',
-
-    // Reference Gradients
-    gradients: {
-      sunsetMesh: ['#DD4B34', '#ED6C44', '#FBA567'] as const,
-      sunsetMeshSoft: ['#E25841', '#EE7B53', '#FDBA78'] as const,
-      citronGlow: ['#D9F944', '#B6EA22'] as const,
-      obsidianCard: ['#18181B', '#0F172A'] as const,
-    },
-
-    // Reference 1: OxeliaMetrix Electric Citron
-    citron: '#D9F944',
-    citronLight: '#F5FDCE',
-    citronDark: '#8DAE0A',
-
-    // Reference 3: Willie Schulist Terracotta & Warm Sunset Coral
-    terracotta: '#DD4B34',
-    terracottaLight: '#FFEDE8',
-    coral: '#ED6C44',
-    coralLight: '#FFF1EC',
-    amberWarm: '#FBA567',
-    amberLight: '#FEF3C7',
-
-    // Reference 2: Obsidian
-    obsidian: '#111827',
-    obsidianPill: '#18181B',
-
-    // Text & Content Labels
-    label: '#0F172A',
-    secondaryLabel: '#64748B',
-    tertiaryLabel: '#94A3B8',
-    quaternaryLabel: '#CBD5E1',
-
-    // Separators & Borders
-    separator: '#E2E8F0',
-    opaqueSeparator: '#CBD5E1',
-
-    // Core Brand Tint
-    tint: '#0F172A',
-    tintLight: '#F1F5F9',
-    tintDark: '#020617',
-
-    // Species Semantic Accents
-    cat: '#DD4B34',
-    catLight: '#FFEDE8',
-    dog: '#ED6C44',
-    dogLight: '#FEF3C7',
-
-    // Nature Accents
-    emerald: '#10B981',
-    emeraldLight: '#D1FAE5',
-
-    // Status & Scientific Triage
-    welfareAlert: '#DC2626',
-    welfareAlertLight: '#FEE2E2',
-    success: '#10B981',
-    successLight: '#D1FAE5',
-    warning: '#F59E0B',
-    warningLight: '#FEF3C7',
-
-    // Glass & Card Materials
-    glassSurface: 'rgba(255, 255, 255, 0.88)',
-    glassBorder: 'rgba(226, 232, 240, 0.8)',
-    darkGlassSurface: 'rgba(15, 23, 42, 0.90)',
-    darkGlassBorder: 'rgba(51, 65, 85, 0.6)',
-  },
-
+  // Values live in packages/design-tokens (brandPalette)
+  colors: { ...brandPalette, gradients: brandGradients },
   typography: {
     largeTitle: {
       fontSize: 34,
@@ -193,7 +124,7 @@ export const DesignTokens = {
     medium: {
       shadowColor: '#000000',
       shadowOffset: { width: 0, height: 3 },
-      shadowOpacity: 0.10,
+      shadowOpacity: 0.1,
       shadowRadius: 8,
       elevation: 3,
     },

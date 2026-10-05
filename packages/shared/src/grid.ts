@@ -1,7 +1,7 @@
 /**
  * Spatial Grid Generalization Utilities for Animal Protection.
  *
- * Free-roaming cats and dogs in Tunisia face risks of municipal culling.
+ * Free-roaming cats and dogs face risks of culling in many places.
  * Public and volunteer-facing coordinates are strictly generalized to ~1 km grid cells.
  */
 
@@ -19,7 +19,11 @@ const GRID_SIZE_METERS = 1000; // 1 km
 
 /**
  * Calculates a 1 km grid cell ID and its centroid for any given coordinate.
- * Uses spherical approximation tailored for Tunisia (~30N to 37.5N).
+ *
+ * Latitude bands are 1 km tall; within a band the longitude step is 1 km at
+ * the band's centre latitude, so cells are ~1 km x 1 km anywhere on Earth.
+ * Bands are clamped at +/-85 degrees. Must stay identical to
+ * public.grid_1km_indices() in supabase/migrations/20260929000002.
  *
  * @param longitude Longitude in decimal degrees (EPSG:4326)
  * @param latitude Latitude in decimal degrees (EPSG:4326)
@@ -31,14 +35,14 @@ export function generalizeTo1KmGrid(longitude: number, latitude: number): Genera
 
   // Latitudinal grid spacing (constant ~0.009009 deg)
   const latStep = GRID_SIZE_METERS / METERS_PER_DEGREE_LAT;
+  const clampedLat = Math.max(-85, Math.min(85, latitude));
+  const latIndex = Math.floor(clampedLat / latStep);
 
-  // Longitudinal grid spacing (varies with latitude cos(phi))
-  const radLat = (latitude * Math.PI) / 180;
-  const metersPerDegreeLon = METERS_PER_DEGREE_LAT * Math.cos(radLat);
-  const lonStep = GRID_SIZE_METERS / metersPerDegreeLon;
+  // Longitudinal spacing from the band centre, so every point in a band
+  // shares the same longitude grid
+  const bandCentreRad = ((latIndex + 0.5) * latStep * Math.PI) / 180;
+  const lonStep = GRID_SIZE_METERS / (METERS_PER_DEGREE_LAT * Math.cos(bandCentreRad));
 
-  // Discrete cell indices
-  const latIndex = Math.floor(latitude / latStep);
   const lonIndex = Math.floor(longitude / lonStep);
 
   // Cell Centroid (midpoint of the 1km x 1km cell)
@@ -62,8 +66,10 @@ export function generalizeTo1KmGrid(longitude: number, latitude: number): Genera
     centroid: [roundedCentroidLon, roundedCentroidLat],
     gridCellId,
     coordinateUncertaintyInMeters,
-    dataGeneralizations: 'Coordinates generalized to 1 km grid centroid to protect free-roaming animals from municipal culling',
-    informationWithheld: 'Exact GPS coordinates restricted to certified researchers and administrators',
+    dataGeneralizations:
+      'Coordinates generalized to 1 km grid centroid to protect free-roaming animals from municipal culling',
+    informationWithheld:
+      'Exact GPS coordinates restricted to certified researchers and administrators',
   };
 }
 
@@ -77,8 +83,5 @@ export function isLocationGeneralized(
   genLat: number
 ): boolean {
   const gen = generalizeTo1KmGrid(origLon, origLat);
-  return (
-    Math.abs(gen.centroid[0] - genLon) < 0.0001 &&
-    Math.abs(gen.centroid[1] - genLat) < 0.0001
-  );
+  return Math.abs(gen.centroid[0] - genLon) < 0.0001 && Math.abs(gen.centroid[1] - genLat) < 0.0001;
 }

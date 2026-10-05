@@ -11,7 +11,8 @@ import { supabase } from './supabase';
 export async function handleAuthUrl(url: string): Promise<boolean> {
   try {
     if (!url) return false;
-    console.log('[deepLinkAuth] Incoming Auth URL:', url);
+    // Never log the query or fragment: sign-in links carry access tokens
+    console.log('[deepLinkAuth] Incoming link:', url.split(/[?#]/)[0]);
 
     // Extract query parameters and hash fragments
     const queryPart = (url.split('#')[0] || '').split('?')[1] || '';
@@ -34,7 +35,6 @@ export async function handleAuthUrl(url: string): Promise<boolean> {
     }
 
     if (params.access_token && params.refresh_token) {
-      console.log('[deepLinkAuth] Setting active session from tokens...');
       const { data, error } = await supabase.auth.setSession({
         access_token: params.access_token,
         refresh_token: params.refresh_token,
@@ -45,10 +45,8 @@ export async function handleAuthUrl(url: string): Promise<boolean> {
         return false;
       }
 
-      console.log('[deepLinkAuth] Session activated for:', data.user?.email);
       return !!data.session;
     } else if (params.code) {
-      console.log('[deepLinkAuth] Exchanging authorization code for session...');
       const { data, error } = await supabase.auth.exchangeCodeForSession(params.code);
 
       if (error) {
@@ -56,7 +54,6 @@ export async function handleAuthUrl(url: string): Promise<boolean> {
         return false;
       }
 
-      console.log('[deepLinkAuth] Code exchanged for:', data.user?.email);
       return !!data.session;
     }
 
