@@ -5,7 +5,14 @@
     "skipLibCheck": true,
     "jsx": "react-native",
     "allowImportingTsExtensions": true,
-    "noEmit": true
+    "noEmit": true,
+    // Illustrations import single Phosphor icons from their source files to keep
+    // the bundle small; type-check them against the published declarations
+    "paths": {
+      "phosphor-react-native/src/icons/*": [
+        "./node_modules/phosphor-react-native/lib/typescript/icons/*"
+      ]
+    }
   },
   "include": ["src/**/*", "app/**/*", ".expo/types/**/*.ts", "expo-env.d.ts"],
   "exclude": ["src/__tests__"]

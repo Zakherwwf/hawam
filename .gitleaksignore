@@ -1,0 +1,5 @@
+# Reviewed false positives (see .gitleaks.toml for the general allowlist).
+# The Supabase anon key: role "anon", public by design; row-level security protects the data.
+4e359db209f3d582ba1112f91b313e9bc013b7e6:apps/dashboard/src/data/client.ts:jwt:9
+# A local storage key name ('hawem_colonies_v2'), not a credential.
+377fc6ade5d7ccf343a19d6b00108f71f226bff0:apps/mobile/src/features/colonies/coloniesStore.ts:generic-api-key:72
